@@ -1,8 +1,12 @@
 import "./constants";
 import { Elysia } from "elysia";
+import { openapi } from "@elysiajs/openapi";
+import { auth } from "./api/auth.js";
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { z } from "zod";
+import { betterAuthPlugins } from "./http/plugins/better-auth.js";
 
 async function saveClassrooms() {
   await fs.writeFile(
@@ -19,71 +23,34 @@ async function saveUsers() {
 }
 
 const app = new Elysia()
-  .get("/", () => ({ message: "Server is running" }))
-  .get("/classrooms", () => classrooms)
-  .get("/users", () => users)
-  .post("/reservations", async ({ body, set }) => {
-    const payload = body as { userId?: string; classroomId?: string; startTimestamp?: number; endTimestamp?: number };
-    const { userId, classroomId, startTimestamp, endTimestamp } = payload;
-    
-    if (!userId || !classroomId || !startTimestamp || !endTimestamp) {
-       set.status = 400;
-       return { error: "Missing required fields: userId, classroomId, startTimestamp, endTimestamp" };
-    }
-
-    const user = users.find(u => u.id === userId);
-    const classroom = classrooms.find(c => c.id === classroomId);
-
-    if (!user || !classroom) {
-       set.status = 404;
-       return { error: "User or Classroom not found" };
-    }
-
-    // Initialize arrays if they don't exist
-    if (!user.reservedRooms) user.reservedRooms = [];
-    if (!classroom.reservations) classroom.reservations = [];
-
-    user.reservedRooms.push({ classroomId, startTimestamp, endTimestamp });
-    classroom.reservations.push({ userId, startTimestamp, endTimestamp });
-
-    await saveUsers();
-    await saveClassrooms();
-
-    return { success: true, user, classroom };
+  .use(openapi())
+  .use(betterAuthPlugins)
+  .all("/api/auth/*", async (ctx) => {
+    return auth.handler(ctx.request);
   })
-  .delete("/reservations", async ({ body, set }) => {
-    const payload = body as { userId?: string; classroomId?: string; startTimestamp?: number; endTimestamp?: number };
-    const { userId, classroomId, startTimestamp, endTimestamp } = payload;
-    
-    if (!userId || !classroomId || !startTimestamp || !endTimestamp) {
-       set.status = 400;
-       return { error: "Missing required fields: userId, classroomId, startTimestamp, endTimestamp" };
+  .get("/", () => "Hello Elysia")
+  .get("/users/:id", ({ params }) => {
+
+
+    return { id: "nathan", name: "nathan" };
+  }, {
+
+    detail: {
+      summary: "Buscar usuario pelo id.",
+      tags: ["users"]
+    },
+
+    params: z.object({
+      id: z.string()
+    }),
+
+    response: {
+      200: z.object({
+        id: z.string(),
+        name: z.string()
+      })
     }
 
-    const user = users.find(u => u.id === userId);
-    const classroom = classrooms.find(c => c.id === classroomId);
-
-    if (!user || !classroom) {
-       set.status = 404;
-       return { error: "User or Classroom not found" };
-    }
-
-    if (user.reservedRooms) {
-      user.reservedRooms = user.reservedRooms.filter(
-          r => !(r.classroomId === classroomId && r.startTimestamp === startTimestamp && r.endTimestamp === endTimestamp)
-      );
-    }
-    
-    if (classroom.reservations) {
-      classroom.reservations = classroom.reservations.filter(
-          r => !(r.userId === userId && r.startTimestamp === startTimestamp && r.endTimestamp === endTimestamp)
-      );
-    }
-
-    await saveUsers();
-    await saveClassrooms();
-
-    return { success: true, message: "Reservation cancelled successfully", user, classroom };
   })
   .listen(3000);
 

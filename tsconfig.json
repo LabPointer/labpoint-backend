@@ -28,9 +28,11 @@
 		// Path mapping Options
 		"paths": {
 			"#index": ["./src/index.ts"],
-      		"#app": ["./src/app/index.ts"],
+      		"#api": ["./src/api/index.ts"],
+			"#database": ["./src/database/index.ts"],
 			"#env": ["./src/env.ts"],
 			"#functions": ["./src/functions/index.ts"],
+			"#prisma": ["./generated/prisma/*"],
 			"#classrooms": ["./json/classrooms.json"],
 		}
 	},

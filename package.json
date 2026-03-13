@@ -18,19 +18,32 @@
     "start:dev": "bun --env-file=.env.dev ."
   },
   "dependencies": {
-    "elysia": "latest",
+    "@better-auth/prisma-adapter": "latest",
+    "@elysiajs/openapi": "latest",
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "latest",
+    "better-auth": "latest",
     "chalk": "latest",
+    "dotenvy": "^0.2.0",
+    "elysia": "latest",
+    "pg": "latest",
     "zod": "latest"
   },
   "devDependencies": {
+    "@prisma/config": "^7.5.0",
     "bun-types": "latest",
+    "dotenv": "^17.3.1",
+    "prisma": "^7.5.0",
     "tsup": "latest",
     "tsx": "latest",
     "typescript": "latest"
   },
   "imports": {
-    "#app": [
-      "./build/app/index.js"
+    "#api": [
+      "./build/api/index.js"
+    ],
+    "#database": [
+      "./build/api/database.js"
     ],
     "#env": [
       "./build/env.js"
