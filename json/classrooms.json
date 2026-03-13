@@ -1,0 +1,203 @@
+[
+  {
+    "id": "auditorio-principal",
+    "name": "Auditório Principal",
+    "capacity": 150,
+    "resources": [
+      "Telão"
+    ],
+    "reservations": [
+      {
+        "userId": "user-jailson",
+        "startTimestamp": 1784124000000,
+        "endTimestamp": 1784131200000
+      }
+    ]
+  },
+  {
+    "id": "lab-info-1",
+    "name": "Laboratório de Informática 1",
+    "capacity": 30,
+    "resources": [
+      "Telão",
+      "Computadores"
+    ],
+    "reservations": [
+      {
+        "userId": "user-jailson",
+        "startTimestamp": 1784365200000,
+        "endTimestamp": 1784372400000
+      }
+    ]
+  },
+  {
+    "id": "lab-info-2",
+    "name": "Laboratório de Informática 2",
+    "capacity": 25,
+    "resources": [
+      "Computadores"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-info-3",
+    "name": "Laboratório de Informática 3",
+    "capacity": 40,
+    "resources": [
+      "Telão",
+      "Computadores"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-info-4",
+    "name": "Laboratório de Informática 4",
+    "capacity": 20,
+    "resources": [
+      "Computadores"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-info-5",
+    "name": "Laboratório de Informática 5",
+    "capacity": 35,
+    "resources": [
+      "Telão",
+      "Computadores"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-info-6",
+    "name": "Laboratório de Informática 6",
+    "capacity": 30,
+    "resources": [
+      "Computadores"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-info-7",
+    "name": "Laboratório de Informática 7",
+    "capacity": 25,
+    "resources": [
+      "Telão",
+      "Computadores"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-info-8",
+    "name": "Laboratório de Informática 8",
+    "capacity": 40,
+    "resources": [
+      "Computadores"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-info-9",
+    "name": "Laboratório de Informática 9",
+    "capacity": 20,
+    "resources": [
+      "Telão",
+      "Computadores"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-info-10",
+    "name": "Laboratório de Informática 10",
+    "capacity": 35,
+    "resources": [
+      "Computadores"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-quimica-1",
+    "name": "Laboratório de Química 1",
+    "capacity": 20,
+    "resources": [
+      "Tubo de ensaio"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-quimica-2",
+    "name": "Laboratório de Química 2",
+    "capacity": 25,
+    "resources": [
+      "Tubo de ensaio",
+      "Telão"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-quimica-3",
+    "name": "Laboratório de Química 3",
+    "capacity": 30,
+    "resources": [
+      "Tubo de ensaio"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-quimica-4",
+    "name": "Laboratório de Química 4",
+    "capacity": 25,
+    "resources": [
+      "Tubo de ensaio",
+      "Telão"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-quimica-5",
+    "name": "Laboratório de Química 5",
+    "capacity": 20,
+    "resources": [
+      "Tubo de ensaio"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-quimica-6",
+    "name": "Laboratório de Química 6",
+    "capacity": 35,
+    "resources": [
+      "Tubo de ensaio",
+      "Telão"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-quimica-7",
+    "name": "Laboratório de Química 7",
+    "capacity": 30,
+    "resources": [
+      "Tubo de ensaio"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-quimica-8",
+    "name": "Laboratório de Química 8",
+    "capacity": 25,
+    "resources": [
+      "Tubo de ensaio",
+      "Telão"
+    ],
+    "reservations": []
+  },
+  {
+    "id": "lab-quimica-9",
+    "name": "Laboratório de Química 9",
+    "capacity": 20,
+    "resources": [
+      "Tubo de ensaio"
+    ],
+    "reservations": []
+  }
+]

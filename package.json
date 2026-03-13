@@ -1,0 +1,46 @@
+{
+  "name": "app",
+  "version": "0.0.1",
+  "description": "Backend TypeScript framework with End-to-End Type Safety",
+  "license": "MIT",
+  "author": "Nathan",
+  "type": "module",
+  "main": "build/index.js",
+  "private": true,
+  "scripts": {
+    "check": "tsc --noEmit && echo ✔ Ok",
+    "build": "tsup",
+    "dev": "bun --env-file=.env ./src/index.ts",
+    "dev:dev": "bun --env-file=.env.dev ./src/index.ts",
+    "watch": "bun --watch --env-file=.env ./src/index.ts",
+    "watch:dev": "bun --watch --env-file=.env.dev ./src/index.ts",
+    "start": "bun --env-file=.env .",
+    "start:dev": "bun --env-file=.env.dev ."
+  },
+  "dependencies": {
+    "elysia": "latest",
+    "chalk": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "tsup": "latest",
+    "tsx": "latest",
+    "typescript": "latest"
+  },
+  "imports": {
+    "#app": [
+      "./build/app/index.js"
+    ],
+    "#env": [
+      "./build/env.js"
+    ],
+    "#index": [
+      "./build/index.js"
+    ],
+    "#functions": [
+      "./build/functions/index.js"
+    ]
+  },
+  "module": "src/index.js"
+}
