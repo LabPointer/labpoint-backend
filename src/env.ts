@@ -25,9 +25,5 @@ function validateEnv<T extends ZodRawShape>(schema: ZodObject<T>){
 }
 
 export const env = validateEnv(z.object({
-    BETTER_AUTH_URL: z.string("Better auth url is required").min(1),
-    BETTER_AUTH_SECRET: z.string("Better auth secret is required").min(1),
-    DATABASE_URL: z.string("Database url is required").min(1),
-    POSTGRES_URL: z.string("Postgres url is required").min(1),
-    PRISMA_DATABASE_URL: z.string("Prisma database url is required").min(1)
+    DATABASE_URL: z.string("Database url is required").min(1)
 }));

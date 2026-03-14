@@ -1,18 +1,25 @@
-/*
-  Warnings:
+-- CreateEnum
+CREATE TYPE "resource" AS ENUM ('COMPUTADORES', 'TELAO', 'TUBOS_DE_ENSAIO');
 
-  - You are about to drop the `Post` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `User` table. If the table is not empty, all the data it contains will be lost.
+-- CreateTable
+CREATE TABLE "reserves" (
+    "id" SERIAL NOT NULL,
+    "startFrom" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "endUntil" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "spacesId" TEXT NOT NULL,
 
-*/
--- DropForeignKey
-ALTER TABLE "Post" DROP CONSTRAINT "Post_authorId_fkey";
+    CONSTRAINT "reserves_pkey" PRIMARY KEY ("id")
+);
 
--- DropTable
-DROP TABLE "Post";
+-- CreateTable
+CREATE TABLE "spaces" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "capacity" INTEGER NOT NULL,
+    "resources" "resource"[],
 
--- DropTable
-DROP TABLE "User";
+    CONSTRAINT "spaces_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "user" (
@@ -86,6 +93,9 @@ CREATE INDEX "account_userId_idx" ON "account"("userId");
 
 -- CreateIndex
 CREATE INDEX "verification_identifier_idx" ON "verification"("identifier");
+
+-- AddForeignKey
+ALTER TABLE "reserves" ADD CONSTRAINT "reserves_spacesId_fkey" FOREIGN KEY ("spacesId") REFERENCES "spaces"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

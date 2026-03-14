@@ -7,33 +7,38 @@
   "type": "module",
   "main": "build/index.js",
   "private": true,
+  "prisma": {
+    "schema": "prisma/schema"
+  },
   "scripts": {
     "check": "tsc --noEmit && echo ✔ Ok",
     "build": "tsup",
+    "auth:generate": "bunx auth@latest generate",
+    "prisma:dev": "bunx prisma dev",
+    "prisma:dev:update": "bunx prisma migrate dev --name init && bunx prisma generate",
+    "prisma:studio": "bunx prisma studio",
     "dev": "bun --env-file=.env ./src/index.ts",
-    "dev:dev": "bun --env-file=.env.dev ./src/index.ts",
     "watch": "bun --watch --env-file=.env ./src/index.ts",
-    "watch:dev": "bun --watch --env-file=.env.dev ./src/index.ts",
-    "start": "bun --env-file=.env .",
+    "start": "bun --env-file=.env.prod .",
     "start:dev": "bun --env-file=.env.dev ."
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "latest",
     "@elysiajs/openapi": "latest",
-    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/adapter-pg": "latest",
     "@prisma/client": "latest",
     "better-auth": "latest",
     "chalk": "latest",
-    "dotenvy": "^0.2.0",
+    "dotenvy": "latest",
     "elysia": "latest",
     "pg": "latest",
     "zod": "latest"
   },
   "devDependencies": {
-    "@prisma/config": "^7.5.0",
+    "@prisma/config": "latest",
     "bun-types": "latest",
-    "dotenv": "^17.3.1",
-    "prisma": "^7.5.0",
+    "dotenv": "latest",
+    "prisma": "latest",
     "tsup": "latest",
     "tsx": "latest",
     "typescript": "latest"

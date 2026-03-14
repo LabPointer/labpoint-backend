@@ -9,7 +9,10 @@
 * 🟢 You can import this file directly.
 */
 
+export const Resource = {
+  COMPUTADORES: 'COMPUTADORES',
+  TELAO: 'TELAO',
+  TUBOS_DE_ENSAIO: 'TUBOS_DE_ENSAIO'
+} as const
 
-
-// This file is empty because there are no enums in the schema.
-export {}
+export type Resource = (typeof Resource)[keyof typeof Resource]

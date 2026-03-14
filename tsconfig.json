@@ -30,6 +30,7 @@
 			"#index": ["./src/index.ts"],
       		"#api": ["./src/api/index.ts"],
 			"#database": ["./src/database/index.ts"],
+			"@src/*": ["./src/*"],
 			"#env": ["./src/env.ts"],
 			"#functions": ["./src/functions/index.ts"],
 			"#prisma": ["./generated/prisma/*"],

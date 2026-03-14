@@ -1,0 +1,29 @@
+enum Resource {
+    COMPUTADORES
+    TELAO
+    TUBOS_DE_ENSAIO
+
+    @@map("resource")
+}
+
+model Reserves {
+    id        Int      @id @default(autoincrement())
+    startFrom DateTime @default(now())
+    endUntil  DateTime @default(now())
+    // (1:N)
+    spacesId  String
+    space     Spaces   @relation(fields: [spacesId], references: [id])
+
+    @@map("reserves")
+}
+
+model Spaces {
+    id        String     @id
+    name      String
+    capacity  Int
+    resources Resource[]
+    // (0:N)
+    reserves  Reserves[]
+
+    @@map("spaces")
+}

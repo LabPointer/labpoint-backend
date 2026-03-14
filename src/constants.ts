@@ -1,13 +1,16 @@
 import constantsJson from "../json/constants.json" with { type: "json" };
-import classroomsJson from "../json/classrooms.json" with { type: "json" };
+import spacesJson from "../json/spaces.json" with { type: "json" };
 import usersJson from "../json/users.json" with { type: "json" };
 
 declare global {
   var constants: typeof constantsJson;
-  var classrooms: typeof classroomsJson;
+  var spaces: typeof spacesJson;
   var users: typeof usersJson;
 }
-
-globalThis.constants = JSON.parse(JSON.stringify(constantsJson));
-globalThis.classrooms = JSON.parse(JSON.stringify(classroomsJson));
-globalThis.users = JSON.parse(JSON.stringify(usersJson));
+Object.assign(globalThis, Object.freeze({
+    constants: constantsJson,
+    spaces: spacesJson,
+}));
+//globalThis.constants = JSON.parse(JSON.stringify(constantsJson));
+//globalThis.spaces = JSON.parse(JSON.stringify(spacesJson));
+//globalThis.users = JSON.parse(JSON.stringify(usersJson));

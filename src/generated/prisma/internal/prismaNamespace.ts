@@ -384,6 +384,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
+  Reserves: 'Reserves',
+  Spaces: 'Spaces',
   User: 'User',
   Session: 'Session',
   Account: 'Account',
@@ -403,10 +405,158 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "account" | "verification"
+    modelProps: "reserves" | "spaces" | "user" | "session" | "account" | "verification"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
+    Reserves: {
+      payload: Prisma.$ReservesPayload<ExtArgs>
+      fields: Prisma.ReservesFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ReservesFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservesPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ReservesFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservesPayload>
+        }
+        findFirst: {
+          args: Prisma.ReservesFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservesPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ReservesFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservesPayload>
+        }
+        findMany: {
+          args: Prisma.ReservesFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservesPayload>[]
+        }
+        create: {
+          args: Prisma.ReservesCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservesPayload>
+        }
+        createMany: {
+          args: Prisma.ReservesCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ReservesCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservesPayload>[]
+        }
+        delete: {
+          args: Prisma.ReservesDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservesPayload>
+        }
+        update: {
+          args: Prisma.ReservesUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservesPayload>
+        }
+        deleteMany: {
+          args: Prisma.ReservesDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ReservesUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ReservesUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservesPayload>[]
+        }
+        upsert: {
+          args: Prisma.ReservesUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservesPayload>
+        }
+        aggregate: {
+          args: Prisma.ReservesAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateReserves>
+        }
+        groupBy: {
+          args: Prisma.ReservesGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ReservesGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ReservesCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ReservesCountAggregateOutputType> | number
+        }
+      }
+    }
+    Spaces: {
+      payload: Prisma.$SpacesPayload<ExtArgs>
+      fields: Prisma.SpacesFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SpacesFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SpacesPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SpacesFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SpacesPayload>
+        }
+        findFirst: {
+          args: Prisma.SpacesFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SpacesPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SpacesFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SpacesPayload>
+        }
+        findMany: {
+          args: Prisma.SpacesFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SpacesPayload>[]
+        }
+        create: {
+          args: Prisma.SpacesCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SpacesPayload>
+        }
+        createMany: {
+          args: Prisma.SpacesCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SpacesCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SpacesPayload>[]
+        }
+        delete: {
+          args: Prisma.SpacesDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SpacesPayload>
+        }
+        update: {
+          args: Prisma.SpacesUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SpacesPayload>
+        }
+        deleteMany: {
+          args: Prisma.SpacesDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SpacesUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SpacesUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SpacesPayload>[]
+        }
+        upsert: {
+          args: Prisma.SpacesUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SpacesPayload>
+        }
+        aggregate: {
+          args: Prisma.SpacesAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSpaces>
+        }
+        groupBy: {
+          args: Prisma.SpacesGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SpacesGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SpacesCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SpacesCountAggregateOutputType> | number
+        }
+      }
+    }
     User: {
       payload: Prisma.$UserPayload<ExtArgs>
       fields: Prisma.UserFieldRefs
@@ -742,6 +892,26 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const ReservesScalarFieldEnum = {
+  id: 'id',
+  startFrom: 'startFrom',
+  endUntil: 'endUntil',
+  spacesId: 'spacesId'
+} as const
+
+export type ReservesScalarFieldEnum = (typeof ReservesScalarFieldEnum)[keyof typeof ReservesScalarFieldEnum]
+
+
+export const SpacesScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  capacity: 'capacity',
+  resources: 'resources'
+} as const
+
+export type SpacesScalarFieldEnum = (typeof SpacesScalarFieldEnum)[keyof typeof SpacesScalarFieldEnum]
+
+
 export const UserScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -831,23 +1001,16 @@ export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
 /**
- * Reference to a field of type 'String'
+ * Reference to a field of type 'Int'
  */
-export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String'>
+export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
     
 
 
 /**
- * Reference to a field of type 'String[]'
+ * Reference to a field of type 'Int[]'
  */
-export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
     
 
 
@@ -866,16 +1029,51 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
- * Reference to a field of type 'Int'
+ * Reference to a field of type 'String'
  */
-export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String'>
     
 
 
 /**
- * Reference to a field of type 'Int[]'
+ * Reference to a field of type 'String[]'
  */
-export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Resource[]'
+ */
+export type ListEnumResourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Resource[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Resource'
+ */
+export type EnumResourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Resource'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 /**
@@ -973,6 +1171,8 @@ export type PrismaClientOptions = ({
   comments?: runtime.SqlCommenterPlugin[]
 }
 export type GlobalOmitConfig = {
+  reserves?: Prisma.ReservesOmit
+  spaces?: Prisma.SpacesOmit
   user?: Prisma.UserOmit
   session?: Prisma.SessionOmit
   account?: Prisma.AccountOmit

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "lab-info-01",
+    "name": "Informatica 1",
+    "capacity": 20,
+    "resources": [
+      "COMPUTADORES", "TELAO"
+    ]
+  },
+  {
+    "id": "lab-info-02",
+    "name": "Informatica 2",
+    "capacity": 20,
+    "resources": [
+      "COMPUTADORES", "TELAO"
+    ]
+  },
+  {
+    "id": "lab-info-08",
+    "name": "Informatica 8",
+    "capacity": 30,
+    "resources": [
+      "COMPUTADORES", "TELAO"
+    ]
+  },
+  {
+    "id": "lab-quim-01",
+    "name": "Quimica 1",
+    "capacity": 50,
+    "resources": [
+      "TUBOS_DE_ENSAIO"
+    ]
+  },
+  {
+    "id": "auditorio",
+    "name": "Auditorio",
+    "capacity": 150,
+    "resources": [
+      "TELAO"
+    ]
+  }
+]

@@ -51,6 +51,8 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  Reserves: 'Reserves',
+  Spaces: 'Spaces',
   User: 'User',
   Session: 'Session',
   Account: 'Account',
@@ -71,6 +73,26 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 } as const)
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
+
+
+export const ReservesScalarFieldEnum = {
+  id: 'id',
+  startFrom: 'startFrom',
+  endUntil: 'endUntil',
+  spacesId: 'spacesId'
+} as const
+
+export type ReservesScalarFieldEnum = (typeof ReservesScalarFieldEnum)[keyof typeof ReservesScalarFieldEnum]
+
+
+export const SpacesScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  capacity: 'capacity',
+  resources: 'resources'
+} as const
+
+export type SpacesScalarFieldEnum = (typeof SpacesScalarFieldEnum)[keyof typeof SpacesScalarFieldEnum]
 
 
 export const UserScalarFieldEnum = {
