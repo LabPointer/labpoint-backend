@@ -1,36 +1,14 @@
 import "./constants";
 import { Elysia } from "elysia";
 import { openapi } from "@elysiajs/openapi";
-import { auth } from "./api/auth.js";
-
-import fs from "node:fs/promises";
-import path from "node:path";
 import { z } from "zod";
-import { betterAuthPlugins } from "./http/plugins/better-auth.js";
 import { db } from "#database";
 import { Resource } from "./generated/prisma/enums.js";
-
-
-async function saveClassrooms() {
-  await fs.writeFile(
-    path.join(import.meta.dir, "../json/classrooms.json"),
-    JSON.stringify(spaces, null, 2)
-  );
-}
-
-async function saveUsers() {
-  await fs.writeFile(
-    path.join(import.meta.dir, "../json/users.json"),
-    JSON.stringify(users, null, 2)
-  );
-}
+//import { auth } from "./api/auth.js";
+//import { betterAuthPlugins } from "./http/plugins/better-auth.js";
 
 const app = new Elysia()
   .use(openapi())
-  .use(betterAuthPlugins)
-  .all("/api/auth/*", async (ctx) => {
-    return auth.handler(ctx.request);
-  })
   .get("/", () => "Hello Elysia")
   .get("/spaces", async ({ query }) => {
     const labs = await db.spaces.findMany({
@@ -48,7 +26,7 @@ const app = new Elysia()
 
     detail: {
       summary: "Lista todos os laboratorios.",
-      description: "http://localhost:3000/spaces?name=lab&capacity=20&resources=TELAO",
+      description: "/spaces?name=lab&capacity=20&resources=TELAO",
       tags: ["laboratorio"]
     },
 
@@ -123,6 +101,17 @@ const app = new Elysia()
       id: z.string()
     }),
   })
+  .listen(3000);
+
+console.log(
+  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}\n`
+);
+
+/*
+  .use(betterAuthPlugins)
+  .all("/api/auth/*", async (ctx) => {
+    return auth.handler(ctx.request);
+  })
   .get("/users/:id", ({ params }) => {
 
 
@@ -146,8 +135,4 @@ const app = new Elysia()
     }
 
   })
-  .listen(3000);
-
-console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}\n`
-);
+*/

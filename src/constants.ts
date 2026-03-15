@@ -1,11 +1,9 @@
 import constantsJson from "../json/constants.json" with { type: "json" };
 import spacesJson from "../json/spaces.json" with { type: "json" };
-import usersJson from "../json/users.json" with { type: "json" };
 
 declare global {
   var constants: typeof constantsJson;
   var spaces: typeof spacesJson;
-  var users: typeof usersJson;
 }
 Object.assign(globalThis, Object.freeze({
     constants: constantsJson,

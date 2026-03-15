@@ -1,3 +1,4 @@
+/*
 import { Elysia } from "elysia";
 import { auth } from "#api";
 
@@ -16,3 +17,4 @@ export const betterAuthPlugins = new Elysia({ name: "better-auth" })
             }
         }
     })
+*/
