@@ -33,11 +33,7 @@ const app = new Elysia()
 
     const labs = await db.select().from(spaces).where(where);
 
-    return labs.map((lab) => ({
-      ...lab,
-      capacity: Number(lab.capacity),
-      resources: lab.resources ?? [],
-    }));
+    return labs;
   }, {
     auth: false,
 
