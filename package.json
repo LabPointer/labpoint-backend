@@ -7,38 +7,35 @@
   "type": "module",
   "main": "build/index.js",
   "private": true,
-  "prisma": {
-    "schema": "prisma/schema"
-  },
   "scripts": {
     "check": "tsc --noEmit && echo ✔ Ok",
     "build": "tsup",
-    "auth:generate": "bunx auth@latest generate",
-    "prisma:dev": "bunx prisma dev",
-    "prisma:dev:update": "bunx prisma migrate dev --name init && bunx prisma generate",
-    "prisma:studio": "bunx prisma studio",
+    "auth:generate": "bunx --bun auth@latest generate --config ./src/api/auth.ts",
+    "db:generate": "bunx --bun --env-file=.env drizzle-kit generate",
+    "db:migrate": "bunx --bun --env-file=.env drizzle-kit migrate",
+    "db:upsert": "bun --env-file=.env ./src/seed.ts",
     "dev": "bun --env-file=.env ./src/index.ts",
     "watch": "bun --watch --env-file=.env ./src/index.ts",
     "start": "bun --env-file=.env.prod .",
     "start:dev": "bun --env-file=.env.dev ."
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.5.5",
     "@better-auth/prisma-adapter": "latest",
     "@elysiajs/openapi": "latest",
-    "@prisma/adapter-pg": "latest",
-    "@prisma/client": "latest",
+    "@neondatabase/serverless": "latest",
     "better-auth": "latest",
     "chalk": "latest",
     "dotenvy": "latest",
+    "drizzle-orm": "latest",
     "elysia": "latest",
     "pg": "latest",
     "zod": "latest"
   },
   "devDependencies": {
-    "@prisma/config": "latest",
     "bun-types": "latest",
     "dotenv": "latest",
-    "prisma": "latest",
+    "drizzle-kit": "latest",
     "tsup": "latest",
     "tsx": "latest",
     "typescript": "latest"
@@ -47,8 +44,8 @@
     "#api": [
       "./build/api/index.js"
     ],
-    "#database": [
-      "./build/api/database.js"
+    "#db": [
+      "./build/db/index.js"
     ],
     "#env": [
       "./build/env.js"

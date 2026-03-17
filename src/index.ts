@@ -2,25 +2,42 @@ import "./constants";
 import { Elysia } from "elysia";
 import { openapi } from "@elysiajs/openapi";
 import { z } from "zod";
-import { db } from "#database";
-import { Resource } from "./generated/prisma/enums.js";
-//import { auth } from "./api/auth.js";
-//import { betterAuthPlugins } from "./http/plugins/better-auth.js";
+import { db } from "#db";
+import { and, eq, gte, ilike, sql } from "drizzle-orm";
+import { spaces } from "./db/schema/spaces.js";
+import { reserves } from "./db/schema/reserves.js";
 
 const app = new Elysia()
   .use(openapi())
   .get("/", () => "Hello Elysia")
   .get("/spaces", async ({ query }) => {
-    const labs = await db.spaces.findMany({
-      where: {
-        id: query.id,
-        name: query.name ? { contains: query.name, mode: "insensitive" } : undefined,
-        capacity: query.capacity ? { gte: Number(query.capacity) } : undefined,
-        resources: query.resources ? { hasSome: query.resources.split(",") as Resource[] } : undefined,
-      }
-    });
+    const resourceList = (query.resources ?? "")
+      .split(",")
+      .map((r: string) => r.trim())
+      .filter(Boolean);
 
-    return labs;
+    const resourcesOverlap =
+      resourceList.length === 0
+        ? undefined
+        : sql`${spaces.resources} && ${sql`ARRAY[${sql.join(
+            resourceList.map((r: string) => sql`${r}`),
+            sql`, `,
+          )}]::resource[]`}`;
+
+    const where = and(
+      query.id ? eq(spaces.id, query.id) : undefined,
+      query.name ? ilike(spaces.name, `%${query.name}%`) : undefined,
+      query.capacity ? gte(spaces.capacity, query.capacity) : undefined,
+      resourcesOverlap,
+    );
+
+    const labs = await db.select().from(spaces).where(where);
+
+    return labs.map((lab) => ({
+      ...lab,
+      capacity: Number(lab.capacity),
+      resources: lab.resources ?? [],
+    }));
   }, {
     auth: false,
 
@@ -39,13 +56,12 @@ const app = new Elysia()
   })
 
   .get("/reserves", async ({ params }) => {
-    const reserves = await db.reserves.findMany({
-      where: {
-        spacesId: params.spaceId
-      }
-    });
+    const rows = await db
+      .select()
+      .from(reserves)
+      .where(eq(reserves.spaceId, params.spaceId));
 
-    return reserves;
+    return rows;
   }, {
     auth: false,
 
@@ -59,13 +75,14 @@ const app = new Elysia()
     }),
   })
   .post("/reserve/create/:id", async ({ params, body }) => {
-    const reserve = await db.reserves.create({
-      data: {
-        spacesId: params.id,
+    const [reserve] = await db
+      .insert(reserves)
+      .values({
+        spaceId: params.id,
         startFrom: new Date(body.startFrom),
-        endUntil: new Date(body.endUntil),
-      }
-    })
+        endFrom: new Date(body.endUntil),
+      })
+      .returning();
 
     return reserve;
   }, {
@@ -86,9 +103,12 @@ const app = new Elysia()
     }),
   })
   .delete("/reserve/cancel/:id", async ({ params }) => {
-    const reserves = await db.reserves.delete({ where: { id: Number(params.id) } })
+    const [deleted] = await db
+      .delete(reserves)
+      .where(eq(reserves.id, params.id))
+      .returning();
 
-    return reserves;
+    return deleted;
   }, {
     auth: false,
 
@@ -101,7 +121,7 @@ const app = new Elysia()
       id: z.string()
     }),
   })
-  .listen(3000);
+  .listen(3001);
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}\n`

@@ -29,8 +29,8 @@
 		"paths": {
 			"#index": ["./src/index.ts"],
       		"#api": ["./src/api/index.ts"],
-			"#database": ["./src/database/index.ts"],
-			"@src/*": ["./src/*"],
+			"#db": ["./src/db/index.ts"],
+			"@/*": ["./src/*"],
 			"#env": ["./src/env.ts"],
 			"#functions": ["./src/functions/index.ts"],
 			"#prisma": ["./generated/prisma/*"],

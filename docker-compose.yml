@@ -1,0 +1,11 @@
+services:
+  db:
+    image: postgres:18.3
+    container_name: labpoint-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: labpoint
+      POSTGRES_PASSWORD: labpoint
+      POSTGRES_DB: labpoint
