@@ -4,7 +4,7 @@
     "name": "Informatica 1",
     "capacity": 20,
     "resources": [
-      "Computadores", "Telão"
+      "computadores", "telão"
     ]
   },
   {
@@ -12,7 +12,7 @@
     "name": "Informatica 2",
     "capacity": 20,
     "resources": [
-      "Computadores", "Telão"
+      "computadores", "telão"
     ]
   },
   {
@@ -20,7 +20,7 @@
     "name": "Informatica 8",
     "capacity": 30,
     "resources": [
-      "Computadores", "Telão"
+      "computadores", "telão"
     ]
   },
   {
@@ -28,7 +28,7 @@
     "name": "Quimica 1",
     "capacity": 50,
     "resources": [
-      "Tubos de Ensaio"
+      "tubos de ensaio"
     ]
   },
   {
@@ -36,7 +36,7 @@
     "name": "Auditorio",
     "capacity": 150,
     "resources": [
-      "Telão"
+      "telão"
     ]
   }
 ]

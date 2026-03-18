@@ -3,7 +3,7 @@ import { pgTable, text, numeric, uuid, pgEnum } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm/relations";
 import { reserves } from "./reserves.js";
 
-export const resourceEnum = pgEnum("resource", ["Computadores", "Telão", "Tubos de Ensaio"]);
+export const resourceEnum = pgEnum("resource", ["computadores", "telão", "tubos de ensaio"]);
 
 export const spaces = pgTable("spaces", {
     id: uuid("id").primaryKey().$defaultFn(() => randomUUIDv7()),

@@ -11,7 +11,10 @@ const app = new Elysia()
   .use(openapi())
   .get("/", () => "Hello Elysia")
   .get("/spaces", async ({ query }) => {
-    const resourceList = (query.resources ?? "")
+    const resourcesRaw =
+      Array.isArray(query.resources) ? query.resources.join(",") : query.resources ?? "";
+
+    const resourceList = resourcesRaw
       .split(",")
       .map((r: string) => r.trim())
       .filter(Boolean);
@@ -31,9 +34,9 @@ const app = new Elysia()
       resourcesOverlap,
     );
 
-    const labs = await db.select().from(spaces).where(where);
+    const spacesResult = await db.select().from(spaces).where(where);
 
-    return labs;
+    return spacesResult;
   }, {
     auth: false,
 
@@ -47,8 +50,8 @@ const app = new Elysia()
       id: z.string().optional(),
       name: z.string().optional(),
       capacity: z.string().optional(),
-      resources: z.string().optional(),
-    }),
+      resources: z.union([z.string(), z.array(z.string())]).optional(),
+    })
   })
 
   .get("/reserves", async ({ params }) => {
@@ -74,7 +77,7 @@ const app = new Elysia()
     const [reserve] = await db
       .insert(reserves)
       .values({
-        spaceId: params.id,
+        spaceId: params.spaceId,
         startFrom: new Date(body.startFrom),
         endFrom: new Date(body.endUntil),
       })
@@ -90,7 +93,7 @@ const app = new Elysia()
     },
 
     params: z.object({
-      id: z.string()
+      spaceId: z.string()
     }),
 
     body: z.object({
