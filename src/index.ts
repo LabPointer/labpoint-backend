@@ -3,7 +3,7 @@ import { Elysia } from "elysia";
 import { openapi } from "@elysiajs/openapi";
 import { z } from "zod";
 import { db } from "#db";
-import { and, eq, gte, ilike, sql } from "drizzle-orm";
+import { and, eq, gte, ilike, lt, sql } from "drizzle-orm";
 import { spaces } from "./db/schema/spaces.js";
 import { reserves } from "./db/schema/reserves.js";
 
@@ -23,9 +23,9 @@ const app = new Elysia()
       resourceList.length === 0
         ? undefined
         : sql`${spaces.resources} && ${sql`ARRAY[${sql.join(
-            resourceList.map((r: string) => sql`${r}`),
-            sql`, `,
-          )}]::resource[]`}`;
+          resourceList.map((r: string) => sql`${r}`),
+          sql`, `,
+        )}]::resource[]`}`;
 
     const where = and(
       query.id ? eq(spaces.id, query.id) : undefined,
@@ -54,13 +54,28 @@ const app = new Elysia()
     })
   })
 
-  .get("/reserves", async ({ params }) => {
+  .get("/reserves/:spaceId", async ({ params, query }) => {
     const rows = await db
       .select()
       .from(reserves)
-      .where(eq(reserves.spaceId, params.spaceId));
+      .where(and(
+        eq(reserves.spaceId, params.spaceId),
+      ));
 
-    return rows;
+    const conflictingReservation = await db.query.reserves.findFirst({
+      where: (table, { and, eq, lt, gt }) =>
+        and(
+          eq(table.spaceId, params.spaceId),
+          query.startFrom ? lt(table.startFrom, new Date(query.startFrom)) : undefined,
+          query.endUntil ? gt(table.endFrom, new Date(query.endUntil)) : undefined
+        ),
+    });
+
+    console.log(conflictingReservation);
+
+    console.log(rows);
+
+    return Array.isArray(rows) ? rows : ([] as typeof rows);
   }, {
     auth: false,
 
@@ -72,8 +87,14 @@ const app = new Elysia()
     params: z.object({
       spaceId: z.string()
     }),
+
+    query: z.object({
+      startFrom: z.iso.datetime().optional(),
+      endUntil: z.iso.datetime().optional(),
+    })
   })
-  .post("/reserve/create/:id", async ({ params, body }) => {
+  .post("/reserve/create/:spaceId", async ({ params, body }) => {
+    console.log(params.spaceId);
     const [reserve] = await db
       .insert(reserves)
       .values({
@@ -82,6 +103,8 @@ const app = new Elysia()
         endFrom: new Date(body.endUntil),
       })
       .returning();
+
+    console.log(reserve);
 
     return reserve;
   }, {
