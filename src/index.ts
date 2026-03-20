@@ -3,7 +3,7 @@ import { Elysia } from "elysia";
 import { openapi } from "@elysiajs/openapi";
 import { z } from "zod";
 import { db } from "#db";
-import { and, eq, gte, ilike, lt, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { spaces } from "./db/schema/spaces.js";
 import { reserves } from "./db/schema/reserves.js";
 
@@ -27,14 +27,15 @@ const app = new Elysia()
           sql`, `,
         )}]::resource[]`}`;
 
-    const where = and(
-      query.id ? eq(spaces.id, query.id) : undefined,
-      query.name ? ilike(spaces.name, `%${query.name}%`) : undefined,
-      query.capacity ? gte(spaces.capacity, query.capacity) : undefined,
-      resourcesOverlap,
-    );
-
-    const spacesResult = await db.select().from(spaces).where(where);
+    const spacesResult = await db.query.spaces.findMany({
+      where(fields, { and, ilike, gte }) {
+        return and(
+          query.name ? ilike(fields.name, `%${query.name}%`) : undefined,
+          query.capacity ? gte(fields.capacity, query.capacity) : undefined,
+          resourcesOverlap,
+        );
+      },
+    });
 
     return spacesResult;
   }, {
@@ -54,28 +55,41 @@ const app = new Elysia()
     })
   })
 
-  .get("/reserves/:spaceId", async ({ params, query }) => {
-    const rows = await db
+  .get("/reserves/:spaceName", async ({ params, query }) => {
+    const foundReserves = await db
       .select()
       .from(reserves)
       .where(and(
-        eq(reserves.spaceId, params.spaceId),
+        eq(reserves.spaceName, params.spaceName),
       ));
 
     const conflictingReservation = await db.query.reserves.findFirst({
       where: (table, { and, eq, lt, gt }) =>
         and(
-          eq(table.spaceId, params.spaceId),
-          query.startFrom ? lt(table.startFrom, new Date(query.startFrom)) : undefined,
-          query.endUntil ? gt(table.endFrom, new Date(query.endUntil)) : undefined
+          eq(table.spaceName, params.spaceName),
+          query.endAt ? lt(table.startAt, new Date(query.endAt)) : undefined,
+          query.startAt ? gt(table.endAt, new Date(query.startAt)) : undefined
         ),
     });
 
-    console.log(conflictingReservation);
-
-    console.log(rows);
-
-    return Array.isArray(rows) ? rows : ([] as typeof rows);
+    return {
+      foundReserves: foundReserves.map((r) => ({
+        ...r,
+        id: String(r.id),
+        createdAt: r.createdAt.toISOString(),
+        startAt: r.startAt.toISOString(),
+        endAt: r.endAt.toISOString(),
+      })),
+      conflictingReservation: conflictingReservation
+        ? {
+          ...conflictingReservation,
+          id: String(conflictingReservation.id),
+          createdAt: conflictingReservation.createdAt.toISOString(),
+          startAt: conflictingReservation.startAt.toISOString(),
+          endAt: conflictingReservation.endAt.toISOString(),
+        }
+        : undefined,
+    };
   }, {
     auth: false,
 
@@ -85,52 +99,101 @@ const app = new Elysia()
     },
 
     params: z.object({
-      spaceId: z.string()
+      spaceName: z.string()
     }),
 
     query: z.object({
-      startFrom: z.iso.datetime().optional(),
-      endUntil: z.iso.datetime().optional(),
-    })
+      startAt: z.iso.datetime().optional(),
+      endAt: z.iso.datetime().optional(),
+    }),
+
+    response: {
+      200: z.object({
+        foundReserves: z.object({
+          id: z.string(),
+          createdAt: z.iso.datetime(),
+          startAt: z.iso.datetime(),
+          endAt: z.iso.datetime(),
+          spaceName: z.string(),
+        }).array(),
+        conflictingReservation: z.object({
+          id: z.string(),
+          createdAt: z.iso.datetime(),
+          startAt: z.iso.datetime(),
+          endAt: z.iso.datetime(),
+          spaceName: z.string(),
+        }).optional(),
+      })
+    }
   })
-  .post("/reserve/create/:spaceId", async ({ params, body }) => {
-    console.log(params.spaceId);
+  .post("/reserve/create/:spaceName", async ({ params, body, set }) => {
+    const conflict = await db.query.reserves.findFirst({
+      where: (table, { and, eq, lt, gt }) =>
+        and(
+          eq(table.spaceName, params.spaceName),
+          lt(table.startAt, new Date(body.endAt)),
+          gt(table.endAt, new Date(body.startAt))
+        ),
+    });
+
+    if (conflict) {
+      set.status = 409;
+      return {
+        status: "error",
+        message: "Reserva indisponível: Horário já está ocupado."
+      };
+    }
+
     const [reserve] = await db
       .insert(reserves)
       .values({
-        spaceId: params.spaceId,
-        startFrom: new Date(body.startFrom),
-        endFrom: new Date(body.endUntil),
+        spaceName: params.spaceName,
+        startAt: new Date(body.startAt),
+        endAt: new Date(body.endAt),
       })
       .returning();
 
-    console.log(reserve);
-
-    return reserve;
+    return {
+      status: "success",
+      message: "Reserva realizada com sucesso!",
+      reserve
+    };
   }, {
     auth: false,
 
     detail: {
-      summary: "Cria uma reserva para um espaço.",
+      summary: "Registra uma reserva para um espaço.",
       tags: ["reserves"]
     },
 
     params: z.object({
-      spaceId: z.string()
+      spaceName: z.string()
     }),
 
     body: z.object({
-      startFrom: z.iso.datetime(),
-      endUntil: z.iso.datetime(),
+      startAt: z.iso.datetime(),
+      endAt: z.iso.datetime(),
     }),
   })
-  .delete("/reserve/cancel/:id", async ({ params }) => {
+  .delete("/reserve/cancel/:id", async ({ params, set }) => {
     const [deleted] = await db
       .delete(reserves)
-      .where(eq(reserves.id, params.id))
+      .where(eq(reserves.id, Number(params.id)))
       .returning();
 
-    return deleted;
+    if (!deleted) {
+      set.status = 404;
+      return {
+        status: "error",
+        message: "Reserva não encontrada: não foi possível realizar o cancelamento."
+      };
+    }
+
+    return {
+      status: "success",
+      message: "Reserva cancelada com sucesso!",
+      deleted
+    };
   }, {
     auth: false,
 

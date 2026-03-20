@@ -1,13 +1,13 @@
 import constantsJson from "../json/constants.json" with { type: "json" };
-import spacesJson from "../json/spaces.json" with { type: "json" };
+import laboratoriesJson from "../json/laboratories.json" with { type: "json" };
 
 declare global {
   var constants: typeof constantsJson;
-  var spaces: typeof spacesJson;
+  var laboratories: typeof laboratoriesJson;
 }
 Object.assign(globalThis, Object.freeze({
     constants: constantsJson,
-    spaces: spacesJson,
+    laboratories: laboratoriesJson,
 }));
 //globalThis.constants = JSON.parse(JSON.stringify(constantsJson));
 //globalThis.spaces = JSON.parse(JSON.stringify(spacesJson));

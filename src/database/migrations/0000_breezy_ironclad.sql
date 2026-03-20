@@ -16,10 +16,12 @@ CREATE TABLE "accounts" (
 );
 --> statement-breakpoint
 CREATE TABLE "reserves" (
-	"id" uuid PRIMARY KEY NOT NULL,
-	"start_from" timestamp DEFAULT now() NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"start_at" timestamp DEFAULT now() NOT NULL,
 	"end_at" timestamp DEFAULT now() NOT NULL,
-	"space_id" uuid NOT NULL
+	"space_name" text NOT NULL,
+	CONSTRAINT "check_end_after_start" CHECK ("reserves"."end_at" > "reserves"."start_at")
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
@@ -35,8 +37,7 @@ CREATE TABLE "sessions" (
 );
 --> statement-breakpoint
 CREATE TABLE "spaces" (
-	"id" uuid PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
+	"name" text PRIMARY KEY NOT NULL,
 	"capacity" numeric NOT NULL,
 	"resources" "resource"[],
 	CONSTRAINT "spaces_name_unique" UNIQUE("name")
@@ -63,7 +64,7 @@ CREATE TABLE "verifications" (
 );
 --> statement-breakpoint
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "reserves" ADD CONSTRAINT "reserves_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reserves" ADD CONSTRAINT "reserves_space_name_spaces_name_fk" FOREIGN KEY ("space_name") REFERENCES "public"."spaces"("name") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "accounts_userId_idx" ON "accounts" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "sessions_userId_idx" ON "sessions" USING btree ("user_id");--> statement-breakpoint

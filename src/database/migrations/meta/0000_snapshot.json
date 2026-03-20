@@ -1,5 +1,5 @@
 {
-  "id": "5cfd7452-3c77-4f37-ac0d-31981a9ce257",
+  "id": "074c7fdd-04aa-4ad4-be07-18298e2a5c2d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -131,12 +131,19 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "serial",
           "primaryKey": true,
           "notNull": true
         },
-        "start_from": {
-          "name": "start_from",
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "start_at": {
+          "name": "start_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -149,24 +156,24 @@
           "notNull": true,
           "default": "now()"
         },
-        "space_id": {
-          "name": "space_id",
-          "type": "uuid",
+        "space_name": {
+          "name": "space_name",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "reserves_space_id_spaces_id_fk": {
-          "name": "reserves_space_id_spaces_id_fk",
+        "reserves_space_name_spaces_name_fk": {
+          "name": "reserves_space_name_spaces_name_fk",
           "tableFrom": "reserves",
           "tableTo": "spaces",
           "columnsFrom": [
-            "space_id"
+            "space_name"
           ],
           "columnsTo": [
-            "id"
+            "name"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -175,7 +182,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "check_end_after_start": {
+          "name": "check_end_after_start",
+          "value": "\"reserves\".\"end_at\" > \"reserves\".\"start_at\""
+        }
+      },
       "isRLSEnabled": false
     },
     "public.sessions": {
@@ -281,16 +293,10 @@
       "name": "spaces",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
         "name": {
           "name": "name",
           "type": "text",
-          "primaryKey": false,
+          "primaryKey": true,
           "notNull": true
         },
         "capacity": {

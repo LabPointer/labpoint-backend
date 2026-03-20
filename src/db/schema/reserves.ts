@@ -1,23 +1,23 @@
-import { randomUUIDv7 } from "bun";
-import { pgTable, uuid, timestamp, check } from "drizzle-orm/pg-core";
+import { pgTable, serial, timestamp, check, text } from "drizzle-orm/pg-core";
 import { spaces } from "./spaces.js";
 import { relations } from "drizzle-orm/relations";
 import { sql } from "drizzle-orm/sql";
 
 export const reserves = pgTable("reserves", {
-  id: uuid("id").primaryKey().$defaultFn(() => randomUUIDv7()),
-  startFrom: timestamp("start_from").defaultNow().notNull(),
-  endFrom: timestamp("end_at").defaultNow().notNull(),
-  spaceId: uuid("space_id")
+  id: serial("id").primaryKey(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  startAt: timestamp("start_at").defaultNow().notNull(),
+  endAt: timestamp("end_at").defaultNow().notNull(),
+  spaceName: text("space_name")
     .notNull()
-    .references(() => spaces.id, { onDelete: "cascade" }),
-}, (table) => ({
-  checkEndAfterStart: check("check_end_after_start", sql`${table.endFrom} > ${table.startFrom}`),
-}));
+    .references(() => spaces.name, { onDelete: "cascade" }),
+}, (table) => [
+  check("check_end_after_start", sql`${table.endAt} > ${table.startAt}`),
+]);
 
 export const reservesRelations = relations(reserves, ({ one }) => ({
   spaces: one(spaces, {
-    fields: [reserves.spaceId],
-    references: [spaces.id],
+    fields: [reserves.spaceName],
+    references: [spaces.name],
   }),
 }));

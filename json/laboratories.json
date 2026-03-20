@@ -1,39 +1,34 @@
 [
   {
-    "id": "lab-info-01",
-    "name": "Informatica 1",
+    "name": "informatica 1",
     "capacity": 20,
     "resources": [
       "computadores", "telão"
     ]
   },
   {
-    "id": "lab-info-02",
-    "name": "Informatica 2",
+    "name": "informatica 2",
     "capacity": 20,
     "resources": [
       "computadores", "telão"
     ]
   },
   {
-    "id": "lab-info-08",
-    "name": "Informatica 8",
+    "name": "informatica 8",
     "capacity": 30,
     "resources": [
       "computadores", "telão"
     ]
   },
   {
-    "id": "lab-quim-01",
-    "name": "Quimica 1",
+    "name": "quimica 1",
     "capacity": 50,
     "resources": [
       "tubos de ensaio"
     ]
   },
   {
-    "id": "auditorio",
-    "name": "Auditorio",
+    "name": "auditorio",
     "capacity": 150,
     "resources": [
       "telão"
