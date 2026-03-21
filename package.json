@@ -20,8 +20,7 @@
     "start:dev": "bun --env-file=.env.dev ."
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "^1.5.5",
-    "@better-auth/prisma-adapter": "latest",
+    "@better-auth/drizzle-adapter": "latest",
     "@elysiajs/openapi": "latest",
     "@neondatabase/serverless": "latest",
     "better-auth": "latest",

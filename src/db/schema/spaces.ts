@@ -1,6 +1,4 @@
-import { pgTable, text, numeric, uuid, pgEnum } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm/relations";
-import { reserves } from "./reserves.js";
+import { pgTable, text, numeric, pgEnum } from "drizzle-orm/pg-core";
 
 export const resourceEnum = pgEnum("resource", ["computadores", "telão", "tubos de ensaio"]);
 

@@ -3,41 +3,53 @@ import { Elysia } from "elysia";
 import { openapi } from "@elysiajs/openapi";
 import { z } from "zod";
 import { db } from "#db";
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { spaces } from "./db/schema/spaces.js";
 import { reserves } from "./db/schema/reserves.js";
 
 const app = new Elysia()
   .use(openapi())
   .get("/", () => "Hello Elysia")
-  .get("/spaces", async ({ query }) => {
-    const resourcesRaw =
-      Array.isArray(query.resources) ? query.resources.join(",") : query.resources ?? "";
+  .get("/spaces", async ({ query, set }) => {
+    try {
+      const resourcesRaw =
+        Array.isArray(query.resources) ? query.resources.join(",") : query.resources ?? "";
 
-    const resourceList = resourcesRaw
-      .split(",")
-      .map((r: string) => r.trim())
-      .filter(Boolean);
+      const resourceList = resourcesRaw
+        .split(",")
+        .map((r: string) => r.trim())
+        .filter(Boolean);
 
-    const resourcesOverlap =
-      resourceList.length === 0
-        ? undefined
-        : sql`${spaces.resources} && ${sql`ARRAY[${sql.join(
-          resourceList.map((r: string) => sql`${r}`),
-          sql`, `,
-        )}]::resource[]`}`;
+      const resourcesOverlap =
+        resourceList.length === 0
+          ? undefined
+          : sql`${spaces.resources} && ${sql`ARRAY[${sql.join(
+            resourceList.map((r: string) => sql`${r}`),
+            sql`, `,
+          )}]::resource[]`}`;
 
-    const spacesResult = await db.query.spaces.findMany({
-      where(fields, { and, ilike, gte }) {
-        return and(
-          query.name ? ilike(fields.name, `%${query.name}%`) : undefined,
-          query.capacity ? gte(fields.capacity, query.capacity) : undefined,
-          resourcesOverlap,
-        );
-      },
-    });
+      const spacesResult = await db.query.spaces.findMany({
+        where(fields, { and, ilike, gte }) {
+          return and(
+            query.name ? ilike(fields.name, `%${query.name}%`) : undefined,
+            query.capacity ? gte(fields.capacity, query.capacity) : undefined,
+            resourcesOverlap,
+          );
+        },
+      });
 
-    return spacesResult;
+      return {
+        status: "success",
+        data: spacesResult
+      };
+    } catch (error) {
+      console.error(error);
+      set.status = 500;
+      return {
+        status: "error",
+        message: "Erro ao buscar os espaços no banco de dados."
+      };
+    }
   }, {
     auth: false,
 
@@ -52,44 +64,74 @@ const app = new Elysia()
       name: z.string().optional(),
       capacity: z.string().optional(),
       resources: z.union([z.string(), z.array(z.string())]).optional(),
-    })
+    }),
+
+    response: {
+      200: z.object({
+        status: z.literal("success"),
+        data: z.array(z.object({
+          id: z.number().or(z.string()).optional(),
+          name: z.string(),
+          capacity: z.number().or(z.string()),
+          resources: z.array(z.string()).nullable()
+        }).passthrough())
+      }),
+      500: z.object({
+        status: z.literal("error"),
+        message: z.string()
+      })
+    }
   })
 
-  .get("/reserves/:spaceName", async ({ params, query }) => {
-    const foundReserves = await db
-      .select()
-      .from(reserves)
-      .where(and(
-        eq(reserves.spaceName, params.spaceName),
-      ));
+  .get("/reserves/:spaceName", async ({ params, query, set }) => {
+    try {
+      const foundReserves = await db
+        .select()
+        .from(reserves)
+        .where(eq(reserves.spaceName, params.spaceName));
 
-    const conflictingReservation = await db.query.reserves.findFirst({
-      where: (table, { and, eq, lt, gt }) =>
-        and(
-          eq(table.spaceName, params.spaceName),
-          query.endAt ? lt(table.startAt, new Date(query.endAt)) : undefined,
-          query.startAt ? gt(table.endAt, new Date(query.startAt)) : undefined
-        ),
-    });
+      let conflictingReservation = undefined;
 
-    return {
-      foundReserves: foundReserves.map((r) => ({
-        ...r,
-        id: String(r.id),
-        createdAt: r.createdAt.toISOString(),
-        startAt: r.startAt.toISOString(),
-        endAt: r.endAt.toISOString(),
-      })),
-      conflictingReservation: conflictingReservation
-        ? {
-          ...conflictingReservation,
-          id: String(conflictingReservation.id),
-          createdAt: conflictingReservation.createdAt.toISOString(),
-          startAt: conflictingReservation.startAt.toISOString(),
-          endAt: conflictingReservation.endAt.toISOString(),
+      if (query.startAt && query.endAt) {
+        conflictingReservation = await db.query.reserves.findFirst({
+          where: (table, { and, eq, lt, gt }) =>
+            and(
+              eq(table.spaceName, params.spaceName),
+              lt(table.startAt, new Date(query.endAt!)),
+              gt(table.endAt, new Date(query.startAt!))
+            ),
+        });
+      }
+
+      return {
+        status: "success",
+        data: {
+          foundReserves: foundReserves.map((r) => ({
+            ...r,
+            id: String(r.id),
+            createdAt: r.createdAt.toISOString(),
+            startAt: r.startAt.toISOString(),
+            endAt: r.endAt.toISOString(),
+          })),
+          conflictingReservation: conflictingReservation
+            ? {
+              ...conflictingReservation,
+              id: String(conflictingReservation.id),
+              createdAt: conflictingReservation.createdAt.toISOString(),
+              startAt: conflictingReservation.startAt.toISOString(),
+              endAt: conflictingReservation.endAt.toISOString(),
+            }
+            : null,
         }
-        : undefined,
-    };
+      };
+    } catch (error) {
+      console.error(error);
+      set.status = 500;
+      return {
+        status: "error",
+        message: "Erro ao buscar as reservas no banco de dados."
+      };
+    }
   }, {
     auth: false,
 
@@ -109,55 +151,71 @@ const app = new Elysia()
 
     response: {
       200: z.object({
-        foundReserves: z.object({
-          id: z.string(),
-          createdAt: z.iso.datetime(),
-          startAt: z.iso.datetime(),
-          endAt: z.iso.datetime(),
-          spaceName: z.string(),
-        }).array(),
-        conflictingReservation: z.object({
-          id: z.string(),
-          createdAt: z.iso.datetime(),
-          startAt: z.iso.datetime(),
-          endAt: z.iso.datetime(),
-          spaceName: z.string(),
-        }).optional(),
+        status: z.literal("success"),
+        data: z.object({
+          foundReserves: z.object({
+            id: z.string(),
+            createdAt: z.iso.datetime(),
+            startAt: z.iso.datetime(),
+            endAt: z.iso.datetime(),
+            spaceName: z.string(),
+          }).passthrough().array(),
+          conflictingReservation: z.object({
+            id: z.string(),
+            createdAt: z.iso.datetime(),
+            startAt: z.iso.datetime(),
+            endAt: z.iso.datetime(),
+            spaceName: z.string(),
+          }).passthrough().nullable(),
+        })
+      }),
+      500: z.object({
+        status: z.literal("error"),
+        message: z.string()
       })
     }
   })
   .post("/reserve/create/:spaceName", async ({ params, body, set }) => {
-    const conflict = await db.query.reserves.findFirst({
-      where: (table, { and, eq, lt, gt }) =>
-        and(
-          eq(table.spaceName, params.spaceName),
-          lt(table.startAt, new Date(body.endAt)),
-          gt(table.endAt, new Date(body.startAt))
-        ),
-    });
+    try {
+      const conflict = await db.query.reserves.findFirst({
+        where: (table, { and, eq, lt, gt }) =>
+          and(
+            eq(table.spaceName, params.spaceName),
+            lt(table.startAt, new Date(body.endAt)),
+            gt(table.endAt, new Date(body.startAt))
+          ),
+      });
 
-    if (conflict) {
-      set.status = 409;
+      if (conflict) {
+        set.status = 409;
+        return {
+          status: "error",
+          message: "Reserva indisponível: Horário já está ocupado por outra reserva."
+        };
+      }
+
+      const [reserve] = await db
+        .insert(reserves)
+        .values({
+          spaceName: params.spaceName,
+          startAt: new Date(body.startAt),
+          endAt: new Date(body.endAt),
+        })
+        .returning();
+
+      return {
+        status: "success",
+        message: "Reserva realizada com sucesso!",
+        data: reserve
+      };
+    } catch (error) {
+      console.error(error);
+      set.status = 500;
       return {
         status: "error",
-        message: "Reserva indisponível: Horário já está ocupado."
+        message: "Erro interno ao tentar criar a reserva."
       };
     }
-
-    const [reserve] = await db
-      .insert(reserves)
-      .values({
-        spaceName: params.spaceName,
-        startAt: new Date(body.startAt),
-        endAt: new Date(body.endAt),
-      })
-      .returning();
-
-    return {
-      status: "success",
-      message: "Reserva realizada com sucesso!",
-      reserve
-    };
   }, {
     auth: false,
 
@@ -174,26 +232,51 @@ const app = new Elysia()
       startAt: z.iso.datetime(),
       endAt: z.iso.datetime(),
     }),
+
+    response: {
+      200: z.object({
+        status: z.literal("success"),
+        message: z.string(),
+        data: z.any()
+      }),
+      409: z.object({
+        status: z.literal("error"),
+        message: z.string()
+      }),
+      500: z.object({
+        status: z.literal("error"),
+        message: z.string()
+      })
+    }
   })
   .delete("/reserve/cancel/:id", async ({ params, set }) => {
-    const [deleted] = await db
-      .delete(reserves)
-      .where(eq(reserves.id, Number(params.id)))
-      .returning();
+    try {
+      const [deleted] = await db
+        .delete(reserves)
+        .where(eq(reserves.id, Number(params.id)))
+        .returning();
 
-    if (!deleted) {
-      set.status = 404;
+      if (!deleted) {
+        set.status = 404;
+        return {
+          status: "error",
+          message: "Reserva não encontrada: não foi possível realizar o cancelamento."
+        };
+      }
+
+      return {
+        status: "success",
+        message: "Reserva cancelada com sucesso!",
+        data: deleted
+      };
+    } catch (error) {
+      console.error(error);
+      set.status = 500;
       return {
         status: "error",
-        message: "Reserva não encontrada: não foi possível realizar o cancelamento."
+        message: "Erro interno ao tentar cancelar a reserva."
       };
     }
-
-    return {
-      status: "success",
-      message: "Reserva cancelada com sucesso!",
-      deleted
-    };
   }, {
     auth: false,
 
@@ -205,6 +288,22 @@ const app = new Elysia()
     params: z.object({
       id: z.string()
     }),
+
+    response: {
+      200: z.object({
+        status: z.literal("success"),
+        message: z.string(),
+        data: z.any()
+      }),
+      404: z.object({
+        status: z.literal("error"),
+        message: z.string()
+      }),
+      500: z.object({
+        status: z.literal("error"),
+        message: z.string()
+      })
+    }
   })
   .listen(3001);
 
