@@ -1,5 +1,5 @@
 import ck from "chalk";
-import { z, ZodObject, ZodRawShape } from "zod";
+import { z, type ZodObject, type ZodRawShape } from "zod";
 import chalk from "chalk";
 
 const x = chalk.red("✖︎");
@@ -12,7 +12,7 @@ function validateEnv<T extends ZodRawShape>(schema: ZodObject<T>){
         for(const error of result.error.issues){
             const { path, message } = error;
             console.error(`${x} ENV VAR → ${u.bold(path)} ${message}`);
-            if (error.code == "invalid_type")
+            if (error.code === "invalid_type")
                 console.log(ck.dim(
                     `└ "Expected: ${u.green(error.expected)} | Received: ${u.red(error.input)}`
                 ));

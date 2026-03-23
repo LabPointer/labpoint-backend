@@ -1,12 +1,12 @@
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
-import { randomUUIDv7 } from "bun";
+import { uuidv7 } from "uuidv7";
 
 export const sessions = pgTable(
   "sessions",
   {
-    id: uuid("id").primaryKey().$defaultFn(() => randomUUIDv7()),
+    id: uuid("id").primaryKey().$defaultFn(() => uuidv7()),
     expiresAt: timestamp("expires_at").notNull(),
     token: text("token").notNull().unique(),
     createdAt: timestamp("created_at").notNull(),

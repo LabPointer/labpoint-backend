@@ -1,5 +1,5 @@
 {
-  "name": "app",
+  "name": "labpoint",
   "version": "0.0.1",
   "description": "Backend TypeScript framework with End-to-End Type Safety",
   "license": "MIT",
@@ -10,51 +10,37 @@
   "scripts": {
     "check": "tsc --noEmit && echo ✔ Ok",
     "build": "tsup",
-    "auth:generate": "bunx --bun auth@latest generate --config ./src/api/auth.ts",
-    "db:generate": "bunx --bun --env-file=.env drizzle-kit generate",
-    "db:migrate": "bunx --bun --env-file=.env drizzle-kit migrate",
-    "db:upsert": "bun --env-file=.env ./src/seed.ts",
-    "dev": "bun --env-file=.env ./src/index.ts",
-    "watch": "bun --watch --env-file=.env ./src/index.ts",
-    "start": "bun --env-file=.env.prod .",
-    "start:dev": "bun --env-file=.env.dev ."
+    "auth:generate": "npx auth@latest generate --config ./src/api/auth.ts",
+    "db:generate": "npx --env-file=.env drizzle-kit generate",
+    "db:migrate": "npx --env-file=.env drizzle-kit migrate",
+    "db:upsert": "tsx --env-file=.env ./src/seed.ts",
+    "dev": "tsx --env-file=.env ./src/index.ts",
+    "watch": "tsx --watch --env-file=.env ./src/index.ts",
+    "start": "node --env-file=.env.prod .",
+    "start:dev": "tsx --env-file=.env ./src/index.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "latest",
-    "@elysiajs/openapi": "latest",
-    "@neondatabase/serverless": "latest",
+    "@fastify/cors": "latest",
+    "@fastify/swagger": "latest",
+    "@scalar/fastify-api-reference": "latest",
+    "bcrypt": "latest",
     "better-auth": "latest",
     "chalk": "latest",
-    "dotenvy": "latest",
     "drizzle-orm": "latest",
-    "elysia": "latest",
+    "fastify": "latest",
+    "fastify-plugin": "^5.1.0",
+    "fastify-type-provider-zod": "latest",
     "pg": "latest",
+    "uuidv7": "latest",
     "zod": "latest"
   },
   "devDependencies": {
-    "bun-types": "latest",
-    "dotenv": "latest",
-    "drizzle-kit": "latest",
+    "@biomejs/biome": "latest",
+    "@types/bcrypt": "latest",
+    "@types/node": "^24.12",
     "tsup": "latest",
     "tsx": "latest",
     "typescript": "latest"
-  },
-  "imports": {
-    "#api": [
-      "./build/api/index.js"
-    ],
-    "#db": [
-      "./build/db/index.js"
-    ],
-    "#env": [
-      "./build/env.js"
-    ],
-    "#index": [
-      "./build/index.js"
-    ],
-    "#functions": [
-      "./build/functions/index.js"
-    ]
-  },
-  "module": "src/index.js"
+  }
 }
