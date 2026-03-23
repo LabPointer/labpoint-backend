@@ -12,7 +12,6 @@ import ck from "chalk";
 import { z } from "zod";
 import { db, spaces, reserves } from "#db";
 import { sql, eq } from "drizzle-orm";
-import { routes } from "#api";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 
