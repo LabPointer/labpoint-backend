@@ -1,5 +1,6 @@
-import constantsJson from "../json/constants.json" with { type: "json" };
-import laboratoriesJson from "../json/laboratories.json" with { type: "json" };
+//import constantsJson from "../json/constants.json" with { type: "json" };
+import constantsJson from "@json/constants.json" with { type: "json" };
+import laboratoriesJson from "@json/laboratories.json" with { type: "json" };
 
 declare global {
   var constants: typeof constantsJson;
