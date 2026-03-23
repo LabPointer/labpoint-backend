@@ -1,8 +1,8 @@
 
-import { betterAuth } from "better-auth";
 import { db } from "#db";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import * as bcrypt from "bcrypt";
+import { betterAuth } from "better-auth";
 
 export const auth = betterAuth({
     database: drizzleAdapter(db, {
@@ -19,10 +19,10 @@ export const auth = betterAuth({
         }
     },
     session: {
-        expiresIn: 60 * 60 * 24 * 7,
+        expiresIn: (60 * 60 * 24 * 7),
         cookieCache: {
             enabled: true,
-            maxAge: 60 * 10
+            maxAge: (60 * 10)
         }
     }
 });

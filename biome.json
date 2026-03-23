@@ -1,19 +1,24 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.4.8/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
 	"vcs": {
-		"enabled": true,
+		"enabled": false,
 		"clientKind": "git",
-		"useIgnoreFile": true
+		"useIgnoreFile": false
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": [
+			"**/src/**/*",
+			"**/.vscode/**/*"
+		]
 	},
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "space",
-		"indentWidth": 4,
-		"lineWidth": 80
+		"lineWidth": 80,
+		"indentWidth": 4
 	},
+	"assist": { "actions": { "source": { "organizeImports": "on" } } },
 	"linter": {
 		"enabled": true,
 		"rules": {
@@ -24,13 +29,6 @@
 		"formatter": {
 			"quoteStyle": "double"
 		}
-	},
-	"assist": {
-		"enabled": true,
-		"actions": {
-			"source": {
-				"organizeImports": "on"
-			}
-		}
 	}
 }
+
