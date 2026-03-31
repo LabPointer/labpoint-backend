@@ -14,7 +14,7 @@
 			"#env": ["./src/env.ts"],
 			"#functions": ["./src/functions/index.ts"],
 			"#db": ["./src/db/index.ts"],
-			"#types/*": ["./src/@types/*"],
+			"#types/*": ["./src/types/*"],
 			"#constants": ["./json/constants.json"],
 			"#laboratories": ["./json/laboratories.json"],
 			"@json/*": ["./json/*"],
