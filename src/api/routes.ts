@@ -1,6 +1,6 @@
 import { db, reserves, spaces } from "#db";
-import type { FastifyTypedInstance } from "#types/fastify.js";
-import { eq, sql } from "drizzle-orm";
+import type { FastifyTypedInstance } from "@/types/fastify.js";
+import { and, arrayOverlaps, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 export async function routes(app: FastifyTypedInstance) {
@@ -90,43 +90,29 @@ export async function routes(app: FastifyTypedInstance) {
     );
 
     app.get(
-        "/reserves/:spaceName",
+        "/reserves/:spaceName/:date",
         {
             schema: {
                 summary: "Lista todas as reservas de um espaço.",
                 tags: ["reserves"],
                 params: z.object({
                     spaceName: z.string(),
-                }),
-                querystring: z.object({
-                    startAt: z.iso.datetime().optional(),
-                    endAt: z.iso.datetime().optional(),
+                    date: z.iso.date(),
                 }),
                 response: {
                     200: z.object({
                         status: z.literal("success"),
                         data: z.object({
                             foundReserves: z.array(
-                                z
-                                    .object({
+                                z.object({
                                         id: z.string(),
-                                        createdAt: z.string().datetime(),
-                                        startAt: z.string().datetime(),
-                                        endAt: z.string().datetime(),
+                                        createdAt: z.iso.datetime(),
+                                        date: z.iso.date(),
+                                        horarios: z.array(z.string()),
                                         spaceName: z.string(),
                                     })
                                     .loose(),
-                            ),
-                            conflictingReservation: z
-                                .object({
-                                    id: z.string(),
-                                    createdAt: z.string().datetime(),
-                                    startAt: z.string().datetime(),
-                                    endAt: z.string().datetime(),
-                                    spaceName: z.string(),
-                                })
-                                .loose()
-                                .nullable(),
+                            )
                         }),
                     }),
                     500: z.object({
@@ -138,26 +124,17 @@ export async function routes(app: FastifyTypedInstance) {
         },
         async (request, reply) => {
             try {
-                const { spaceName } = request.params;
-                const { startAt, endAt } = request.query;
+                const { spaceName, date } = request.params;
 
                 const foundReserves = await db
                     .select()
                     .from(reserves)
-                    .where(eq(reserves.spaceName, spaceName));
-
-                let conflictingReservation = undefined;
-
-                if (startAt && endAt) {
-                    conflictingReservation = await db.query.reserves.findFirst({
-                        where: (table, { and, eq, lt, gt }) =>
-                            and(
-                                eq(table.spaceName, spaceName),
-                                lt(table.startAt, new Date(endAt)),
-                                gt(table.endAt, new Date(startAt)),
-                            ),
-                    });
-                }
+                    .where(
+                        and(
+                            eq(reserves.spaceName, spaceName),
+                            eq(reserves.date, date),
+                        ),
+                    );
 
                 return {
                     status: "success",
@@ -166,20 +143,7 @@ export async function routes(app: FastifyTypedInstance) {
                             ...r,
                             id: String(r.id),
                             createdAt: r.createdAt.toISOString(),
-                            startAt: r.startAt.toISOString(),
-                            endAt: r.endAt.toISOString(),
-                        })),
-                        conflictingReservation: conflictingReservation
-                            ? {
-                                  ...conflictingReservation,
-                                  id: String(conflictingReservation.id),
-                                  createdAt:
-                                      conflictingReservation.createdAt.toISOString(),
-                                  startAt:
-                                      conflictingReservation.startAt.toISOString(),
-                                  endAt: conflictingReservation.endAt.toISOString(),
-                              }
-                            : null,
+                        }))
                     },
                 } as const;
             } catch (error) {
@@ -203,8 +167,8 @@ export async function routes(app: FastifyTypedInstance) {
                     spaceName: z.string(),
                 }),
                 body: z.object({
-                    startAt: z.string().datetime(),
-                    endAt: z.string().datetime(),
+                    date: z.iso.date(),
+                    horarios: z.array(z.string()).min(1, "Precisa ter pelo menos 1 horario"),
                 }),
                 response: {
                     200: z.object({
@@ -226,14 +190,14 @@ export async function routes(app: FastifyTypedInstance) {
         async (request, reply) => {
             try {
                 const { spaceName } = request.params;
-                const { startAt, endAt } = request.body;
+                const { date, horarios } = request.body;
 
                 const conflict = await db.query.reserves.findFirst({
-                    where: (table, { and, eq, lt, gt }) =>
+                    where: (table, { and, eq }) =>
                         and(
                             eq(table.spaceName, spaceName),
-                            lt(table.startAt, new Date(endAt)),
-                            gt(table.endAt, new Date(startAt)),
+                            eq(table.date, date),
+                            arrayOverlaps(table.horarios, horarios as typeof reserves.$inferInsert.horarios)
                         ),
                 });
 
@@ -250,8 +214,8 @@ export async function routes(app: FastifyTypedInstance) {
                     .insert(reserves)
                     .values({
                         spaceName,
-                        startAt: new Date(startAt),
-                        endAt: new Date(endAt),
+                        date,
+                        horarios: horarios as typeof reserves.$inferInsert.horarios,
                     })
                     .returning();
 
@@ -263,9 +227,10 @@ export async function routes(app: FastifyTypedInstance) {
             } catch (error) {
                 console.error(error);
                 reply.status(500);
+                const message = error instanceof Error ? error.message : String(error);
                 return {
                     status: "error",
-                    message: "Erro interno ao tentar criar a reserva.",
+                    message: "Erro interno: " + message,
                 } as const;
             }
         },
