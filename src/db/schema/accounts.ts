@@ -6,7 +6,9 @@ import { uuidv7 } from "uuidv7";
 export const accounts = pgTable(
   "accounts",
   {
-    id: uuid("id").primaryKey().$defaultFn(() => uuidv7()),
+    id: uuid("id")
+      .primaryKey()
+      .$defaultFn(() => uuidv7()),
     accountId: uuid("account_id").notNull(),
     providerId: uuid("provider_id").notNull(),
     userId: uuid("user_id")

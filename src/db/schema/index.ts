@@ -8,10 +8,10 @@ import { verifications } from "./verifications.js";
 export { accounts, reserves, spaces, sessions, users, verifications };
 
 export const schema = {
-    accounts,
-    sessions,
-    users,
-    verifications,
-    spaces,
-    reserves
-}
+  accounts,
+  sessions,
+  users,
+  verifications,
+  spaces,
+  reserves,
+};

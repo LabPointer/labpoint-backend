@@ -5,7 +5,9 @@ import { sessions } from "./sessions.js";
 import { uuidv7 } from "uuidv7";
 
 export const users = pgTable("users", {
-  id: uuid("id").primaryKey().$defaultFn(() => uuidv7()),
+  id: uuid("id")
+    .primaryKey()
+    .$defaultFn(() => uuidv7()),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
