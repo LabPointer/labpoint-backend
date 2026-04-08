@@ -9,6 +9,8 @@
   "private": true,
   "scripts": {
     "check": "tsc --noEmit && echo ✔ Ok",
+    "lint": "biome check",
+    "format": "biome format --write --fix",
     "build": "tsup",
     "auth:generate": "npx auth@latest generate --config ./src/api/auth.ts",
     "db:generate": "drizzle-kit generate",
@@ -43,7 +45,7 @@
   "devDependencies": {
     "@biomejs/biome": "latest",
     "@types/bcrypt": "latest",
-    "@types/node": "^24.12",
+    "@types/node": "latest",
     "tsup": "latest",
     "tsx": "latest",
     "typescript": "latest"

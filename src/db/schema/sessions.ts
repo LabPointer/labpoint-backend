@@ -6,7 +6,9 @@ import { uuidv7 } from "uuidv7";
 export const sessions = pgTable(
   "sessions",
   {
-    id: uuid("id").primaryKey().$defaultFn(() => uuidv7()),
+    id: uuid("id")
+      .primaryKey()
+      .$defaultFn(() => uuidv7()),
     expiresAt: timestamp("expires_at").notNull(),
     token: text("token").notNull().unique(),
     createdAt: timestamp("created_at").notNull(),
