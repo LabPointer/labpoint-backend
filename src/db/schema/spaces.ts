@@ -1,4 +1,4 @@
-import { pgTable, text, numeric, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, numeric, pgEnum, serial } from "drizzle-orm/pg-core";
 
 export const resourceEnum = pgEnum("resource", [
   "computadores",
@@ -7,7 +7,8 @@ export const resourceEnum = pgEnum("resource", [
 ]);
 
 export const spaces = pgTable("spaces", {
-  name: text("name").primaryKey().unique().notNull(),
+  id: serial("id").primaryKey(),
+  name: text("name").unique().notNull(),
   capacity: numeric("capacity").notNull(),
   resources: resourceEnum().array(),
 });
