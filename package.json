@@ -38,6 +38,7 @@
     "fastify": "latest",
     "fastify-plugin": "latest",
     "fastify-type-provider-zod": "latest",
+    "http-status-codes": "latest",
     "pg": "latest",
     "uuidv7": "latest",
     "zod": "latest"

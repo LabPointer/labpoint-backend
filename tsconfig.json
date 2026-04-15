@@ -1,8 +1,9 @@
 {
 	"compilerOptions": {
+		"types": ["node"],
 		"module": "nodenext",
-		//"moduleResolution": "bundler",
-		//"resolveJsonModule": true,
+		"moduleResolution": "nodenext",
+		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		// Output Options
 		"outDir": "./build",
