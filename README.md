@@ -1,11 +1,11 @@
-# Labpoint Backend
+# Bangboo API
 
-Labpoint é um sistema de agendamento de laboratórios, criado em primeiro momento para a instituição do SENAI com o intuito de organizar melhor a disposição das aulas na unidade e ajudar os professores a organizar e planejar os dias de acordo com a necessidade da disciplina. O backend concentra recursos para o desenvolvimento funcional do sistema.
+Bangboo é uma API é o backend do bot do discord.
 
-> [!AVISO]
+> [!WARNING]
 > Versão recomendada do [Nodejs](https://nodejs.org/pt-br) é 24 LTS ou superior
 
-> [!AVISO]
+> [!WARNING]
 > Versão recomendada do [Docker](https://www.docker.com/) é 4 ou superior
 
 # Iniciando

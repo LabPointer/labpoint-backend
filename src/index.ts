@@ -8,7 +8,7 @@ import {
 import { fastifySwagger } from "@fastify/swagger";
 import { fastifyCors } from "@fastify/cors";
 import ScalarApiReference from "@scalar/fastify-api-reference";
-import { routes } from "#api";
+import { registerRoutes } from "#api";
 import ck from "chalk";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
@@ -38,7 +38,7 @@ await app.register(ScalarApiReference, {
 });
 
 // Rotas
-await routes(app);
+registerRoutes(app);
 
 await app.ready();
 
