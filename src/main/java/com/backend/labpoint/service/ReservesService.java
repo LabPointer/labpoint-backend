@@ -1,8 +1,8 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.entity.Reserves;
-import com.backend.labpoint.entity.SchedulesEnum;
-import com.backend.labpoint.entity.Spaces;
+import com.backend.labpoint.domain.reserves.Reserves;
+import com.backend.labpoint.domain.reserves.SchedulesEnum;
+import com.backend.labpoint.domain.spaces.Spaces;
 import com.backend.labpoint.repository.ReservesRepository;
 import com.backend.labpoint.repository.SpacesRepository;
 import org.springframework.beans.factory.annotation.Autowired;

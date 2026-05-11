@@ -1,7 +1,8 @@
-package com.backend.labpoint.entity;
+package com.backend.labpoint.domain.reserves;
 
 import java.time.LocalDate;
 
+import com.backend.labpoint.domain.spaces.Spaces;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;

@@ -1,4 +1,4 @@
-package com.backend.labpoint.entity;
+package com.backend.labpoint.domain.spaces;
 
 public enum ResourcesEnum {
     TELAO("Telão"),

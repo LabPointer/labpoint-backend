@@ -1,4 +1,4 @@
-package com.backend.labpoint.entity;
+package com.backend.labpoint.domain.spaces;
 
 import jakarta.persistence.*;
 import lombok.Getter;

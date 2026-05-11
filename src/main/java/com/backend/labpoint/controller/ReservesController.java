@@ -1,8 +1,8 @@
 package com.backend.labpoint.controller;
 
 
-import com.backend.labpoint.dto.body.ReserveBody;
-import com.backend.labpoint.entity.Reserves;
+import com.backend.labpoint.dto.body.ReservRequestDTO;
+import com.backend.labpoint.domain.reserves.Reserves;
 import com.backend.labpoint.service.ReservesService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -41,7 +40,7 @@ public class ReservesController {
             @ApiResponse(responseCode = "404", description = "Espaço não encontrado ou erro na criação da reserva")
     })
     @PostMapping("/create/{spaceId}")
-    public ResponseEntity<Void> postCreateReserve(@PathVariable long spaceId, @RequestBody ReserveBody body) {
+    public ResponseEntity<Void> postCreateReserve(@PathVariable long spaceId, @RequestBody ReservRequestDTO body) {
         if (reserveService.createReserve(spaceId, body.date(), body.schedules())) {
             return ResponseEntity.notFound().build();
         }

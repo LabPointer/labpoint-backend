@@ -1,9 +1,9 @@
 package com.backend.labpoint.controller;
 
-import com.backend.labpoint.dto.response.SpacesResponse;
-import com.backend.labpoint.entity.ResourcesEnum;
-import com.backend.labpoint.entity.SpaceResources;
-import com.backend.labpoint.entity.Spaces;
+import com.backend.labpoint.dto.response.SpacesResponseDTO;
+import com.backend.labpoint.domain.spaces.ResourcesEnum;
+import com.backend.labpoint.domain.spaces.SpaceResources;
+import com.backend.labpoint.domain.spaces.Spaces;
 import com.backend.labpoint.service.SpacesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -33,15 +33,15 @@ public class SpacesController {
             @ApiResponse(responseCode = "404", description = "Nenhum laboratorio encontrado")
     })
     @GetMapping
-    public ResponseEntity<List<SpacesResponse>> getSpaces(@RequestParam(name = "nome", required = false) String name,
-                                                          @RequestParam(name = "capacity", required = false) Integer capacity,
-                                                          @RequestParam(name = "resources", required = false) Set<ResourcesEnum> resources) {
+    public ResponseEntity<List<SpacesResponseDTO>> getSpaces(@RequestParam(name = "nome", required = false) String name,
+                                                             @RequestParam(name = "capacity", required = false) Integer capacity,
+                                                             @RequestParam(name = "resources", required = false) Set<ResourcesEnum> resources) {
         List<Spaces> spaces = spaceService.getSpaces(name, capacity);
         if (spaces == null || spaces.isEmpty()) return ResponseEntity.notFound().build();
 
-        List<SpacesResponse> spacesResponse = new ArrayList<>();
+        List<SpacesResponseDTO> spacesResponse = new ArrayList<>();
         for (Spaces space : spaces) {
-            SpacesResponse spaceResponse = new SpacesResponse();
+            SpacesResponseDTO spaceResponse = new SpacesResponseDTO();
 
             if (resources != null && !resources.isEmpty()) {
                 List<SpaceResources> r = spaceService.getSpaceResources(space.getId(), space.getResources());

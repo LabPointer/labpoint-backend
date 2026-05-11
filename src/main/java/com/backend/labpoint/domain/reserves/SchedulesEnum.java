@@ -1,4 +1,4 @@
-package com.backend.labpoint.entity;
+package com.backend.labpoint.domain.reserves;
 
 public enum SchedulesEnum {
     M_AULA_1("M-Aula1"),

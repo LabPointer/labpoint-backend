@@ -1,8 +1,7 @@
 package com.backend.labpoint.repository;
 
-import com.backend.labpoint.entity.ResourcesEnum;
-import com.backend.labpoint.entity.SpaceResources;
-import com.backend.labpoint.entity.Spaces;
+import com.backend.labpoint.domain.spaces.ResourcesEnum;
+import com.backend.labpoint.domain.spaces.SpaceResources;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
