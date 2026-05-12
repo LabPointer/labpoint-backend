@@ -27,7 +27,7 @@ public class ResourcesController {
     @Autowired
     private SpaceResourcesRepository spaceResourcesRepository;
 
-    @Operation(summary = "Busca por recursos", description = "Retorna uma lista de recursos. Destinmado ao autocomplete.")
+    @Operation(summary = "Busca por recursos", description = "Retorna uma lista de recursos. Destinado ao autocomplete.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Recursos encontrados", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SpaceResources.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
             @ApiResponse(responseCode = "404", description = "Nenhum recurso encontrado", content = @Content)
