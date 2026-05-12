@@ -23,10 +23,10 @@ public class ReservesService {
 
     @Transactional(readOnly = true)
     public List<Reserves> getReservesByDate(long spaceId, LocalDate date) {
-        return  reserveRepository.findByReservedDateAndSpace_Id(date, spaceId);
+        return reserveRepository.findByReservedDateAndSpace_Id(date, spaceId);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public boolean createReserve(long spaceId, LocalDate date, Set<SchedulesEnum> schedules) {
         Spaces space = spaceRepository.findById(spaceId).stream().findFirst().orElse(null);
         if (space == null) return false;

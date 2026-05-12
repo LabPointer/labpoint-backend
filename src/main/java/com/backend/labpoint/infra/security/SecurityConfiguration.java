@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -24,12 +25,23 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.
                 csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults()) // Enable CORS support in Spring Security
                 .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests ->
-                    authorizeRequests
-                            .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                            .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
-                            .anyRequest().authenticated()
+                        authorizeRequests
+                                // Options preflight
+                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                // Documentation
+                                .requestMatchers(HttpMethod.GET, "/docs/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/v3/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
+                                // Authentication
+                                .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
+                                // Spaces
+                                .requestMatchers(HttpMethod.POST, "/spaces/create").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/spaces/delete/**").hasRole("ADMIN")
+                                .anyRequest().authenticated()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

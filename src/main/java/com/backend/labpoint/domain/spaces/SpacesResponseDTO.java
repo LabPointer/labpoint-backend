@@ -1,8 +1,5 @@
-package com.backend.labpoint.dto.response;
+package com.backend.labpoint.domain.spaces;
 
-import com.backend.labpoint.domain.spaces.SpaceResources;
-import com.backend.labpoint.domain.spaces.Spaces;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;

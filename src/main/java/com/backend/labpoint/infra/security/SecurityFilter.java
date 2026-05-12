@@ -1,19 +1,16 @@
 package com.backend.labpoint.infra.security;
 
+import com.backend.labpoint.repository.UsersRepository;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
-import com.backend.labpoint.repository.UsersRepository;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -40,23 +37,20 @@ public class SecurityFilter extends OncePerRequestFilter {
     }
 
     private String recoverToken(HttpServletRequest request) {
-        /*
         var authHeader = request.getHeader("Authorization");
-        if (authHeader == null) return null;
-        return authHeader.replace("Bearer ", "");
-        */
+        if (authHeader != null) {
+            return authHeader.replace("Bearer ", "");
+        }
+
         var reqCookies = request.getCookies();
-        String jwtToken = null;
         if (reqCookies != null) {
-            jwtToken = Arrays.stream(reqCookies)
-                .filter(cookie -> cookie.getName().equals("session_jwt"))
-                .map(coockie -> coockie.getValue())
-                .findFirst()
-                .orElse(null);
+            return Arrays.stream(reqCookies)
+                    .filter(cookie -> cookie.getName().equals("session_jwt"))
+                    .map(cookie -> cookie.getValue())
+                    .findFirst()
+                    .map(token -> token.replace("Bearer ", ""))
+                    .orElse(null);
         }
-        if (jwtToken != null) {
-            jwtToken = jwtToken.replace("Bearer ", "");
-        }
-        return jwtToken;
+        return null;
     }
 }

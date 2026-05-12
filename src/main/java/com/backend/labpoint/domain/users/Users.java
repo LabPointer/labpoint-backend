@@ -1,7 +1,10 @@
 package com.backend.labpoint.domain.users;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,20 +24,20 @@ public class Users implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column( nullable = false )
+    @Column(nullable = false)
     private String username;
 
-    @Column( nullable = false, unique = true )
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column( nullable = false, unique = true )
+    @Column(nullable = false, unique = true)
     private String registration;
 
-    @Column( nullable = false)
+    @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column( nullable = false )
+    @Column(nullable = false)
     private UserRole role;
 
     public Users(String username, String email, String registration, String password, UserRole role) {
@@ -47,8 +50,20 @@ public class Users implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if(role == UserRole.ADMIN) return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_USER"));
-        else return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        if (role == UserRole.OWNER) {
+            return List.of(
+                new SimpleGrantedAuthority("ROLE_OWNER"),
+                new SimpleGrantedAuthority("ROLE_ADMIN"),
+                new SimpleGrantedAuthority("ROLE_USER")
+            );
+        } else if (role == UserRole.ADMIN) {
+            return List.of(
+                new SimpleGrantedAuthority("ROLE_ADMIN"),
+                new SimpleGrantedAuthority("ROLE_USER")
+            );
+        } else {
+            return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        }
     }
 
     @Override

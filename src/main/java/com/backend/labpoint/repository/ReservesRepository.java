@@ -1,9 +1,8 @@
 package com.backend.labpoint.repository;
 
+import com.backend.labpoint.domain.reserves.Reserves;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
-import com.backend.labpoint.domain.reserves.Reserves;
 
 import java.time.LocalDate;
 import java.util.List;
