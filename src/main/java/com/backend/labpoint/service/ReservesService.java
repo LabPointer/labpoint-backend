@@ -22,21 +22,21 @@ public class ReservesService {
     private ReservesRepository reserveRepository;
 
     @Transactional(readOnly = true)
-    public List<Reserves> getReservesByDate(long spaceId, LocalDate date) {
+    public List<Reserves> getReservesByDate(Long spaceId, LocalDate date) {
         return reserveRepository.findByReservedDateAndSpace_Id(date, spaceId);
     }
 
     @Transactional
-    public boolean createReserve(long spaceId, LocalDate date, Set<SchedulesEnum> schedules) {
+    public boolean createReserve(Long spaceId, LocalDate date, Set<SchedulesEnum> schedules) {
         Spaces space = spaceRepository.findById(spaceId).stream().findFirst().orElse(null);
         if (space == null) return false;
         List<Reserves> reserves = reserveRepository.findByReservedDateAndSpace_Id(date, spaceId);
-        boolean isAvailable = false;
-        if (reserves != null || !reserves.isEmpty()) {
-            isAvailable = reserves.stream()
-                    .noneMatch(r -> r.getSchedule().equals(schedules));
+        boolean isUnavaliable = false;
+        if (reserves != null && !reserves.isEmpty()) {
+            isUnavaliable = reserves.stream()
+                    .anyMatch(r -> r.getSchedule().equals(schedules));
         }
-        if (isAvailable) return false;
+        if (isUnavaliable) return false;
 
         schedules.forEach(schedule -> {
             Reserves reserve = new Reserves();

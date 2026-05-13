@@ -32,12 +32,12 @@ public class ReservesController {
             @ApiResponse(responseCode = "404", description = "Nenhuma reserva encontrada", content = @Content)
     })
     @GetMapping("/find/{spaceId}/{date}")
-    public ResponseEntity<List<Reserves>> getReserve(@PathVariable long spaceId, @PathVariable LocalDate date) {
-        List<Reserves> spaces = reserveService.getReservesByDate(spaceId, date);
-        if (spaces.isEmpty()) {
+    public ResponseEntity<List<Reserves>> getReserve(@PathVariable Long spaceId, @PathVariable LocalDate date) {
+        List<Reserves> reserves = reserveService.getReservesByDate(spaceId, date);
+        if (reserves.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(spaces);
+        return ResponseEntity.ok(reserves);
     }
 
     @Operation(summary = "Cria uma nova reserva", description = "Cria uma reserva para um espaço específico na data e horários fornecidos")
@@ -46,8 +46,8 @@ public class ReservesController {
             @ApiResponse(responseCode = "404", description = "Espaço não encontrado ou erro na criação da reserva")
     })
     @PostMapping("/create/{spaceId}")
-    public ResponseEntity<Void> postCreateReserve(@PathVariable long spaceId, @RequestBody ReserveRequestDTO body) {
-        if (reserveService.createReserve(spaceId, body.date(), body.schedules())) {
+    public ResponseEntity<Void> postCreateReserve(@PathVariable Long spaceId, @RequestBody ReserveRequestDTO body) {
+        if (!reserveService.createReserve(spaceId, body.date(), body.schedules())) {
             return ResponseEntity.notFound().build();
         }
 

@@ -22,6 +22,10 @@ public interface SpaceResourcesRepository extends JpaRepository<SpaceResources, 
     List<SpaceResources> findByName(String name);
 
     @Query("SELECT sr FROM SpaceResources sr " +
+            "WHERE sr.space.id = :spaceId ")
+    List<SpaceResources> findSpaceResourceBySpaceId(@Param("spaceId") Long spaceId);
+
+    @Query("SELECT sr FROM SpaceResources sr " +
             "WHERE sr.space.id = :spaceId " +
             "AND (:resources IS NULL OR sr.name IN :resources)")
     List<SpaceResources> findSpaceResourceByListResourceAndSpaceId(@Param("spaceId") Long spaceId,

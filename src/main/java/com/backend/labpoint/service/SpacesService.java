@@ -34,6 +34,11 @@ public class SpacesService {
         return spaceResourcesRepository.findSpaceResourceByResourceAndSpaceId(spaceId, resource);
     }
 
+    @Transactional(readOnly = true)
+    public List<SpaceResources> getSpaceResourcesBySpaceId(long spaceId) {
+        return spaceResourcesRepository.findSpaceResourceBySpaceId(spaceId);
+    }
+
     @Transactional
     public Spaces createSpace(Spaces space) {
         return spaceRepository.save(space);

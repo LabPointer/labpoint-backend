@@ -2,6 +2,7 @@ package com.backend.labpoint.controller;
 
 import com.backend.labpoint.domain.error.ErroResponseDTO;
 import com.backend.labpoint.domain.users.LoginRequestDTO;
+import com.backend.labpoint.domain.users.LoginResponseDTO;
 import com.backend.labpoint.domain.users.RegisterRequestDTO;
 import com.backend.labpoint.domain.users.Users;
 import com.backend.labpoint.infra.security.TokenService;
@@ -29,7 +30,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 @RequestMapping("/auth")
 @Tag(name = "/auth", description = "Endpoints para gerenciamento de autenticação")
-@CrossOrigin
 public class AuthController {
 
     @Autowired
@@ -43,24 +43,28 @@ public class AuthController {
 
     @Operation(summary = "Login", description = "Realiza o login do usuário")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Login realizado com sucesso"),
-            @ApiResponse(responseCode = "401", description = "Usuário ou senha incorretos")
+            @ApiResponse(responseCode = "200", description = "Login realizado com sucesso", content = @Content(schema = @Schema(implementation = LoginResponseDTO.class, requiredMode = Schema.RequiredMode.REQUIRED))),
+            @ApiResponse(responseCode = "401", description = "Usuário ou senha incorretos", content = @Content)
     })
     @PostMapping("/login")
-    public ResponseEntity<Void> login(@RequestBody @Valid LoginRequestDTO data) {
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO data) {
         var registrationPasswordAuthentication = new UsernamePasswordAuthenticationToken(data.registration(), data.password());
         var auth = authenticationManager.authenticate(registrationPasswordAuthentication);
 
         var token = tokenService.generateToken((Users) auth.getPrincipal());
 
+
         ResponseCookie cookie = ResponseCookie.from("session_jwt", token)
                 .httpOnly(true)
-                .secure(false) // Permite o envio do cookie via HTTP (localhost)
+                .secure(false)
                 .path("/")
                 .sameSite("Lax")
+                .secure(false)
                 .build();
 
-        return ResponseEntity.ok().header("Set-Cookie", cookie.toString()).build();
+
+        //return ResponseEntity.ok().header("Set-Cookie", cookie.toString()).build();
+        return ResponseEntity.ok().body(new LoginResponseDTO(token));
     }
 
     @Operation(summary = "Logout", description = "Realiza o logout do usuário")
@@ -74,7 +78,8 @@ public class AuthController {
                 .secure(true)
                 .path("/")
                 .maxAge(0)
-                .sameSite("Strict")
+                .sameSite("Lax")
+                .secure(false)
                 .build();
 
         return ResponseEntity.ok().header("Set-Cookie", deleteCookie.toString()).build();

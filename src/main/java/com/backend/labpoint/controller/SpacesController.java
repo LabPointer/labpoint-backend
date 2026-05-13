@@ -24,7 +24,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/spaces")
 @Tag(name = "/spaces", description = "Endpoints para pesquisa de espaços")
-@CrossOrigin
 public class SpacesController {
     @Autowired
     private SpacesService spaceService;
@@ -53,10 +52,13 @@ public class SpacesController {
 
                 if (!hasResource) continue;
 
-                spaceResponse.setResources(r);
+                spaceResponse.setResources(r.stream().map(s -> s.getName()).toList());
+            } else {
+                List<SpaceResources> r = spaceService.getSpaceResourcesBySpaceId(space.getId());
+                spaceResponse.setResources(r.stream().map(s -> s.getName()).toList());
             }
 
-            spaceResponse.setSpace(space);
+            spaceResponse.setSpaceResponse(space);
             spacesResponse.add(spaceResponse);
         }
 

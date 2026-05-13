@@ -33,14 +33,17 @@ public class SecurityFilter extends OncePerRequestFilter {
             var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
+
         filterChain.doFilter(request, response);
     }
 
     private String recoverToken(HttpServletRequest request) {
+        /*
         var authHeader = request.getHeader("Authorization");
         if (authHeader != null) {
             return authHeader.replace("Bearer ", "");
         }
+        */
 
         var reqCookies = request.getCookies();
         if (reqCookies != null) {
@@ -51,6 +54,7 @@ public class SecurityFilter extends OncePerRequestFilter {
                     .map(token -> token.replace("Bearer ", ""))
                     .orElse(null);
         }
+        
         return null;
     }
 }
