@@ -29,8 +29,6 @@ public class SecurityConfiguration {
                 .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
-                                // Options preflight
-                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                 // Documentation
                                 .requestMatchers(HttpMethod.GET, "/docs/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/v3/**").permitAll()

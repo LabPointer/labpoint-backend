@@ -18,6 +18,9 @@ public class TokenService {
     @Value("${api.security.token.secret}")
     private String secret;
 
+    @Value("${api.security.token.age}")
+    private long tokenMaxAge;
+
     public String generateToken(Users user) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
@@ -46,6 +49,6 @@ public class TokenService {
     }
 
     private Instant genExpirationDate() {
-        return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of("-03:00"));
+        return LocalDateTime.now().plusHours(tokenMaxAge).toInstant(ZoneOffset.of("-03:00"));
     }
 }

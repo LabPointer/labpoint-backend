@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -22,10 +23,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import java.time.Duration;
+import java.time.Instant;
 
 @Controller
 @RequestMapping("/auth")
@@ -41,6 +44,9 @@ public class AuthController {
     @Autowired
     private TokenService tokenService;
 
+    @Value("${api.security.token.age}")
+    private long tokenMaxAge;
+
     @Operation(summary = "Login", description = "Realiza o login do usuário")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Login realizado com sucesso", content = @Content(schema = @Schema(implementation = LoginResponseDTO.class, requiredMode = Schema.RequiredMode.REQUIRED))),
@@ -50,21 +56,25 @@ public class AuthController {
     public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO data) {
         var registrationPasswordAuthentication = new UsernamePasswordAuthenticationToken(data.registration(), data.password());
         var auth = authenticationManager.authenticate(registrationPasswordAuthentication);
+        var user =  (Users)auth.getPrincipal();
+        var token = tokenService.generateToken(user);
 
-        var token = tokenService.generateToken((Users) auth.getPrincipal());
+        var maxAge = Duration.ofHours(tokenMaxAge);
 
-
-        ResponseCookie cookie = ResponseCookie.from("session_jwt", token)
+        ResponseCookie jwtCookie = ResponseCookie
+                .from("jwt-session", token)
                 .httpOnly(true)
                 .secure(false)
                 .path("/")
                 .sameSite("Lax")
                 .secure(false)
+                .maxAge(maxAge)
                 .build();
 
-
-        //return ResponseEntity.ok().header("Set-Cookie", cookie.toString()).build();
-        return ResponseEntity.ok().body(new LoginResponseDTO(token));
+        return ResponseEntity
+                .ok()
+                .header("Set-Cookie", jwtCookie.toString())
+                .body(new LoginResponseDTO(user.getUsername(), user.getRole().toString(), Instant.now().plus(maxAge).toEpochMilli()));
     }
 
     @Operation(summary = "Logout", description = "Realiza o logout do usuário")
@@ -73,7 +83,7 @@ public class AuthController {
     })
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
-        ResponseCookie deleteCookie = ResponseCookie.from("session_jwt", "")
+        ResponseCookie deleteCookie = ResponseCookie.from("jwt-session", "")
                 .httpOnly(true)
                 .secure(true)
                 .path("/")

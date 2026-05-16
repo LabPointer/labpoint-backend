@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,7 +21,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/resources")
 @Tag(name = "/resources", description = "Endpoints para pesquisa de recursos")
-@CrossOrigin
 public class ResourcesController {
     @Autowired
     private SpaceResourcesRepository spaceResourcesRepository;

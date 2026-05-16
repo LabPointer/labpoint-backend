@@ -2,14 +2,13 @@ spring.application.name=labpoint
 server.port=3001
 
 # --- Security ---
-# spring.security.user.name=""
-# spring.security.user.password=""
-# spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+api.security.token.secret=${JWT_SECRET:my-secret-key}
+api.security.token.age=120
 
 # --- Datasource ---
-spring.datasource.url=jdbc:<url do banco de dados>
-spring.datasource.username=<usuario>
-spring.datasource.password=<senha>
+spring.datasource.url=jdbc:<database url>
+spring.datasource.username=<user>
+spring.datasource.password=<password>
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 
 # --- JPA / Hibernate ---

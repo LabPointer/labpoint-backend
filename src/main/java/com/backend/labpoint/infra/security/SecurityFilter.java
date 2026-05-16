@@ -48,7 +48,7 @@ public class SecurityFilter extends OncePerRequestFilter {
         var reqCookies = request.getCookies();
         if (reqCookies != null) {
             return Arrays.stream(reqCookies)
-                    .filter(cookie -> cookie.getName().equals("session_jwt"))
+                    .filter(cookie -> cookie.getName().equals("jwt-session"))
                     .map(cookie -> cookie.getValue())
                     .findFirst()
                     .map(token -> token.replace("Bearer ", ""))
