@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,7 +43,7 @@ public class ReservesController {
 
     @Operation(summary = "Cria uma nova reserva", description = "Cria uma reserva para um espaço específico na data e horários fornecidos")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Reserva criada com sucesso"),
+            @ApiResponse(responseCode = "201", description = "Reserva criada com sucesso"),
             @ApiResponse(responseCode = "404", description = "Espaço não encontrado ou erro na criação da reserva")
     })
     @PostMapping("/create/{spaceId}")
@@ -51,6 +52,6 @@ public class ReservesController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }

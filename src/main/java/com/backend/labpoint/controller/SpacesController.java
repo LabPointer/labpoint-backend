@@ -87,7 +87,7 @@ public class SpacesController {
             spaceService.createSpaceResource(newResource);
         }
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @Operation(summary = "Deleta um espaço", description = "Deleta um espaço do sistema")
@@ -98,9 +98,9 @@ public class SpacesController {
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteSpace(@PathVariable Long id) {
         if (spaceService.deleteSpace(id))
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.notFound().build();
 
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.noContent().build();
     }
 
 }

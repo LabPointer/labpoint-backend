@@ -97,7 +97,7 @@ public class AuthController {
 
     @Operation(summary = "Registra um novo usuário", description = "Registra um novo usuário no sistema")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Usuário registrado com sucesso", content = @Content),
+            @ApiResponse(responseCode = "201", description = "Usuário registrado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PostMapping("/register")
@@ -116,6 +116,6 @@ public class AuthController {
 
         usersRepository.save(user);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }
