@@ -5,4 +5,6 @@ CREATE TABLE users(
     registration TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
     role TEXT NOT NULL
+    locked BOOLEAN DEFAULT false,
+    enabled BOOLEAN DEFAULT false
 )

@@ -40,6 +40,12 @@ public class Users implements UserDetails {
     @Column(nullable = false)
     private UserRole role;
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean locked = false;
+
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean enabled = true;
+
     public Users(String username, String email, String registration, String password, UserRole role) {
         this.username = username;
         this.email = email;
@@ -78,7 +84,7 @@ public class Users implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return UserDetails.super.isAccountNonLocked();
+        return !locked;
     }
 
     @Override
@@ -88,6 +94,6 @@ public class Users implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return UserDetails.super.isEnabled();
+        return enabled;
     }
 }
