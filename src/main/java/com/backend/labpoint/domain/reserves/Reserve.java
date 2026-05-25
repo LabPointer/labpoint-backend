@@ -1,7 +1,9 @@
 package com.backend.labpoint.domain.reserves;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -15,19 +17,22 @@ import com.backend.labpoint.domain.user.User;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "reserves")
+@Table(name = "reserve")
 @Getter
 @Setter
-public class Reserves {
+@AllArgsConstructor
+@NoArgsConstructor
+public class Reserve {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private OffsetDateTime createdAt;
 
     @Column(name = "reserved_date", nullable = false)
     private LocalDate reservedDate;
@@ -46,6 +51,13 @@ public class Reserves {
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "fk_space_id", nullable = false)
     private Space space;
+
+    public Reserve(LocalDate reservedDate, SchedulesEnum schedule, User user, Space space) {
+        this.reservedDate = reservedDate;
+        this.schedule = schedule;
+        this.user = user;
+        this.space = space;
+    }
 }
 
 /*

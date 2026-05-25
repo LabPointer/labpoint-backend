@@ -22,7 +22,7 @@ public class Space {
     @Column(nullable = false, length = 32)
     private String name;
 
-    @Column(nullable = false, length = 256)
+    @Column(length = 256)
     private String description;
 
     @Column(nullable = false)

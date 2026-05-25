@@ -25,8 +25,6 @@ import java.util.Set;
 
 @Service
 public class SpaceService {
-    private final SpaceController spaceController;
-
     @Autowired
     private SpacesRepository spaceRepository;
 
@@ -36,15 +34,11 @@ public class SpaceService {
     @Autowired
     private SpaceSubjectRepository spaceSubjectRepository;
 
-    // Additional repositories for handling resources and subjects
     @Autowired
     private ResourceRepository resourceRepository;
 
     @Autowired
     private SubjectRepository subjectRepository;
-    SpaceService(SpaceController spaceController) {
-        this.spaceController = spaceController;
-    }
 
     @Transactional(readOnly = true)
     public List<Space> getSpaces(Specification<Space> spec, Pageable pageable) {
@@ -54,17 +48,6 @@ public class SpaceService {
     @Transactional(readOnly = true)
     public long countSpaces(Specification<Space> spec) {
         return spaceRepository.count(spec);
-    }
-
-    @Transactional(readOnly = true)
-    public List<SpaceResource> getSpaceResourcesByList(Integer spaceId, Set<String> resources) {
-        return spaceResourceRepository.findSpaceResourceByListResourceAndSpaceId(spaceId,
-                resources != null ? resources.stream().toList() : null);
-    }
-
-    @Transactional(readOnly = true)
-    public List<SpaceResource> getSpaceResourcesByString(Integer spaceId, String resource) {
-        return spaceResourceRepository.findSpaceResourceByResourceAndSpaceId(spaceId, resource);
     }
 
     @Transactional(readOnly = true)
@@ -86,7 +69,7 @@ public class SpaceService {
         newSpace = spaceRepository.save(newSpace);
 
         for (var r : resources) {
-            var hasResource = resourceRepository.existByName(r);
+            var hasResource = resourceRepository.existsByName(r);
             Resource resource = null;
             if (!hasResource) {
                 resource = resourceRepository.save(new Resource(r));

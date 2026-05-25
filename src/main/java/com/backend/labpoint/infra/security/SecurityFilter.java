@@ -1,6 +1,6 @@
 package com.backend.labpoint.infra.security;
 
-import com.backend.labpoint.repository.UsersRepository;
+import com.backend.labpoint.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,14 +21,16 @@ public class SecurityFilter extends OncePerRequestFilter {
     private TokenService tokenService;
 
     @Autowired
-    private UsersRepository usersRepository;
+    private UserRepository usersRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         var token = recoverToken(request);
         if (token != null) {
             var subject = tokenService.validateToken(token);
-            UserDetails user = usersRepository.findByRegistration(subject).orElseThrow(() -> new RuntimeException("User not found"));
+            UserDetails user = usersRepository.findByRegistration(subject)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
             var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -39,11 +41,11 @@ public class SecurityFilter extends OncePerRequestFilter {
 
     private String recoverToken(HttpServletRequest request) {
         /*
-        var authHeader = request.getHeader("Authorization");
-        if (authHeader != null) {
-            return authHeader.replace("Bearer ", "");
-        }
-        */
+         * var authHeader = request.getHeader("Authorization");
+         * if (authHeader != null) {
+         * return authHeader.replace("Bearer ", "");
+         * }
+         */
 
         var reqCookies = request.getCookies();
         if (reqCookies != null) {
@@ -54,7 +56,7 @@ public class SecurityFilter extends OncePerRequestFilter {
                     .map(token -> token.replace("Bearer ", ""))
                     .orElse(null);
         }
-        
+
         return null;
     }
 }

@@ -34,12 +34,22 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.GET, "/v3/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
                                 // Authentication
+                                .requestMatchers(HttpMethod.GET, "/auth/users").hasRole("ADMIN")
                                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/auth/update").hasRole("ADMIN")
                                 // Spaces
                                 .requestMatchers(HttpMethod.POST, "/spaces/create").hasRole("ADMIN")
                                 .requestMatchers(HttpMethod.PATCH, "/spaces/update/**").hasRole("ADMIN")
                                 .requestMatchers(HttpMethod.DELETE, "/spaces/delete/**").hasRole("ADMIN")
+                                // Resources
+                                .requestMatchers(HttpMethod.POST, "/resources/create").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PATCH, "/resources/update/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/resources/delete/**").hasRole("ADMIN")
+                                // Subject
+                                .requestMatchers(HttpMethod.POST, "/subjects/create").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PATCH, "/subjects/update/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/subjects/delete/**").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

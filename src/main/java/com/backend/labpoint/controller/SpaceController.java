@@ -12,7 +12,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,20 +52,18 @@ public class SpaceController {
             @ApiResponse(responseCode = "404", description = "Nenhum laboratorio encontrado", content = @Content)
     })
     @GetMapping
-    public ResponseEntity<SpacesResponseDTO> getSpaces(@ModelAttribute SpaceRequestDTO params) {
+    public ResponseEntity<SpacesResponseDTO> getSpaces(@ParameterObject @ModelAttribute SpaceRequestDTO params) {
         Specification<Space> spec = SpaceSpecification.filters(
                 params.name(),
                 params.capacity(),
                 params.resources(),
-                params.subjects(),
-                params.offset(),
-                params.limit());
+                params.subjects());
 
         int total = (int) spaceService.countSpaces(spec);
 
         int offset = params.offset() != null ? params.offset() : 0;
         int limit = params.limit() != null ? params.limit() : 10;
-        Pageable pageable = PageRequest.of(offset / limit, limit);
+        Pageable pageable = PageRequest.of(offset / limit, limit, Sort.by("name").ascending());
 
         List<Space> spaces = spaceService.getSpaces(spec, pageable);
         if (spaces == null || spaces.isEmpty())
@@ -119,7 +119,7 @@ public class SpaceController {
             @ApiResponse(responseCode = "400", description = "Erro ao editar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update/{id}")
-    public ResponseEntity patchSpace(@PathVariable Integer id, @RequestBody @Valid PatchSpaceRequestDTO data) {
+    public ResponseEntity<Object> patchSpace(@PathVariable Integer id, @RequestBody @Valid PatchSpaceRequestDTO data) {
         try {
             var updatedSpace = spaceService.updateSpace(id, data);
             return ResponseEntity.ok(updatedSpace);

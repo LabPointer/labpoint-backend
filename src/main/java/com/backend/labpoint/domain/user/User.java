@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user")
+@Table(name = "\"user\"")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -39,9 +39,6 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
-
-    @Column(nullable = false, columnDefinition = "boolean default true")
-    private boolean locked = false;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean enabled = false;
@@ -80,11 +77,6 @@ public class User implements UserDetails {
     @Override
     public boolean isAccountNonExpired() {
         return UserDetails.super.isAccountNonExpired();
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return !locked;
     }
 
     @Override

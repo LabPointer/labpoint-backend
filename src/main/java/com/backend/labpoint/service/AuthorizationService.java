@@ -1,6 +1,6 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.repository.UsersRepository;
+import com.backend.labpoint.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class AuthorizationService implements UserDetailsService {
     @Autowired
-    private UsersRepository usersRepository;
+    private UserRepository usersRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

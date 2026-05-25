@@ -15,7 +15,7 @@ import java.util.Set;
 public class SpaceSpecification {
 
     public static Specification<Space> filters(String name, Integer capacity, Set<Integer> resources,
-            Set<Integer> subjects, Integer offset, Integer limit) {
+            Set<Integer> subjects) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 

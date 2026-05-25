@@ -1,8 +1,9 @@
 package com.backend.labpoint.controller;
 
 
+import com.backend.labpoint.domain.reserves.Reserve;
 import com.backend.labpoint.domain.reserves.ReserveRequestDTO;
-import com.backend.labpoint.domain.reserves.Reserves;
+import com.backend.labpoint.domain.reserves.Reserve;
 import com.backend.labpoint.service.ReserveService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -15,8 +16,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -29,12 +33,12 @@ public class ReserveController {
 
     @Operation(summary = "Busca reservas por espaço e data", description = "Retorna uma lista de reservas para um determinado espaço em uma data específica")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de reservas encontrada", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Reserves.class, requiredMode = RequiredMode.REQUIRED)))),
+            @ApiResponse(responseCode = "200", description = "Lista de reservas encontrada", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Reserve.class, requiredMode = RequiredMode.REQUIRED)))),
             @ApiResponse(responseCode = "404", description = "Nenhuma reserva encontrada", content = @Content)
     })
     @GetMapping("/find/{spaceId}/{date}")
-    public ResponseEntity<List<Reserves>> getReserve(@PathVariable Long spaceId, @PathVariable LocalDate date) {
-        List<Reserves> reserves = reserveService.getReservesByDate(spaceId, date);
+    public ResponseEntity<List<Reserve>> getReserve(@PathVariable Long spaceId, @PathVariable LocalDate date) {
+        List<Reserve> reserves = reserveService.getReservesByDate(spaceId, date);
         if (reserves.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -47,8 +51,10 @@ public class ReserveController {
             @ApiResponse(responseCode = "404", description = "Espaço não encontrado ou erro na criação da reserva")
     })
     @PostMapping("/create/{spaceId}")
-    public ResponseEntity<Void> postCreateReserve(@PathVariable Long spaceId, @RequestBody ReserveRequestDTO body) {
-        if (!reserveService.createReserve(spaceId, body.date(), body.schedules())) {
+    public ResponseEntity<Void> postCreateReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long spaceId, @RequestBody ReserveRequestDTO body) {
+        var registration = userDetails.getUsername();
+        var user = reserveService.findUserByRegistration(registration);
+        if (!reserveService.createReserve(user, spaceId, body.date(), body.schedules())) {
             return ResponseEntity.notFound().build();
         }
 

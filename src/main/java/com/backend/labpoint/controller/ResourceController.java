@@ -2,9 +2,7 @@ package com.backend.labpoint.controller;
 
 import com.backend.labpoint.domain.error.ErroResponseDTO;
 import com.backend.labpoint.domain.resource.Resource;
-import com.backend.labpoint.domain.space.SpaceResource;
 import com.backend.labpoint.repository.ResourceRepository;
-import com.backend.labpoint.repository.SpaceResourceRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,6 +14,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,7 +32,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/resources")
-@Tag(name = "/resource", description = "Endpoints para pesquisa de recursos")
+@Tag(name = "/resources", description = "Endpoints para pesquisa de recursos")
 public class ResourceController {
     @Autowired
     private ResourceRepository resourceRepository;
@@ -42,8 +43,14 @@ public class ResourceController {
             @ApiResponse(responseCode = "404", description = "Nenhum recurso encontrado", content = @Content)
     })
     @GetMapping
-    public ResponseEntity<List<Resource>> getResources(@RequestParam(required = false) String name) {
-        var resources = name == null ? resourceRepository.findAll() : resourceRepository.findByName(name);
+    public ResponseEntity<List<Resource>> getResources(@RequestParam(required = false) String name, @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
+        var limit = size == null ? 10 : size;
+        if (limit > 50) limit = 50;
+        if (limit < 10) limit = 10;
+        var offset = page == null ? 0 : (page - 1) * limit;
+        if (offset < 0) offset = 0;
+        Pageable pageable = PageRequest.of(offset, limit, Sort.by("name").ascending());
+        var resources = name == null ? resourceRepository.findAll() : resourceRepository.findByNameLike(name, pageable);
         if (resources.isEmpty())
             return ResponseEntity.notFound().build();
 
@@ -57,7 +64,7 @@ public class ResourceController {
     })
     @PostMapping("/create")
     public ResponseEntity postCreateResource(@RequestBody @NotBlank String name) {
-        if (resourceRepository.existByName(name))
+        if (resourceRepository.existsByName(name))
             return ResponseEntity.badRequest().body(new ErroResponseDTO(HttpStatus.BAD_REQUEST, "Recurso já existe"));
         Resource newResource = new Resource(null, name);
         resourceRepository.save(newResource);
@@ -77,7 +84,7 @@ public class ResourceController {
 
         var resource = resourceRepository.findById(id).orElseThrow();
 
-        if (resourceRepository.existByName(newName))
+        if (resourceRepository.existsByName(newName))
             return ResponseEntity.badRequest().body(new ErroResponseDTO(HttpStatus.BAD_REQUEST, "Recurso já existe"));
 
         resource.setName(newName);

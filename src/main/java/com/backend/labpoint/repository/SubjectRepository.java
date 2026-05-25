@@ -1,13 +1,20 @@
 package com.backend.labpoint.repository;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.backend.labpoint.domain.subject.Subject;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public interface SubjectRepository extends JpaRepository<Subject, Integer> {
     List<Subject> findByName(String name);
-    List<Subject> findByNameContaining(String nome);
+
     Boolean existsByName(String name);
+
+    @Query("SELECT s FROM Subject s WHERE s.name LIKE %:name%")
+    List<Subject> findByNameContaining(String name, Pageable pageable);
 }
