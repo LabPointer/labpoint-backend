@@ -8,8 +8,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Repository
-public interface ReservesRepository extends JpaRepository<Reserves, Long> {
-    List<Reserves> findByReservedDateAndSpace_Id(LocalDate reservedDate, Long spaceId);
+public interface ReserveRepository extends JpaRepository<Reserves, Integer> {
+    List<Reserves> findByReservedDateAndSpace_Id(LocalDate reservedDate, Integer spaceId);
 /*
     @Query("SELECT r FROM Reserve r " +
             "WHERE r.reservedDate = :date " +

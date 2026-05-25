@@ -1,4 +1,4 @@
-package com.backend.labpoint.domain.users;
+package com.backend.labpoint.domain.user;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -14,12 +14,12 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
+@Table(name = "user")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Users implements UserDetails {
+public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -44,9 +44,9 @@ public class Users implements UserDetails {
     private boolean locked = false;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
-    private boolean enabled = true;
+    private boolean enabled = false;
 
-    public Users(String username, String email, String registration, String password, UserRole role) {
+    public User(String username, String email, String registration, String password, UserRole role) {
         this.username = username;
         this.email = email;
         this.registration = registration;

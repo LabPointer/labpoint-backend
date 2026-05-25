@@ -1,16 +1,17 @@
 package com.backend.labpoint.repository;
 
-import com.backend.labpoint.domain.spaces.SpaceResources;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.backend.labpoint.domain.space.SpaceResource;
+
 import java.util.List;
 
 @Repository
-public interface SpaceResourcesRepository extends JpaRepository<SpaceResources, Integer>, JpaSpecificationExecutor<SpaceResources> {
+public interface SpaceResourceRepository extends JpaRepository<SpaceResource, Integer>, JpaSpecificationExecutor<SpaceResource> {
     /*
     @Query("SELECT sr.space FROM SpaceResources sr " +
             "WHERE sr.space.id = :spaceId " +
@@ -19,21 +20,23 @@ public interface SpaceResourcesRepository extends JpaRepository<SpaceResources, 
                            @Param("resources") List<ResourcesEnum> resources);
      */
 
-    List<SpaceResources> findByName(String name);
+    List<SpaceResource> findByName(String name);
+    
+    Boolean existByName(String name);
 
     @Query("SELECT sr FROM SpaceResources sr " +
             "WHERE sr.space.id = :spaceId ")
-    List<SpaceResources> findSpaceResourceBySpaceId(@Param("spaceId") Long spaceId);
+    List<SpaceResource> findSpaceResourceBySpaceId(@Param("spaceId") Integer spaceId);
 
     @Query("SELECT sr FROM SpaceResources sr " +
             "WHERE sr.space.id = :spaceId " +
             "AND (:resources IS NULL OR sr.name IN :resources)")
-    List<SpaceResources> findSpaceResourceByListResourceAndSpaceId(@Param("spaceId") Long spaceId,
+    List<SpaceResource> findSpaceResourceByListResourceAndSpaceId(@Param("spaceId") Integer spaceId,
             @Param("resources") List<String> resources);
 
     @Query("SELECT sr FROM SpaceResources sr " +
             "WHERE sr.space.id = :spaceId " +
             "AND (:resource IS NULL OR sr.name LIKE CONCAT('%', :resource, '%'))")
-    List<SpaceResources> findSpaceResourceByResourceAndSpaceId(@Param("spaceId") Long spaceId,
+    List<SpaceResource> findSpaceResourceByResourceAndSpaceId(@Param("spaceId") Integer spaceId,
                                                                @Param("resource") String resource);
 }

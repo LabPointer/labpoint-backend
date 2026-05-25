@@ -1,13 +1,14 @@
 package com.backend.labpoint.repository;
 
-import com.backend.labpoint.domain.users.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.backend.labpoint.domain.user.User;
 
 import java.util.Optional;
 import java.util.UUID;
 
-public interface UsersRepository extends JpaRepository<Users, UUID> {
-    Optional<Users> findByRegistration(String registration);
+public interface UsersRepository extends JpaRepository<User, UUID> {
+    Optional<User> findByRegistration(String registration);
 
-    Optional<Users> findByEmail(String email);
+    Optional<User> findByEmail(String email);
 }

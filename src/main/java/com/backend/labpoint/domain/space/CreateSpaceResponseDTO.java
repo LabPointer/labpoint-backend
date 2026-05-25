@@ -1,4 +1,4 @@
-package com.backend.labpoint.domain.spaces;
+package com.backend.labpoint.domain.space;
 
 import jakarta.validation.constraints.NotNull;
 

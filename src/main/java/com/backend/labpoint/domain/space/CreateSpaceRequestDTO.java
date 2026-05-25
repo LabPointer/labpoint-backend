@@ -1,4 +1,4 @@
-package com.backend.labpoint.domain.spaces;
+package com.backend.labpoint.domain.space;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -18,6 +18,12 @@ public record CreateSpaceRequestDTO(
         @Min(value = 1, message = "Capacity must be at least 1")
         Integer capacity,
 
-        @NotNull(message = "Resource is required")
-        Set<String> resources) {
+        Set<String> resources,
+
+        Set<String> subjects
+) {
+    public CreateSpaceRequestDTO {
+        if (resources == null) resources = Set.of();
+        if (subjects == null) subjects = Set.of();
+    }
 }

@@ -1,10 +1,10 @@
 package com.backend.labpoint.controller;
 
 import com.backend.labpoint.domain.error.ErroResponseDTO;
-import com.backend.labpoint.domain.users.LoginRequestDTO;
-import com.backend.labpoint.domain.users.LoginResponseDTO;
-import com.backend.labpoint.domain.users.RegisterRequestDTO;
-import com.backend.labpoint.domain.users.Users;
+import com.backend.labpoint.domain.user.LoginRequestDTO;
+import com.backend.labpoint.domain.user.LoginResponseDTO;
+import com.backend.labpoint.domain.user.RegisterRequestDTO;
+import com.backend.labpoint.domain.user.User;
 import com.backend.labpoint.infra.security.TokenService;
 import com.backend.labpoint.repository.UsersRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,7 +56,7 @@ public class AuthController {
     public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO data) {
         var registrationPasswordAuthentication = new UsernamePasswordAuthenticationToken(data.registration(), data.password());
         var auth = authenticationManager.authenticate(registrationPasswordAuthentication);
-        var user =  (Users)auth.getPrincipal();
+        var user =  (User)auth.getPrincipal();
         var token = tokenService.generateToken(user);
 
         var maxAge = Duration.ofHours(tokenMaxAge);
@@ -112,7 +112,7 @@ public class AuthController {
         }
 
         var encryptedPass = new BCryptPasswordEncoder().encode(data.password());
-        var user = new Users(data.username(), data.email(), data.registration(), encryptedPass, data.role());
+        var user = new User(data.username(), data.email(), data.registration(), encryptedPass, data.role());
 
         usersRepository.save(user);
 

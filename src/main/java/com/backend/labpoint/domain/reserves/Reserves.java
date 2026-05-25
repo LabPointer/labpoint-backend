@@ -1,14 +1,19 @@
 package com.backend.labpoint.domain.reserves;
 
-import com.backend.labpoint.domain.spaces.Spaces;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.type.SqlTypes;
 
+import com.backend.labpoint.domain.space.Space;
+import com.backend.labpoint.domain.user.User;
+
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
@@ -18,7 +23,11 @@ import java.time.LocalDate;
 public class Reserves {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 
     @Column(name = "reserved_date", nullable = false)
     private LocalDate reservedDate;
@@ -30,8 +39,13 @@ public class Reserves {
 
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "fk_user_id", nullable = false)
+    private User user;
+
+    @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "fk_space_id", nullable = false)
-    private Spaces space;
+    private Space space;
 }
 
 /*

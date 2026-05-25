@@ -1,13 +1,13 @@
-package com.backend.labpoint.domain.spaces;
+package com.backend.labpoint.domain.space;
 
-public enum ResourcesEnum {
+public enum ResourceEnum {
     TELAO("Telão"),
     COMPUTADORES("Computadores"),
     TUBOS_DE_ENSAIO("Tubos de Ensaio");
 
     private final String description;
 
-    ResourcesEnum(String description) {
+    ResourceEnum(String description) {
         this.description = description;
     }
 

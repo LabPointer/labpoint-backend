@@ -1,4 +1,4 @@
-package com.backend.labpoint.domain.spaces;
+package com.backend.labpoint.domain.space;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -7,12 +7,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "spaces")
+@Table(name = "space")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Spaces {
+public class Space {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -22,11 +22,15 @@ public class Spaces {
     @Column(nullable = false, length = 32)
     private String name;
 
+    @Column(nullable = false, length = 256)
+    private String description;
+
     @Column(nullable = false)
     private int capacity;
 
-    public Spaces(String name, int capacity) {
+    public Space(String name, String description, int capacity) {
         this.name = name;
+        this.description = description;
         this.capacity = capacity;
     }
 

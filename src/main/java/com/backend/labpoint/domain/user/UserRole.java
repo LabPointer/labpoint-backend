@@ -1,4 +1,4 @@
-package com.backend.labpoint.domain.users;
+package com.backend.labpoint.domain.user;
 
 public enum UserRole {
     OWNER("owner"),

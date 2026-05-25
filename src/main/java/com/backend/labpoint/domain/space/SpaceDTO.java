@@ -1,4 +1,4 @@
-package com.backend.labpoint.domain.spaces;
+package com.backend.labpoint.domain.space;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,7 +9,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class SpacesResponseDTO {
+public class SpaceDTO {
     @NotNull
     private Integer id;
 
@@ -21,9 +21,5 @@ public class SpacesResponseDTO {
 
     private List<String> resources;
 
-    public void setSpaceResponse(Spaces space) {
-        this.id = space.getId();
-        this.name = space.getName();
-        this.capacity = space.getCapacity();
-    }
+    private List<String> subjects;
 }

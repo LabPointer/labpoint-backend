@@ -38,6 +38,7 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                                 // Spaces
                                 .requestMatchers(HttpMethod.POST, "/spaces/create").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PATCH, "/spaces/update/**").hasRole("ADMIN")
                                 .requestMatchers(HttpMethod.DELETE, "/spaces/delete/**").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 )

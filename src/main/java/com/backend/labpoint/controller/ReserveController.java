@@ -3,7 +3,7 @@ package com.backend.labpoint.controller;
 
 import com.backend.labpoint.domain.reserves.ReserveRequestDTO;
 import com.backend.labpoint.domain.reserves.Reserves;
-import com.backend.labpoint.service.ReservesService;
+import com.backend.labpoint.service.ReserveService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,9 +23,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/reserves")
 @Tag(name = "/reserves", description = "Endpoints para gerenciamento de reservas")
-public class ReservesController {
+public class ReserveController {
     @Autowired
-    private ReservesService reserveService;
+    private ReserveService reserveService;
 
     @Operation(summary = "Busca reservas por espaço e data", description = "Retorna uma lista de reservas para um determinado espaço em uma data específica")
     @ApiResponses(value = {

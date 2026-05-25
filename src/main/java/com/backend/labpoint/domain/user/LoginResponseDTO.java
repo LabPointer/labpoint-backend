@@ -1,4 +1,4 @@
-package com.backend.labpoint.domain.users;
+package com.backend.labpoint.domain.user;
 
 import jakarta.validation.constraints.NotNull;
 
