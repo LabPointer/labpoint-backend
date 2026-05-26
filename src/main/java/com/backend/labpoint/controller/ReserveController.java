@@ -3,7 +3,7 @@ package com.backend.labpoint.controller;
 
 import com.backend.labpoint.domain.reserves.Reserve;
 import com.backend.labpoint.domain.reserves.ReserveRequestDTO;
-import com.backend.labpoint.domain.reserves.Reserve;
+import com.backend.labpoint.domain.user.User;
 import com.backend.labpoint.service.ReserveService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -20,7 +20,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -52,8 +51,8 @@ public class ReserveController {
     })
     @PostMapping("/create/{spaceId}")
     public ResponseEntity<Void> postCreateReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long spaceId, @RequestBody ReserveRequestDTO body) {
-        var registration = userDetails.getUsername();
-        var user = reserveService.findUserByRegistration(registration);
+        String registration = userDetails.getUsername();
+        User user = reserveService.findUserByRegistration(registration);
         if (!reserveService.createReserve(user, spaceId, body.date(), body.schedules())) {
             return ResponseEntity.notFound().build();
         }

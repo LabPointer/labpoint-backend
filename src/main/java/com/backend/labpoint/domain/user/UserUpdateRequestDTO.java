@@ -1,7 +1,5 @@
 package com.backend.labpoint.domain.user;
 
-import jakarta.validation.constraints.NotNull;
-
 import java.util.UUID;
 
 public record UserUpdateRequestDTO(
@@ -12,5 +10,5 @@ public record UserUpdateRequestDTO(
         String password,
         UserRole role,
         Boolean enabled
-        ) {
+) {
 }

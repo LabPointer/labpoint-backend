@@ -1,35 +1,26 @@
 package com.backend.labpoint.controller;
 
-import java.util.List;
-
+import com.backend.labpoint.domain.error.ErroResponseDTO;
+import com.backend.labpoint.domain.subject.Subject;
+import com.backend.labpoint.repository.SubjectRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.backend.labpoint.domain.error.ErroResponseDTO;
-import com.backend.labpoint.domain.subject.Subject;
-import com.backend.labpoint.repository.SubjectRepository;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 
 @RestController
 @RequestMapping("/subjects")
@@ -41,21 +32,21 @@ public class SubjectController {
 
     @Operation(summary = "Lista todas as matérias", description = "Lista todas as matérias cadastradas")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Matérias listadas com sucesso", 
-                content = @Content(array = @ArraySchema(schema = @Schema(implementation = Subject.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
+            @ApiResponse(responseCode = "200", description = "Matérias listadas com sucesso",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = Subject.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
             @ApiResponse(responseCode = "404", description = "Nenhuma matéria encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @GetMapping
     public ResponseEntity<List<Subject>> getSubjects(@RequestParam(required = false) String name, @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
-        var limit = size == null ? 10 : size;
+        int limit = size == null ? 10 : size;
         if (limit > 50) limit = 50;
         if (limit < 10) limit = 10;
-        var offset = page == null ? 0 : (page - 1) * limit;
+        int offset = page == null ? 0 : (page - 1) * limit;
         if (offset < 0) offset = 0;
         Pageable pageable = PageRequest.of(offset, limit, Sort.by("name").ascending());
         List<Subject> subjects = name == null ? subjectRepository.findAll() : subjectRepository.findByNameContaining(name, pageable);
 
-        if (subjects.isEmpty()) 
+        if (subjects.isEmpty())
             return ResponseEntity.notFound().build();
 
         return ResponseEntity.ok(subjects);
@@ -67,7 +58,7 @@ public class SubjectController {
             @ApiResponse(responseCode = "400", description = "Erro ao criar matéria", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PostMapping("/create")
-    public ResponseEntity createSubject(@RequestBody @NotBlank String name) {
+    public ResponseEntity<Object> createSubject(@RequestBody @NotBlank String name) {
         if (subjectRepository.existsByName(name))
             return ResponseEntity.badRequest().body(new ErroResponseDTO("Subject already exists"));
         Subject subject = new Subject(null, name);
@@ -85,7 +76,7 @@ public class SubjectController {
         if (!subjectRepository.existsById(id))
             return ResponseEntity.notFound().build();
 
-        var subject = subjectRepository.findById(id).orElseThrow();
+        Subject subject = subjectRepository.findById(id).orElseThrow();
 
         if (subjectRepository.existsByName(newName))
             return ResponseEntity.badRequest().body(new ErroResponseDTO("Subject already exists"));

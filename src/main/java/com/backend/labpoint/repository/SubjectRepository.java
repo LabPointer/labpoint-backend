@@ -1,9 +1,8 @@
 package com.backend.labpoint.repository;
 
+import com.backend.labpoint.domain.subject.Subject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import com.backend.labpoint.domain.subject.Subject;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 

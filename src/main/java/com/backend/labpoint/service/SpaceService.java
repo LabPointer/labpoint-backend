@@ -1,22 +1,12 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.controller.SpaceController;
-import com.backend.labpoint.domain.space.SpaceResource;
 import com.backend.labpoint.domain.resource.Resource;
-import com.backend.labpoint.domain.space.PatchSpaceRequestDTO;
-import com.backend.labpoint.domain.space.PatchSpaceResponseDTO;
-import com.backend.labpoint.domain.space.Space;
-import com.backend.labpoint.domain.space.SpaceSubject;
+import com.backend.labpoint.domain.space.*;
 import com.backend.labpoint.domain.subject.Subject;
-import com.backend.labpoint.repository.ResourceRepository;
-import com.backend.labpoint.repository.SpaceResourceRepository;
-import com.backend.labpoint.repository.SpaceSubjectRepository;
-import com.backend.labpoint.repository.SpacesRepository;
-import com.backend.labpoint.repository.SubjectRepository;
-
+import com.backend.labpoint.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,14 +52,14 @@ public class SpaceService {
 
     @Transactional
     public boolean createSpace(String name, String description, int capacity, Set<String> resources, Set<String> subjects) {
-        var hasSpace = spaceRepository.existsByName(name);
+        boolean hasSpace = spaceRepository.existsByName(name);
         if (hasSpace) return false;
 
-        var newSpace = new Space(name, description, capacity);
+        Space newSpace = new Space(name, description, capacity);
         newSpace = spaceRepository.save(newSpace);
 
         for (var r : resources) {
-            var hasResource = resourceRepository.existsByName(r);
+            boolean hasResource = resourceRepository.existsByName(r);
             Resource resource = null;
             if (!hasResource) {
                 resource = resourceRepository.save(new Resource(r));
@@ -77,21 +67,21 @@ public class SpaceService {
                 resource = resourceRepository.findByName(r).getFirst();
             }
 
-            var spaceResource = new SpaceResource(newSpace, resource);
+            SpaceResource spaceResource = new SpaceResource(newSpace, resource);
             spaceResourceRepository.save(spaceResource);
         }
         for (var s : subjects) {
-            var hasSubject = subjectRepository.existsByName(s);
+            boolean hasSubject = subjectRepository.existsByName(s);
             Subject subject = null;
             if (!hasSubject) {
                 subject = subjectRepository.save(new Subject(s));
             } else {
                 subject = subjectRepository.findByName(s).getFirst();
             }
-            var spaceSubject = new SpaceSubject(newSpace, subject);
+            SpaceSubject spaceSubject = new SpaceSubject(newSpace, subject);
             spaceSubjectRepository.save(spaceSubject);
         }
-        
+
         return true;
     }
 
@@ -107,8 +97,9 @@ public class SpaceService {
 
     @Transactional
     public PatchSpaceResponseDTO updateSpace(Integer id, PatchSpaceRequestDTO dto) {
-        if (spaceRepository.existsByName(dto.name())) throw new IllegalArgumentException("Nome ja existe em outro espaço");
-        var space = spaceRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Espaço nao encontrado"));
+        if (spaceRepository.existsByName(dto.name()))
+            throw new IllegalArgumentException("Nome ja existe em outro espaço");
+        Space space = spaceRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Espaço nao encontrado"));
 
         // Update core fields
         space.setName(dto.name());
@@ -149,7 +140,7 @@ public class SpaceService {
 
     @Transactional
     public boolean deleteSpace(Integer id) {
-        var space = spaceRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Espaço nao encontrado"));
+        Space space = spaceRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Espaço nao encontrado"));
         spaceRepository.delete(space);
         return true;
     }

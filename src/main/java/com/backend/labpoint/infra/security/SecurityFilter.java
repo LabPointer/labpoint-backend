@@ -3,6 +3,7 @@ package com.backend.labpoint.infra.security;
 import com.backend.labpoint.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,13 +27,13 @@ public class SecurityFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        var token = recoverToken(request);
+        String token = recoverToken(request);
         if (token != null) {
-            var subject = tokenService.validateToken(token);
+            String subject = tokenService.validateToken(token);
             UserDetails user = usersRepository.findByRegistration(subject)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
@@ -47,7 +48,7 @@ public class SecurityFilter extends OncePerRequestFilter {
          * }
          */
 
-        var reqCookies = request.getCookies();
+        Cookie[] reqCookies = request.getCookies();
         if (reqCookies != null) {
             return Arrays.stream(reqCookies)
                     .filter(cookie -> cookie.getName().equals("jwt-session"))

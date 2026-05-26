@@ -1,12 +1,12 @@
 package com.backend.labpoint.specification;
 
-import org.springframework.data.jpa.domain.Specification;
-
 import com.backend.labpoint.domain.space.Space;
 import com.backend.labpoint.domain.space.SpaceResource;
 import com.backend.labpoint.domain.space.SpaceSubject;
-
-import jakarta.persistence.criteria.*;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.Set;
 public class SpaceSpecification {
 
     public static Specification<Space> filters(String name, Integer capacity, Set<Integer> resources,
-            Set<Integer> subjects) {
+                                               Set<Integer> subjects) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -42,7 +42,7 @@ public class SpaceSpecification {
                         .where(spaceSubjectRoot.get("subject").get("id").in(subjects));
                 predicates.add(root.get("id").in(subjectSubquery));
             }
-            
+
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }

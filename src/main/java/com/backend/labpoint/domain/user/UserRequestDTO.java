@@ -13,6 +13,6 @@ public record UserRequestDTO(
         offset = offset < 0 ? 0 : offset;
         if (limit == null) limit = 20;
         limit = limit < 20 ? 20 :
-                limit > 50 ? 50: limit;
+                limit > 50 ? 50 : limit;
     }
 }

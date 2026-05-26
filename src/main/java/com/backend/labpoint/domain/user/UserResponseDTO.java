@@ -14,5 +14,5 @@ public record UserResponseDTO(
         int offset,
         int limit,
         int total
-        ) {
+) {
 }

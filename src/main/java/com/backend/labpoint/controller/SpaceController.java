@@ -2,8 +2,8 @@ package com.backend.labpoint.controller;
 
 import com.backend.labpoint.domain.error.ErroResponseDTO;
 import com.backend.labpoint.domain.space.*;
-import com.backend.labpoint.domain.subject.Subject;
 import com.backend.labpoint.service.SpaceService;
+import com.backend.labpoint.specification.SpaceSpecification;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,7 +14,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,26 +25,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.backend.labpoint.repository.ResourceRepository;
-import com.backend.labpoint.repository.SubjectRepository;
-import com.backend.labpoint.domain.resource.Resource;
-import com.backend.labpoint.specification.SpaceSpecification;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-
 @RestController
 @RequestMapping("/spaces")
 @Tag(name = "/spaces", description = "Endpoints para pesquisa de espaços")
 public class SpaceController {
     @Autowired
     private SpaceService spaceService;
-
-    @Autowired
-    private ResourceRepository resourceRepository;
-
-    @Autowired
-    private SubjectRepository subjectRepository;
 
     @Operation(summary = "Busca por laboratorios", description = "Retorna uma lista de laboratorios")
     @ApiResponses(value = {

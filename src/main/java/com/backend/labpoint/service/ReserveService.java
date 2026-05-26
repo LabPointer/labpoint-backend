@@ -7,13 +7,10 @@ import com.backend.labpoint.domain.user.User;
 import com.backend.labpoint.repository.ReserveRepository;
 import com.backend.labpoint.repository.SpacesRepository;
 import com.backend.labpoint.repository.UserRepository;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;

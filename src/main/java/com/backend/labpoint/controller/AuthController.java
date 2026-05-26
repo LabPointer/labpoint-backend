@@ -3,7 +3,6 @@ package com.backend.labpoint.controller;
 import com.backend.labpoint.domain.error.ErroResponseDTO;
 import com.backend.labpoint.domain.user.*;
 import com.backend.labpoint.infra.security.TokenService;
-import com.backend.labpoint.repository.UserRepository;
 import com.backend.labpoint.service.AuthService;
 import com.backend.labpoint.specification.AuthSpecification;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,14 +18,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,118 +39,118 @@ import java.util.List;
 @Tag(name = "/auth", description = "Endpoints para gerenciamento de autenticação")
 public class AuthController {
 
-        @Autowired
-        private AuthService authService;
+    @Autowired
+    private AuthService authService;
 
-        @Autowired
-        private AuthenticationManager authenticationManager;
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
-        @Autowired
-        private TokenService tokenService;
+    @Autowired
+    private TokenService tokenService;
 
-        @Value("${api.security.token.age}")
-        private int tokenMaxAge;
+    @Value("${api.security.token.age}")
+    private int tokenMaxAge;
 
-        @Operation(summary = "Login", description = "Realiza o login do usuário")
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Login realizado com sucesso", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserRequestDTO.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
-                        @ApiResponse(responseCode = "404", description = "Usuário nao encontrado", content = @Content)
-        })
-        @GetMapping("/users")
-        public ResponseEntity<List<UserResponseDTO>> getUsers(@RequestParam UserRequestDTO params) {
-                var spec = AuthSpecification.filters(params.username(), params.email(), params.registration(),
-                                params.role());
+    @Operation(summary = "Login", description = "Realiza o login do usuário")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login realizado com sucesso", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserRequestDTO.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
+            @ApiResponse(responseCode = "404", description = "Usuário nao encontrado", content = @Content)
+    })
+    @GetMapping("/users")
+    public ResponseEntity<List<UserResponseDTO>> getUsers(@RequestParam UserRequestDTO params) {
+        Specification<User> spec = AuthSpecification.filters(params.username(), params.email(), params.registration(),
+                params.role());
 
-                int offset = params.offset() != null ? params.offset() : 0;
-                int limit = params.limit() != null ? params.limit() : 10;
-                Pageable pageable = PageRequest.of(offset / limit, limit, Sort.by("registration").ascending());
+        int offset = params.offset() != null ? params.offset() : 0;
+        int limit = params.limit() != null ? params.limit() : 10;
+        Pageable pageable = PageRequest.of(offset / limit, limit, Sort.by("registration").ascending());
 
-                var users = authService.getUsers(spec, pageable);
+        List<User> users = authService.getUsers(spec, pageable);
 
-                // long total = authService.countUsers(spec);
-                int total = users.size();
+        // long total = authService.countUsers(spec);
+        int total = users.size();
 
-                if (users == null || users.isEmpty())
-                        return ResponseEntity.notFound().build();
+        if (users == null || users.isEmpty())
+            return ResponseEntity.notFound().build();
 
-                var userList = new ArrayList<UserResponseDTO>();
-                for (var u : users) {
-                        var user = new UserResponseDTO(u.getId(), u.getRegistration(), u.getUsername(), u.getEmail(),
-                                        u.getRole(), u.isEnabled(),
-                                        offset, limit, total);
-                        userList.add(user);
-                }
-
-                return ResponseEntity.ok(userList);
+        ArrayList<UserResponseDTO> userList = new ArrayList<UserResponseDTO>();
+        for (User u : users) {
+            UserResponseDTO user = new UserResponseDTO(u.getId(), u.getRegistration(), u.getUsername(), u.getEmail(),
+                    u.getRole(), u.isEnabled(),
+                    offset, limit, total);
+            userList.add(user);
         }
 
-        @Operation(summary = "Login", description = "Realiza o login do usuário")
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Login realizado com sucesso", content = @Content(schema = @Schema(implementation = LoginResponseDTO.class, requiredMode = Schema.RequiredMode.REQUIRED))),
-                        @ApiResponse(responseCode = "401", description = "Usuário ou senha incorretos", content = @Content)
-        })
-        @PostMapping("/login")
-        public ResponseEntity<LoginResponseDTO> postLogin(@RequestBody @Valid LoginRequestDTO data) {
-                var registrationPasswordAuthentication = new UsernamePasswordAuthenticationToken(data.registration(),
-                                data.password());
-                var auth = authenticationManager.authenticate(registrationPasswordAuthentication);
-                var user = (User) auth.getPrincipal();
-                var token = tokenService.generateToken(user);
+        return ResponseEntity.ok(userList);
+    }
 
-                var maxAge = Duration.ofHours(tokenMaxAge);
+    @Operation(summary = "Login", description = "Realiza o login do usuário")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login realizado com sucesso", content = @Content(schema = @Schema(implementation = LoginResponseDTO.class, requiredMode = Schema.RequiredMode.REQUIRED))),
+            @ApiResponse(responseCode = "401", description = "Usuário ou senha incorretos", content = @Content)
+    })
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponseDTO> postLogin(@RequestBody @Valid LoginRequestDTO data) {
+        UsernamePasswordAuthenticationToken registrationPasswordAuthentication = new UsernamePasswordAuthenticationToken(data.registration(),
+                data.password());
+        Authentication auth = authenticationManager.authenticate(registrationPasswordAuthentication);
+        User user = (User) auth.getPrincipal();
+        String token = tokenService.generateToken(user);
 
-                ResponseCookie jwtCookie = ResponseCookie
-                                .from("jwt-session", token)
-                                .httpOnly(true)
-                                .secure(false)
-                                .path("/")
-                                .sameSite("Lax")
-                                .secure(false)
-                                .maxAge(maxAge)
-                                .build();
+        Duration maxAge = Duration.ofHours(tokenMaxAge);
 
-                return ResponseEntity
-                                .ok()
-                                .header("Set-Cookie", jwtCookie.toString())
-                                .body(new LoginResponseDTO(user.getUsername(), user.getRole().toString(),
-                                                Instant.now().plus(maxAge).toEpochMilli()));
-        }
+        ResponseCookie jwtCookie = ResponseCookie
+                .from("jwt-session", token)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .sameSite("Lax")
+                .secure(false)
+                .maxAge(maxAge)
+                .build();
 
-        @Operation(summary = "Logout", description = "Realiza o logout do usuário")
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Logout realizado com sucesso")
-        })
-        @PostMapping("/logout")
-        public ResponseEntity<Void> PostLogout() {
-                ResponseCookie deleteCookie = ResponseCookie.from("jwt-session", "")
-                                .httpOnly(true)
-                                .secure(true)
-                                .path("/")
-                                .maxAge(0)
-                                .sameSite("Lax")
-                                .secure(false)
-                                .build();
+        return ResponseEntity
+                .ok()
+                .header("Set-Cookie", jwtCookie.toString())
+                .body(new LoginResponseDTO(user.getUsername(), user.getRole().toString(),
+                        Instant.now().plus(maxAge).toEpochMilli()));
+    }
 
-                return ResponseEntity.ok().header("Set-Cookie", deleteCookie.toString()).build();
-        }
+    @Operation(summary = "Logout", description = "Realiza o logout do usuário")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Logout realizado com sucesso")
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<Void> PostLogout() {
+        ResponseCookie deleteCookie = ResponseCookie.from("jwt-session", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .secure(false)
+                .build();
 
-        @Operation(summary = "Registra um novo usuário", description = "Registra um novo usuário no sistema")
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "201", description = "Usuário registrado com sucesso", content = @Content),
-                        @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
-        })
-        @PostMapping("/register")
-        public ResponseEntity<Object> postRegister(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid RegisterRequestDTO data) {
-                return authService.registerNewUser(userDetails, data);
-        }
+        return ResponseEntity.ok().header("Set-Cookie", deleteCookie.toString()).build();
+    }
 
-        @Operation(summary = "Atualiza as informações do usuario", description = "Atualiza as informações do usuario no sistema")
-        @ApiResponses(value = {
-                @ApiResponse(responseCode = "200", description = "Usuário registrado com sucesso", content = @Content(schema = @Schema(implementation = UserUpdateResponseDTO.class, requiredMode = Schema.RequiredMode.REQUIRED))),
-                @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
-        })
-        @PatchMapping("/update")
-        public ResponseEntity<Object> patchUpdate(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid UserUpdateRequestDTO data) {
-                return authService.updateUserInfo(userDetails, data);
-        }
+    @Operation(summary = "Registra um novo usuário", description = "Registra um novo usuário no sistema")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Usuário registrado com sucesso", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
+    })
+    @PostMapping("/register")
+    public ResponseEntity<Object> postRegister(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid RegisterRequestDTO data) {
+        return authService.registerNewUser(userDetails, data);
+    }
+
+    @Operation(summary = "Atualiza as informações do usuario", description = "Atualiza as informações do usuario no sistema")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuário registrado com sucesso", content = @Content(schema = @Schema(implementation = UserUpdateResponseDTO.class, requiredMode = Schema.RequiredMode.REQUIRED))),
+            @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
+    })
+    @PatchMapping("/update")
+    public ResponseEntity<Object> patchUpdate(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid UserUpdateRequestDTO data) {
+        return authService.updateUserInfo(userDetails, data);
+    }
 }

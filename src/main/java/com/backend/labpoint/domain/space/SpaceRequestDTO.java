@@ -1,10 +1,9 @@
 package com.backend.labpoint.domain.space;
 
-import org.springframework.data.repository.query.Param;
-
 import java.util.Set;
 
-public record SpaceRequestDTO(String name, Integer capacity, Set<Integer> resources, Set<Integer> subjects, Integer offset, Integer limit) {
+public record SpaceRequestDTO(String name, Integer capacity, Set<Integer> resources, Set<Integer> subjects,
+                              Integer offset, Integer limit) {
     public SpaceRequestDTO {
         if (name == null) name = "";
         if (resources == null) resources = Set.of();

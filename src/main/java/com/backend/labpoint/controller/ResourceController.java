@@ -12,21 +12,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -44,10 +36,10 @@ public class ResourceController {
     })
     @GetMapping
     public ResponseEntity<List<Resource>> getResources(@RequestParam(required = false) String name, @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
-        var limit = size == null ? 10 : size;
+        int limit = size == null ? 10 : size;
         if (limit > 50) limit = 50;
         if (limit < 10) limit = 10;
-        var offset = page == null ? 0 : (page - 1) * limit;
+        int offset = page == null ? 0 : (page - 1) * limit;
         if (offset < 0) offset = 0;
         Pageable pageable = PageRequest.of(offset, limit, Sort.by("name").ascending());
         var resources = name == null ? resourceRepository.findAll() : resourceRepository.findByNameLike(name, pageable);
@@ -63,7 +55,7 @@ public class ResourceController {
             @ApiResponse(responseCode = "400", description = "Erro ao criar recurso", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PostMapping("/create")
-    public ResponseEntity postCreateResource(@RequestBody @NotBlank String name) {
+    public ResponseEntity<Object> postCreateResource(@RequestBody @NotBlank String name) {
         if (resourceRepository.existsByName(name))
             return ResponseEntity.badRequest().body(new ErroResponseDTO("Recurso já existe"));
         Resource newResource = new Resource(null, name);

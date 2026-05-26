@@ -6,15 +6,15 @@ import com.backend.labpoint.domain.user.User;
 import com.backend.labpoint.domain.user.UserUpdateRequestDTO;
 import com.backend.labpoint.domain.user.UserUpdateResponseDTO;
 import com.backend.labpoint.repository.UserRepository;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 @Service
@@ -43,11 +43,11 @@ public class AuthService {
                     new ErroResponseDTO("Usuario ja registrado"));
         }
 
-        var encryptedPass = new BCryptPasswordEncoder().encode(data.password());
-        var user = new User(data.username(), data.email(), data.registration(), encryptedPass, data.role());
+        String encryptedPass = new BCryptPasswordEncoder().encode(data.password());
+        User user = new User(data.username(), data.email(), data.registration(), encryptedPass, data.role());
         if (
                 userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")) &&
-                data.enabled() != null
+                        data.enabled() != null
         ) {
             user.setEnabled(data.enabled());
         }
@@ -58,8 +58,8 @@ public class AuthService {
     }
 
     public ResponseEntity<Object> updateUserInfo(UserDetails userDetails, UserUpdateRequestDTO data) {
-        var currentUser = usersRepository.findByRegistration(userDetails.getUsername()).orElseThrow();
-        var isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        User currentUser = usersRepository.findByRegistration(userDetails.getUsername()).orElseThrow();
+        boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (isAdmin) {
             if (data.uuid() != null) {
                 if (currentUser.getId() == data.uuid())

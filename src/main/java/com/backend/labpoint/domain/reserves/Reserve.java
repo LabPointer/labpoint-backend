@@ -1,21 +1,18 @@
 package com.backend.labpoint.domain.reserves;
 
+import com.backend.labpoint.domain.space.Space;
+import com.backend.labpoint.domain.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.type.SqlTypes;
 
-import com.backend.labpoint.domain.space.Space;
-import com.backend.labpoint.domain.user.User;
-
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 

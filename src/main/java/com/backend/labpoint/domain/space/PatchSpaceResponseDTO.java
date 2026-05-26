@@ -1,8 +1,8 @@
 package com.backend.labpoint.domain.space;
 
-import java.util.List;
-
 import jakarta.validation.constraints.NotNull;
+
+import java.util.List;
 
 public record PatchSpaceResponseDTO(
         @NotNull Integer id,

@@ -1,12 +1,11 @@
 package com.backend.labpoint.repository;
 
-import java.util.Optional;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import com.backend.labpoint.domain.user.UserSubject;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
 
 @Repository
 public interface UserSubjectRepository extends JpaRepository<UserSubject, Long> {

@@ -1,5 +1,6 @@
 package com.backend.labpoint.domain.space;
 
+import com.backend.labpoint.domain.resource.Resource;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,8 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-
-import com.backend.labpoint.domain.resource.Resource;
 
 @Entity
 @Table(name = "space_resource")
