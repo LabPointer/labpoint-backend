@@ -7,9 +7,10 @@ import java.util.UUID;
 public record UserUpdateRequestDTO(
         UUID uuid,
         String registration,
+        String username,
         String email,
         String password,
-        String role,
+        UserRole role,
         Boolean enabled
         ) {
 }

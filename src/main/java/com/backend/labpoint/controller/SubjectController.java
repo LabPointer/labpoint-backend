@@ -69,7 +69,7 @@ public class SubjectController {
     @PostMapping("/create")
     public ResponseEntity createSubject(@RequestBody @NotBlank String name) {
         if (subjectRepository.existsByName(name))
-            return ResponseEntity.badRequest().body(new ErroResponseDTO(HttpStatus.BAD_REQUEST, "Subject already exists"));
+            return ResponseEntity.badRequest().body(new ErroResponseDTO("Subject already exists"));
         Subject subject = new Subject(null, name);
         subject = subjectRepository.save(subject);
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -88,7 +88,7 @@ public class SubjectController {
         var subject = subjectRepository.findById(id).orElseThrow();
 
         if (subjectRepository.existsByName(newName))
-            return ResponseEntity.badRequest().body(new ErroResponseDTO(HttpStatus.BAD_REQUEST, "Subject already exists"));
+            return ResponseEntity.badRequest().body(new ErroResponseDTO("Subject already exists"));
 
         subject.setName(newName);
         subject = subjectRepository.save(subject);

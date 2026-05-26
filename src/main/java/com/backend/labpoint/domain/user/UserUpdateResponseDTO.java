@@ -1,13 +1,15 @@
 package com.backend.labpoint.domain.user;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 
-public record RegisterRequestDTO(
-        @NotNull String username,
-        @NotNull @Email String email,
+import java.util.UUID;
+
+public record UserUpdateResponseDTO(
+        UUID id,
         @NotNull String registration,
-        @NotNull String password,
+        @NotNull String username,
+        @NotNull String email,
         @NotNull UserRole role,
         Boolean enabled) {
+
 }

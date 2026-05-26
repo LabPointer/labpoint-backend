@@ -105,9 +105,7 @@ public class SpaceController {
         var success = spaceService.createSpace(data.name(), data.description(), data.capacity(), data.resources(), data.subjects());
         if (!success) {
             return ResponseEntity.badRequest()
-                    .body(new ErroResponseDTO(
-                            HttpStatus.BAD_REQUEST,
-                            "Erro ao criar espaço, possivelmente já existe"));
+                    .body(new ErroResponseDTO("Erro ao criar espaço, possivelmente já existe"));
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -125,7 +123,7 @@ public class SpaceController {
             return ResponseEntity.ok(updatedSpace);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                    .body(new ErroResponseDTO(HttpStatus.BAD_REQUEST, e.getMessage()));
+                    .body(new ErroResponseDTO(e.getMessage()));
         }
     }
 

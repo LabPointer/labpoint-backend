@@ -51,6 +51,15 @@ public class User implements UserDetails {
         this.role = role;
     }
 
+    public User(String username, String email, String registration, String password, UserRole role, boolean enabled) {
+        this.username = username;
+        this.email = email;
+        this.registration = registration;
+        this.password = password;
+        this.role = role;
+        this.enabled = enabled;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         if (role == UserRole.OWNER) {

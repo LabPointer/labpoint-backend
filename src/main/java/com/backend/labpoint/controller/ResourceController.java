@@ -65,7 +65,7 @@ public class ResourceController {
     @PostMapping("/create")
     public ResponseEntity postCreateResource(@RequestBody @NotBlank String name) {
         if (resourceRepository.existsByName(name))
-            return ResponseEntity.badRequest().body(new ErroResponseDTO(HttpStatus.BAD_REQUEST, "Recurso já existe"));
+            return ResponseEntity.badRequest().body(new ErroResponseDTO("Recurso já existe"));
         Resource newResource = new Resource(null, name);
         resourceRepository.save(newResource);
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -85,7 +85,7 @@ public class ResourceController {
         var resource = resourceRepository.findById(id).orElseThrow();
 
         if (resourceRepository.existsByName(newName))
-            return ResponseEntity.badRequest().body(new ErroResponseDTO(HttpStatus.BAD_REQUEST, "Recurso já existe"));
+            return ResponseEntity.badRequest().body(new ErroResponseDTO("Recurso já existe"));
 
         resource.setName(newName);
         resource = resourceRepository.save(resource);

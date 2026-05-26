@@ -10,6 +10,9 @@ public record UserRequestDTO(
 ) {
     public UserRequestDTO {
         if (offset == null) offset = 0;
-        if (limit == null) limit = 10;
+        offset = offset < 0 ? 0 : offset;
+        if (limit == null) limit = 20;
+        limit = limit < 20 ? 20 :
+                limit > 50 ? 50: limit;
     }
 }
