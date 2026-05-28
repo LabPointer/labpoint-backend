@@ -1,0 +1,37 @@
+[
+  {
+    "name": "informatica 1",
+    "capacity": 20,
+    "resources": [
+      "computadores", "telão"
+    ]
+  },
+  {
+    "name": "informatica 2",
+    "capacity": 20,
+    "resources": [
+      "computadores", "telão"
+    ]
+  },
+  {
+    "name": "informatica 8",
+    "capacity": 30,
+    "resources": [
+      "computadores", "telão"
+    ]
+  },
+  {
+    "name": "quimica 1",
+    "capacity": 50,
+    "resources": [
+      "tubos de ensaio"
+    ]
+  },
+  {
+    "name": "auditorio",
+    "capacity": 150,
+    "resources": [
+      "telão"
+    ]
+  }
+]
