@@ -1,4 +1,4 @@
-package com.backend.labpoint.domain.reserves;
+package com.backend.labpoint.domain.reserve;
 
 import com.backend.labpoint.domain.space.Space;
 import com.backend.labpoint.domain.user.User;
@@ -39,6 +39,9 @@ public class Reserve {
     @Column(name = "schedule", nullable = false)
     private SchedulesEnum schedule;
 
+    @Column(name = "locked", nullable = false)
+    private boolean locked = false;
+
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "fk_user_id", nullable = false)
@@ -56,16 +59,3 @@ public class Reserve {
         this.space = space;
     }
 }
-
-/*
-@ElementCollection(targetClass = SchedulesEnum.class)
-    @Enumerated(EnumType.STRING)
-    @CollectionTable(name = "reserve_schedules", joinColumns = @JoinColumn(name = "reserve_id"))
-    @Column(name = "schedule")
-    private Set<SchedulesEnum> schedules;
-
-    @ManyToOne
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "fk_space_id", nullable = false)
-    private Spaces space;
-*/

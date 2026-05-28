@@ -8,6 +8,14 @@ CREATE TABLE "user" (
     enabled BOOLEAN DEFAULT false
 );
 
+CREATE TABLE reset_password_token (
+    id SERIAL PRIMARY KEY,
+    token varchar(64) NOT NULL,
+    expiry_date DATE NOT NULL,
+    fk_user_id UUID NOT NULL,
+    FOREIGN KEY (fk_user_id) REFERENCES "user"(id) ON DELETE CASCADE
+);
+
 CREATE TABLE subject(
     id SERIAL PRIMARY KEY NOT NULL,
     name varchar(32) NOT NULL UNIQUE
@@ -74,6 +82,7 @@ CREATE TABLE reserve(
     created_at timestamptz DEFAULT NOW(),
     reserved_date DATE NOT NULL,
     schedule schedule_enum NOT NULL,
+    locked BOOLEAN DEFAULT false,
     fk_user_id UUID NOT NULL,
     fk_space_id INT NOT NULL,
     FOREIGN KEY (fk_user_id) REFERENCES "user"(id) ON DELETE CASCADE,

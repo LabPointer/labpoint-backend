@@ -62,7 +62,7 @@ public class SubjectController {
         if (subjectRepository.existsByName(name))
             return ResponseEntity.badRequest().body(new ErroResponseDTO("Subject already exists"));
         Subject subject = new Subject(null, name);
-        subject = subjectRepository.save(subject);
+        subjectRepository.save(subject);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -29,14 +30,17 @@ public class AuthService {
     @Autowired
     private UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     public long countUsers(Specification<User> spec) {
         return userRepository.count(spec);
     }
 
+    @Transactional(readOnly = true)
     public List<User> getUsers(Specification<User> spec, Pageable pageable) {
         return userRepository.findAll(spec, pageable).getContent();
     }
 
+    @Transactional
     public ResponseEntity<Object> registerNewUser(UserDetails userDetails, RegisterRequestDTO data) {
         if (usersRepository.findByRegistration(data.registration()).isPresent()) {
             return ResponseEntity.badRequest().body(
@@ -46,7 +50,8 @@ public class AuthService {
         String encryptedPass = new BCryptPasswordEncoder().encode(data.password());
         User user = new User(data.username(), data.email(), data.registration(), encryptedPass, data.role());
         if (
-                userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")) &&
+                userDetails != null &&
+                        userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")) &&
                         data.enabled() != null
         ) {
             user.setEnabled(data.enabled());
@@ -57,6 +62,7 @@ public class AuthService {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    @Transactional
     public ResponseEntity<Object> updateUserInfo(UserDetails userDetails, UserUpdateRequestDTO data) {
         User currentUser = usersRepository.findByRegistration(userDetails.getUsername()).orElseThrow();
         boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));

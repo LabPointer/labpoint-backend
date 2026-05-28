@@ -91,7 +91,7 @@ public class ResourceController {
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity deleteResource(@PathVariable Integer id) {
+    public ResponseEntity<Object> deleteResource(@PathVariable Integer id) {
         if (!resourceRepository.existsById(id))
             return ResponseEntity.notFound().build();
 

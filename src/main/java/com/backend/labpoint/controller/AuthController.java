@@ -13,6 +13,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -152,5 +155,15 @@ public class AuthController {
     @PatchMapping("/update")
     public ResponseEntity<Object> patchUpdate(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid UserUpdateRequestDTO data) {
         return authService.updateUserInfo(userDetails, data);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Object> postResetPassword(@NotBlank @Email String email) {
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/update-password")
+    public ResponseEntity<Object> postUpdatePassword(@NotBlank String token, @NotBlank String password) {
+        return ResponseEntity.ok().build();
     }
 }
