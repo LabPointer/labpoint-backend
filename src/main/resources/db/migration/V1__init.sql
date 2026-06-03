@@ -1,10 +1,10 @@
-CREATE TABLE "user" (
+CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
-    username TEXT NOT NULL,
-    email TEXT NOT NULL,
-    registration TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL,
-    role TEXT NOT NULL,
+    username varchar(32) NOT NULL,
+    email varchar(320) NOT NULL,
+    registration varchar(16) NOT NULL UNIQUE,
+    password varchar(16) NOT NULL,
+    role varchar(16) NOT NULL,
     enabled BOOLEAN DEFAULT false
 );
 
@@ -13,7 +13,7 @@ CREATE TABLE reset_password_token (
     token varchar(64) NOT NULL,
     expiry_date DATE NOT NULL,
     fk_user_id UUID NOT NULL,
-    FOREIGN KEY (fk_user_id) REFERENCES "user"(id) ON DELETE CASCADE
+    FOREIGN KEY (fk_user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE subject(
@@ -25,7 +25,7 @@ CREATE TABLE user_subject(
     id SERIAL PRIMARY KEY NOT NULL,
     fk_user_id UUID NOT NULL,
     fk_subject_id INT NOT NULL,
-    FOREIGN KEY (fk_user_id) REFERENCES "user"(id) ON DELETE CASCADE,
+    FOREIGN KEY (fk_user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (fk_subject_id) REFERENCES subject(id) ON DELETE CASCADE,
     CONSTRAINT uq_user_subject UNIQUE (fk_user_id, fk_subject_id)
 );
@@ -33,7 +33,7 @@ CREATE TABLE user_subject(
 CREATE TABLE space(
     id SERIAL PRIMARY KEY NOT NULL,
     name varchar(32) UNIQUE NOT NULL,
-    description varchar(256),
+    description varchar(128),
     capacity INT NOT NULL
 );
 
@@ -85,7 +85,7 @@ CREATE TABLE reserve(
     locked BOOLEAN DEFAULT false,
     fk_user_id UUID NOT NULL,
     fk_space_id INT NOT NULL,
-    FOREIGN KEY (fk_user_id) REFERENCES "user"(id) ON DELETE CASCADE,
+    FOREIGN KEY (fk_user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (fk_space_id) REFERENCES space(id) ON DELETE CASCADE,
     CONSTRAINT uq_space_schedule UNIQUE (fk_space_id, schedule)
 );

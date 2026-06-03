@@ -1,22 +1,15 @@
 package com.backend.labpoint.domain.space;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
-public class SpacesResponseDTO {
-    private List<SpaceDTO> spaces;
+public record SpacesResponseDTO(
+    @NotEmpty List<SpaceDTO> spaces,
+    @NotNull int offset,
+    @NotNull int limit,
+    @NotNull int total
+) {
 
-    private Integer offset;
-
-    private Integer limit;
-
-    private Integer total;
 }

@@ -32,7 +32,7 @@ public class SpaceController {
     @Autowired
     private SpaceService spaceService;
 
-    @Operation(summary = "Busca por laboratorios", description = "Retorna uma lista de laboratorios")
+    @Operation(summary = "Buscar por laboratorios", description = "Retorna uma lista de laboratorios")
     @ApiResponses(value = {
             // @ApiResponse(responseCode = "200", description = "Laboratorios encontrados",
             // content = @Content(array = @ArraySchema(schema = @Schema(implementation =
@@ -63,28 +63,19 @@ public class SpaceController {
             List<SpaceResource> spaceResources = spaceService.getSpaceResourcesBySpaceId(space.getId());
             List<SpaceSubject> spaceSubjects = spaceService.getSpaceSubjectsBySpaceId(space.getId());
 
-            SpaceDTO spaceResponse = new SpaceDTO();
-            spaceResponse.setId(space.getId());
-            spaceResponse.setName(space.getName());
-            spaceResponse.setCapacity(space.getCapacity());
-            spaceResponse.setResources(spaceResources.stream()
-                    .map(sr -> sr.getResource().getName()).toList());
-            spaceResponse.setSubjects(spaceSubjects.stream()
-                    .map(ss -> ss.getSubject().getName()).toList());
+            List<Integer> resourceIds =  spaceResources.stream().map(SpaceResource::getId).toList();
+            List<Integer> subjectIds = spaceSubjects.stream().map(SpaceSubject::getId).toList();
+            SpaceDTO spaceResponse = new SpaceDTO(space.getId(), space.getName(), space.getCapacity(), resourceIds, subjectIds);
 
             spacesResponse.add(spaceResponse);
         }
 
-        SpacesResponseDTO response = new SpacesResponseDTO();
-        response.setSpaces(spacesResponse);
-        response.setOffset(params.offset());
-        response.setLimit(params.limit());
-        response.setTotal(total);
+        SpacesResponseDTO response = new SpacesResponseDTO(spacesResponse, params.offset() == null ? 0 : params.offset(), params.limit() == null ? 0 : params.limit(), total);
 
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Cria um novo espaço", description = "Cria um novo espaço no sistema")
+    @Operation(summary = "Criar um novo espaço", description = "Cria um novo espaço no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Espaço criado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Erro ao criar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
@@ -116,7 +107,7 @@ public class SpaceController {
         }
     }
 
-    @Operation(summary = "Deleta um espaço", description = "Deleta um espaço do sistema")
+    @Operation(summary = "Deletar um espaço", description = "Deleta um espaço do sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Espaço deletado com sucesso", content = @Content),
             @ApiResponse(responseCode = "404", description = "Espaço não encontrado", content = @Content)

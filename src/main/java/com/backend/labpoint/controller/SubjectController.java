@@ -30,7 +30,7 @@ public class SubjectController {
     @Autowired
     private SubjectRepository subjectRepository;
 
-    @Operation(summary = "Lista todas as matérias", description = "Lista todas as matérias cadastradas")
+    @Operation(summary = "Listar todas as matérias", description = "Lista todas as matérias cadastradas")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Matérias listadas com sucesso",
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = Subject.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
@@ -52,7 +52,7 @@ public class SubjectController {
         return ResponseEntity.ok(subjects);
     }
 
-    @Operation(summary = "Cria uma matéria", description = "Cria uma matéria no sistema")
+    @Operation(summary = "Criar uma matéria", description = "Cria uma matéria no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Matéria criada com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Erro ao criar matéria", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
@@ -66,7 +66,7 @@ public class SubjectController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Operation(summary = "Edita uma matéria", description = "Edita uma matéria no sistema")
+    @Operation(summary = "Editar uma matéria", description = "Edita uma matéria no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Matéria editada com sucesso", content = @Content(schema = @Schema(implementation = Subject.class, requiredMode = Schema.RequiredMode.REQUIRED))),
             @ApiResponse(responseCode = "400", description = "Erro ao editar matéria", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
@@ -87,7 +87,7 @@ public class SubjectController {
         return ResponseEntity.ok(subject);
     }
 
-    @Operation(summary = "Deleta uma matéria", description = "Deleta uma matéria no sistema")
+    @Operation(summary = "Deletar uma matéria", description = "Deleta uma matéria no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Matéria deletada com sucesso", content = @Content),
             @ApiResponse(responseCode = "404", description = "Matéria não encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))

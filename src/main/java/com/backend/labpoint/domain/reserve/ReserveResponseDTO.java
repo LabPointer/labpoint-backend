@@ -6,5 +6,10 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.util.List;
 
-public record ReserveResponseDTO(@NotNull LocalDate reservedDate, @NotEmpty List<Reserve> reserves) {
+import io.swagger.v3.oas.annotations.media.Schema;
+
+public record ReserveResponseDTO(
+    @NotNull LocalDate reservedDate,
+
+    @NotEmpty List<Reserve> reserves) {
 }

@@ -34,7 +34,7 @@ public class ReserveController {
     @Autowired
     private ReserveService reserveService;
 
-    @Operation(summary = "Busca reservas por espaço e data", description = "Retorna uma lista de reservas para um determinado espaço em uma data específica")
+    @Operation(summary = "Buscar reservas por espaço e data", description = "Retorna uma lista de reservas para um determinado espaço em uma data específica")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de reservas encontrada", content = @Content(array = @ArraySchema(schema = @Schema(implementation = ReserveResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))),
             @ApiResponse(responseCode = "404", description = "Nenhuma reserva encontrada", content = @Content)
@@ -44,7 +44,7 @@ public class ReserveController {
         return reserveService.findReserves(params.yearMonth(), params.spaceName(), params.username(), params.registration());
     }
 
-    @Operation(summary = "Busca reservas por espaço e data", description = "Retorna uma lista de reservas para um determinado espaço em uma data específica")
+    @Operation(summary = "Buscar reservas por espaço e data", description = "Retorna uma lista de reservas para um determinado espaço em uma data específica")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de reservas encontrada", content = @Content(array = @ArraySchema(schema = @Schema(implementation = ReserveResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))),
             @ApiResponse(responseCode = "404", description = "Nenhuma reserva encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
@@ -54,7 +54,7 @@ public class ReserveController {
         return reserveService.findReservesBySpace(spaceId, dates);
     }
 
-    @Operation(summary = "Cria uma nova reserva", description = "Cria uma reserva para um espaço específico na data e horários fornecidos")
+    @Operation(summary = "Criar uma nova reserva", description = "Criar uma reserva para um espaço específico na data e horários fornecidos")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Reserva criada com sucesso", content = @Content),
             @ApiResponse(responseCode = "404", description = "Espaço não encontrado ou erro na criação da reserva", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
@@ -70,7 +70,7 @@ public class ReserveController {
         return reserveService.createReserve(user, spaceId, data);
     }
 
-    @Operation(summary = "Atualiza as informações da reserva", description = "Atualiza as informações da reserva")
+    @Operation(summary = "Atualizar as informações da reserva", description = "Atualiza as informações da reserva")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Reserva(s) deletadas com sucesso", content = @Content(schema = @Schema(implementation = Reserve.class, requiredMode = RequiredMode.REQUIRED))),
             @ApiResponse(responseCode = "404", description = "Reserva(s) nao encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
@@ -83,7 +83,7 @@ public class ReserveController {
         return reserveService.updateReserve(user, reserveId, data);
     }
 
-    @Operation(summary = "Deleta um conjunto de reservas", description = "Deleta/cancela um conjunto de reservas do sistema")
+    @Operation(summary = "Deletar um conjunto de reservas", description = "Deleta/cancela um conjunto de reservas do sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Reserva(s) deletadas com sucesso", content = @Content),
             @ApiResponse(responseCode = "404", description = "Reserva(s) nao encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))

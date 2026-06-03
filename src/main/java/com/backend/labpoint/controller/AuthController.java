@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -54,13 +55,13 @@ public class AuthController {
     @Value("${api.security.token.age}")
     private int tokenMaxAge;
 
-    @Operation(summary = "Login", description = "Realiza o login do usuário")
+    @Operation(summary = "Pesquisar por usuarios", description = "Filtra e retorna usuarios encontrados. OBS: A rota funciona apenas para admins")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Login realizado com sucesso", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserRequestDTO.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
+            @ApiResponse(responseCode = "200", description = "Retorna lista de usuarios encontrados", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserRequestDTO.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
             @ApiResponse(responseCode = "404", description = "Usuário nao encontrado", content = @Content)
     })
     @GetMapping("/users")
-    public ResponseEntity<List<UserResponseDTO>> getUsers(@RequestParam UserRequestDTO params) {
+    public ResponseEntity<List<UserResponseDTO>> getUsers(@ParameterObject UserRequestDTO params) {
         Specification<User> spec = AuthSpecification.filters(params.username(), params.email(), params.registration(),
                 params.role());
 
@@ -87,7 +88,7 @@ public class AuthController {
         return ResponseEntity.ok(userList);
     }
 
-    @Operation(summary = "Login", description = "Realiza o login do usuário")
+    @Operation(summary = "Realizar login", description = "Realiza o login do usuário")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Login realizado com sucesso", content = @Content(schema = @Schema(implementation = LoginResponseDTO.class, requiredMode = Schema.RequiredMode.REQUIRED))),
             @ApiResponse(responseCode = "401", description = "Usuário ou senha incorretos", content = @Content)
@@ -119,7 +120,7 @@ public class AuthController {
                         Instant.now().plus(maxAge).toEpochMilli()));
     }
 
-    @Operation(summary = "Logout", description = "Realiza o logout do usuário")
+    @Operation(summary = "Realizar logout", description = "Realiza o logout do usuário")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Logout realizado com sucesso")
     })
@@ -137,7 +138,7 @@ public class AuthController {
         return ResponseEntity.ok().header("Set-Cookie", deleteCookie.toString()).build();
     }
 
-    @Operation(summary = "Registra um novo usuário", description = "Registra um novo usuário no sistema")
+    @Operation(summary = "Registrar um novo usuário", description = "Registra um novo usuário no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Usuário registrado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
@@ -147,7 +148,7 @@ public class AuthController {
         return authService.registerNewUser(userDetails, data);
     }
 
-    @Operation(summary = "Atualiza as informações do usuario", description = "Atualiza as informações do usuario no sistema")
+    @Operation(summary = "Atualizar as informações do usuario", description = "Atualiza as informações do usuario no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Usuário registrado com sucesso", content = @Content(schema = @Schema(implementation = UserUpdateResponseDTO.class, requiredMode = Schema.RequiredMode.REQUIRED))),
             @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))

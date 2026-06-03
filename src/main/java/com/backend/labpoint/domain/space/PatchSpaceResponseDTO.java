@@ -1,13 +1,14 @@
 package com.backend.labpoint.domain.space;
 
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
 public record PatchSpaceResponseDTO(
-        @NotNull Integer id,
-        @NotNull String name,
-        @NotNull Integer capacity,
-        List<String> resources,
-        List<String> subjects) {
+        @NotNull int id,
+        @NotEmpty String name,
+        int capacity,
+        List<Integer> resources,
+        List<Integer> subjects) {
 }

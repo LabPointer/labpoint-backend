@@ -51,7 +51,7 @@ public class SpaceService {
     }
 
     @Transactional
-    public boolean createSpace(String name, String description, int capacity, Set<String> resources, Set<String> subjects) {
+    public boolean createSpace(String name, String description, int capacity, Set<Integer> resources, Set<Integer> subjects) {
         boolean hasSpace = spaceRepository.existsByName(name);
         if (hasSpace) return false;
 
@@ -59,25 +59,14 @@ public class SpaceService {
         newSpace = spaceRepository.save(newSpace);
 
         for (var r : resources) {
-            boolean hasResource = resourceRepository.existsByName(r);
-            Resource resource = null;
-            if (!hasResource) {
-                resource = resourceRepository.save(new Resource(r));
-            } else {
-                resource = resourceRepository.findByName(r).getFirst();
-            }
+            Resource resource = resourceRepository.findById(r).orElseThrow(() -> new IllegalArgumentException("Recurso nao encontrado"));
 
             SpaceResource spaceResource = new SpaceResource(newSpace, resource);
             spaceResourceRepository.save(spaceResource);
         }
         for (var s : subjects) {
-            boolean hasSubject = subjectRepository.existsByName(s);
-            Subject subject = null;
-            if (!hasSubject) {
-                subject = subjectRepository.save(new Subject(s));
-            } else {
-                subject = subjectRepository.findByName(s).getFirst();
-            }
+            Subject subject = subjectRepository.findById(s).orElseThrow(() -> new IllegalArgumentException("Materia nao encontrado"));
+
             SpaceSubject spaceSubject = new SpaceSubject(newSpace, subject);
             spaceSubjectRepository.save(spaceSubject);
         }
@@ -116,9 +105,8 @@ public class SpaceService {
         }
 
         // Add new resource links
-        for (String resourceName : dto.resources()) {
-            Resource resource = resourceRepository.findByName(resourceName).stream().findFirst()
-                    .orElseGet(() -> resourceRepository.save(new Resource(null, resourceName)));
+        for (Integer resourceId : dto.resources()) {
+            Resource resource = resourceRepository.findById(resourceId).orElseThrow();
             SpaceResource spaceResource = new SpaceResource();
             spaceResource.setResource(resource);
             spaceResource.setSpace(space);
@@ -126,9 +114,8 @@ public class SpaceService {
         }
 
         // Add new subject links
-        for (String subjectName : dto.subjects()) {
-            Subject subject = subjectRepository.findByName(subjectName).stream().findFirst()
-                    .orElseGet(() -> subjectRepository.save(new Subject(null, subjectName)));
+        for (Integer subjectId : dto.subjects()) {
+            Subject subject = subjectRepository.findById(subjectId).orElseThrow(() -> new IllegalArgumentException("Materia  nao encontrado"));
             SpaceSubject spaceSubject = new SpaceSubject();
             spaceSubject.setSubject(subject);
             spaceSubject.setSpace(space);

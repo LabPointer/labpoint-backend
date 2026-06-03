@@ -7,19 +7,13 @@ import lombok.Setter;
 
 import java.util.List;
 
-@Getter
-@Setter
-public class SpaceDTO {
+public record SpaceDTO(
     @NotNull
-    private Integer id;
-
+    int id,
     @NotBlank
-    private String name;
-
+    String name,
     @NotNull
-    private Integer capacity;
-
-    private List<String> resources;
-
-    private List<String> subjects;
-}
+    int capacity,
+    List<Integer> resources,
+    List<Integer> subjects
+){}

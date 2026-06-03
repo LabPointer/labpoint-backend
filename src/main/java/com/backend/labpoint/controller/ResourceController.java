@@ -29,7 +29,7 @@ public class ResourceController {
     @Autowired
     private ResourceRepository resourceRepository;
 
-    @Operation(summary = "Busca por recursos", description = "Retorna uma lista de recursos. Destinado ao autocomplete.")
+    @Operation(summary = "Buscar por recursos", description = "Retorna uma lista de recursos. Destinado ao autocomplete.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Recursos encontrados", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Resource.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
             @ApiResponse(responseCode = "404", description = "Nenhum recurso encontrado", content = @Content)
@@ -49,7 +49,7 @@ public class ResourceController {
         return ResponseEntity.ok().body(resources);
     }
 
-    @Operation(summary = "Cria um recurso", description = "Cria um recurso no sistema")
+    @Operation(summary = "Criar um recurso", description = "Cria um recurso no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Erro ao criar recurso", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
@@ -63,7 +63,7 @@ public class ResourceController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Operation(summary = "Edita um recurso", description = "Edita um recurso no sistema")
+    @Operation(summary = "Editar um recurso", description = "Edita um recurso no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Recurso editado com sucesso", content = @Content(schema = @Schema(implementation = Resource.class, requiredMode = Schema.RequiredMode.REQUIRED))),
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class))),
@@ -85,7 +85,7 @@ public class ResourceController {
         return ResponseEntity.ok(resource);
     }
 
-    @Operation(summary = "Deleta um recurso", description = "Deleta um recurso no sistema")
+    @Operation(summary = "Deletar um recurso", description = "Deleta um recurso no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Recurso deletado com sucesso", content = @Content),
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
