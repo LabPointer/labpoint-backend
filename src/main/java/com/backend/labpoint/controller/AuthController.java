@@ -2,6 +2,7 @@ package com.backend.labpoint.controller;
 
 import com.backend.labpoint.domain.error.ErroResponseDTO;
 import com.backend.labpoint.domain.user.*;
+import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.infra.security.TokenService;
 import com.backend.labpoint.service.AuthService;
 import com.backend.labpoint.specification.AuthSpecification;
@@ -74,9 +75,6 @@ public class AuthController {
         // long total = authService.countUsers(spec);
         int total = users.size();
 
-        if (users == null || users.isEmpty())
-            return ResponseEntity.notFound().build();
-
         ArrayList<UserResponseDTO> userList = new ArrayList<UserResponseDTO>();
         for (User u : users) {
             UserResponseDTO user = new UserResponseDTO(u.getId(), u.getRegistration(), u.getUsername(), u.getEmail(),
@@ -99,6 +97,8 @@ public class AuthController {
                 data.password());
         Authentication auth = authenticationManager.authenticate(registrationPasswordAuthentication);
         User user = (User) auth.getPrincipal();
+        if (user == null)
+            throw new ResourceNotFoundException("Usuario nao encontrado");
         String token = tokenService.generateToken(user);
 
         Duration maxAge = Duration.ofHours(tokenMaxAge);
@@ -144,7 +144,7 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PostMapping("/register")
-    public ResponseEntity<Object> postRegister(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid RegisterRequestDTO data) {
+    public ResponseEntity<?> postRegister(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid RegisterRequestDTO data) {
         return authService.registerNewUser(userDetails, data);
     }
 
@@ -154,17 +154,17 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update")
-    public ResponseEntity<Object> patchUpdate(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid UserUpdateRequestDTO data) {
+    public ResponseEntity<?> patchUpdate(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid UserUpdateRequestDTO data) {
         return authService.updateUserInfo(userDetails, data);
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<Object> postResetPassword(@NotBlank @Email String email) {
+    public ResponseEntity<?> postResetPassword(@NotBlank @Email String email) {
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/update-password")
-    public ResponseEntity<Object> postUpdatePassword(@NotBlank String token, @NotBlank String password) {
+    public ResponseEntity<?> postUpdatePassword(@NotBlank String token, @NotBlank String password) {
         return ResponseEntity.ok().build();
     }
 }

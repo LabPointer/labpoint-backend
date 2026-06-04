@@ -3,6 +3,8 @@ package com.backend.labpoint.service;
 import com.backend.labpoint.domain.resource.Resource;
 import com.backend.labpoint.domain.space.*;
 import com.backend.labpoint.domain.subject.Subject;
+import com.backend.labpoint.exception.BadRequestException;
+import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -51,27 +53,26 @@ public class SpaceService {
     }
 
     @Transactional
-    public boolean createSpace(String name, String description, int capacity, Set<Integer> resources, Set<Integer> subjects) {
+    public void createSpace(String name, String description, int capacity, Set<Integer> resources, Set<Integer> subjects) {
         boolean hasSpace = spaceRepository.existsByName(name);
-        if (hasSpace) return false;
+        if (hasSpace)
+            throw new BadRequestException("Espaço ja existe");
 
         Space newSpace = new Space(name, description, capacity);
         newSpace = spaceRepository.save(newSpace);
 
         for (var r : resources) {
-            Resource resource = resourceRepository.findById(r).orElseThrow(() -> new IllegalArgumentException("Recurso nao encontrado"));
+            Resource resource = resourceRepository.findById(r).orElseThrow(() -> new ResourceNotFoundException("Recurso nao encontrado"));
 
             SpaceResource spaceResource = new SpaceResource(newSpace, resource);
             spaceResourceRepository.save(spaceResource);
         }
         for (var s : subjects) {
-            Subject subject = subjectRepository.findById(s).orElseThrow(() -> new IllegalArgumentException("Materia nao encontrado"));
+            Subject subject = subjectRepository.findById(s).orElseThrow(() -> new ResourceNotFoundException("Materia nao encontrada"));
 
             SpaceSubject spaceSubject = new SpaceSubject(newSpace, subject);
             spaceSubjectRepository.save(spaceSubject);
         }
-
-        return true;
     }
 
     @Transactional
@@ -87,8 +88,8 @@ public class SpaceService {
     @Transactional
     public PatchSpaceResponseDTO updateSpace(Integer id, PatchSpaceRequestDTO dto) {
         if (spaceRepository.existsByName(dto.name()))
-            throw new IllegalArgumentException("Nome ja existe em outro espaço");
-        Space space = spaceRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Espaço nao encontrado"));
+            throw new BadRequestException("Nome do espaço ja existe");
+        Space space = spaceRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Espaço nao encontrado"));
 
         // Update core fields
         space.setName(dto.name());
@@ -96,28 +97,30 @@ public class SpaceService {
 
         // Remove existing associations
         List<SpaceResource> oldResources = spaceResourceRepository.findSpaceResourceBySpaceId(id);
-        if (!oldResources.isEmpty()) {
+        if (!oldResources.isEmpty())
             spaceResourceRepository.deleteAll(oldResources);
-        }
         List<SpaceSubject> oldSubjects = spaceSubjectRepository.findSpaceSubjectBySpaceId(id);
-        if (!oldSubjects.isEmpty()) {
+        if (!oldSubjects.isEmpty())
             spaceSubjectRepository.deleteAll(oldSubjects);
-        }
 
         // Add new resource links
-        for (Integer resourceId : dto.resources()) {
-            Resource resource = resourceRepository.findById(resourceId).orElseThrow();
+        List<Resource> resources = resourceRepository.findAllById(dto.resources());
+        if (resources.isEmpty())
+            throw new ResourceNotFoundException("Recurso(s) nao encontrado(s)");
+        List<Subject> subjects = subjectRepository.findAllById(dto.resources());
+        if (subjects.isEmpty())
+            throw new ResourceNotFoundException("Materia(s) nao encontrada(s)");
+        for (Resource r : resources) {
             SpaceResource spaceResource = new SpaceResource();
-            spaceResource.setResource(resource);
+            spaceResource.setResource(r);
             spaceResource.setSpace(space);
             createSpaceResource(spaceResource);
         }
 
         // Add new subject links
-        for (Integer subjectId : dto.subjects()) {
-            Subject subject = subjectRepository.findById(subjectId).orElseThrow(() -> new IllegalArgumentException("Materia  nao encontrado"));
+        for (Subject s : subjects) {
             SpaceSubject spaceSubject = new SpaceSubject();
-            spaceSubject.setSubject(subject);
+            spaceSubject.setSubject(s);
             spaceSubject.setSpace(space);
             createSpaceSubject(spaceSubject);
         }
@@ -126,9 +129,10 @@ public class SpaceService {
     }
 
     @Transactional
-    public boolean deleteSpace(Integer id) {
-        Space space = spaceRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Espaço nao encontrado"));
-        spaceRepository.delete(space);
-        return true;
+    public void deleteSpaces(Set<Integer> ids) {
+        List<Space> spaces = spaceRepository.findByIds(ids.stream().toList());
+        if (spaces.isEmpty())
+            throw new ResourceNotFoundException("Espaço(s) nao encontrado(s)");
+        spaceRepository.deleteAll(spaces);
     }
 }

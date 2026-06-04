@@ -10,6 +10,9 @@ import java.util.List;
 
 @Repository
 public interface ResourceRepository extends JpaRepository<Resource, Integer> {
+    @Query("SELECT r FROM Resource r WHERE r.id in :ids")
+    List<Resource> findByIds(List<Integer> ids);
+
     List<Resource> findByName(String name);
 
     Boolean existsByName(String name);

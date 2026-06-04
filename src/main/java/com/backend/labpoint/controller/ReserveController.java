@@ -40,7 +40,7 @@ public class ReserveController {
             @ApiResponse(responseCode = "404", description = "Nenhuma reserva encontrada", content = @Content)
     })
     @GetMapping
-    public ResponseEntity<Object> getReserves(@ParameterObject ReserveRequestDTO params) {
+    public ResponseEntity<?> getReserves(@ParameterObject ReserveRequestDTO params) {
         return reserveService.findReserves(params.yearMonth(), params.spaceName(), params.username(), params.registration());
     }
 
@@ -50,7 +50,7 @@ public class ReserveController {
             @ApiResponse(responseCode = "404", description = "Nenhuma reserva encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @GetMapping("/find/{spaceId}")
-    public ResponseEntity<Object> getReservesFromSpace(@PathVariable Integer spaceId, @Param("dates") @NotEmpty Set<LocalDate> dates) {
+    public ResponseEntity<?> getReservesFromSpace(@PathVariable Integer spaceId, @Param("dates") @NotEmpty Set<LocalDate> dates) {
         return reserveService.findReservesBySpace(spaceId, dates);
     }
 
@@ -61,7 +61,7 @@ public class ReserveController {
             @ApiResponse(responseCode = "403", description = "Usuario nao é administrador", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @PostMapping("/create/{spaceId}")
-    public ResponseEntity<Object> postCreateReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer spaceId, @RequestBody CreateReserveRequestDTO data) {
+    public ResponseEntity<?> postCreateReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer spaceId, @RequestBody CreateReserveRequestDTO data) {
         String registration = userDetails.getUsername();
         if (data.lock() != null && userDetails.getAuthorities().stream().anyMatch(a -> Objects.equals(a.getAuthority(), "ROLE_ADMIN"))) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO("Usuario precisa ser admin para bloquear reservas"));
@@ -77,7 +77,7 @@ public class ReserveController {
             @ApiResponse(responseCode = "403", description = "Usuario nao é administrador e tentou alterar a reserva de outro usuario", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @PatchMapping("/update/{reserveId}")
-    public ResponseEntity<Object> updateReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer reserveId, @RequestBody UpdateReserveRequestDTO data) {
+    public ResponseEntity<?> updateReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer reserveId, @RequestBody UpdateReserveRequestDTO data) {
         String registration = userDetails.getUsername();
         User user = reserveService.findUserByRegistration(registration);
         return reserveService.updateReserve(user, reserveId, data);
@@ -89,7 +89,7 @@ public class ReserveController {
             @ApiResponse(responseCode = "404", description = "Reserva(s) nao encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @DeleteMapping("/delete")
-    public ResponseEntity<Object> deleteReserve(@AuthenticationPrincipal UserDetails userDetails, @RequestBody DeleteReserveRequestDTO data) {
+    public ResponseEntity<?> deleteReserve(@AuthenticationPrincipal UserDetails userDetails, @RequestBody DeleteReserveRequestDTO data) {
         String registration = userDetails.getUsername();
         User user = reserveService.findUserByRegistration(registration);
         return reserveService.deleteReserve(user, data.reserveIds());

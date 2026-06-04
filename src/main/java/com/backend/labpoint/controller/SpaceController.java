@@ -2,6 +2,7 @@ package com.backend.labpoint.controller;
 
 import com.backend.labpoint.domain.error.ErroResponseDTO;
 import com.backend.labpoint.domain.space.*;
+import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.service.SpaceService;
 import com.backend.labpoint.specification.SpaceSpecification;
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,14 +57,14 @@ public class SpaceController {
 
         List<Space> spaces = spaceService.getSpaces(spec, pageable);
         if (spaces == null || spaces.isEmpty())
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Espaço(s) nao encontrado(s)");
 
         List<SpaceDTO> spacesResponse = new ArrayList<>();
         for (Space space : spaces) {
             List<SpaceResource> spaceResources = spaceService.getSpaceResourcesBySpaceId(space.getId());
             List<SpaceSubject> spaceSubjects = spaceService.getSpaceSubjectsBySpaceId(space.getId());
 
-            List<Integer> resourceIds =  spaceResources.stream().map(SpaceResource::getId).toList();
+            List<Integer> resourceIds = spaceResources.stream().map(SpaceResource::getId).toList();
             List<Integer> subjectIds = spaceSubjects.stream().map(SpaceSubject::getId).toList();
             SpaceDTO spaceResponse = new SpaceDTO(space.getId(), space.getName(), space.getCapacity(), resourceIds, subjectIds);
 
@@ -81,12 +82,8 @@ public class SpaceController {
             @ApiResponse(responseCode = "400", description = "Erro ao criar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PostMapping("/create")
-    public ResponseEntity<ErroResponseDTO> postCreateSpace(@RequestBody @Valid CreateSpaceRequestDTO data) {
-        var success = spaceService.createSpace(data.name(), data.description(), data.capacity(), data.resources(), data.subjects());
-        if (!success) {
-            return ResponseEntity.badRequest()
-                    .body(new ErroResponseDTO("Erro ao criar espaço, possivelmente já existe"));
-        }
+    public ResponseEntity<?> postCreateSpace(@RequestBody @Valid CreateSpaceRequestDTO data) {
+        spaceService.createSpace(data.name(), data.description(), data.capacity(), data.resources(), data.subjects());
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -97,14 +94,9 @@ public class SpaceController {
             @ApiResponse(responseCode = "400", description = "Erro ao editar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update/{id}")
-    public ResponseEntity<Object> patchSpace(@PathVariable Integer id, @RequestBody @Valid PatchSpaceRequestDTO data) {
-        try {
-            var updatedSpace = spaceService.updateSpace(id, data);
-            return ResponseEntity.ok(updatedSpace);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest()
-                    .body(new ErroResponseDTO(e.getMessage()));
-        }
+    public ResponseEntity<?> patchSpace(@PathVariable Integer id, @RequestBody @Valid PatchSpaceRequestDTO data) {
+        var updatedSpace = spaceService.updateSpace(id, data);
+        return ResponseEntity.ok(updatedSpace);
     }
 
     @Operation(summary = "Deletar um espaço", description = "Deleta um espaço do sistema")
@@ -112,10 +104,9 @@ public class SpaceController {
             @ApiResponse(responseCode = "204", description = "Espaço deletado com sucesso", content = @Content),
             @ApiResponse(responseCode = "404", description = "Espaço não encontrado", content = @Content)
     })
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> deleteSpace(@PathVariable Integer id) {
-        if (spaceService.deleteSpace(id))
-            return ResponseEntity.notFound().build();
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteSpace(@RequestBody DeleteSpaceDTO data) {
+        spaceService.deleteSpaces(data.spaceIds());
 
         return ResponseEntity.noContent().build();
     }
