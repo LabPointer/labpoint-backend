@@ -3,7 +3,7 @@ CREATE TABLE users (
     username varchar(32) NOT NULL,
     email varchar(320) NOT NULL,
     registration varchar(16) NOT NULL UNIQUE,
-    password varchar(16) NOT NULL,
+    password TEXT NOT NULL,
     role varchar(16) NOT NULL,
     enabled BOOLEAN DEFAULT false
 );
