@@ -64,8 +64,8 @@ public class SpaceController {
             List<SpaceResource> spaceResources = spaceService.getSpaceResourcesBySpaceId(space.getId());
             List<SpaceSubject> spaceSubjects = spaceService.getSpaceSubjectsBySpaceId(space.getId());
 
-            List<Integer> resourceIds = spaceResources.stream().map(SpaceResource::getId).toList();
-            List<Integer> subjectIds = spaceSubjects.stream().map(SpaceSubject::getId).toList();
+            List<Integer> resourceIds = spaceResources.stream().map(sr -> sr.getResource().getId()).toList();
+            List<Integer> subjectIds = spaceSubjects.stream().map(ss -> ss.getSubject().getId()).toList();
             SpaceDTO spaceResponse = new SpaceDTO(space.getId(), space.getName(), space.getCapacity(), resourceIds, subjectIds);
 
             spacesResponse.add(spaceResponse);
