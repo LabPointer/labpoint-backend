@@ -1,10 +1,12 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.domain.error.ErroResponseDTO;
 import com.backend.labpoint.domain.user.RegisterRequestDTO;
 import com.backend.labpoint.domain.user.User;
 import com.backend.labpoint.domain.user.UserUpdateRequestDTO;
 import com.backend.labpoint.domain.user.UserUpdateResponseDTO;
+import com.backend.labpoint.exception.BadRequestException;
+import com.backend.labpoint.exception.ForbiddenException;
+import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -37,14 +39,16 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public List<User> getUsers(Specification<User> spec, Pageable pageable) {
-        return userRepository.findAll(spec, pageable).getContent();
+        List<User> users = userRepository.findAll(spec, pageable).getContent();
+        if (users == null || users.isEmpty())
+            throw new RuntimeException("Nenhum usuario encontrado");
+        return users;
     }
 
     @Transactional
-    public ResponseEntity<Object> registerNewUser(UserDetails userDetails, RegisterRequestDTO data) {
+    public ResponseEntity<?> registerNewUser(UserDetails userDetails, RegisterRequestDTO data) {
         if (usersRepository.findByRegistration(data.registration()).isPresent()) {
-            return ResponseEntity.badRequest().body(
-                    new ErroResponseDTO("Usuario ja registrado"));
+            throw new BadRequestException("Usuario ja existe");
         }
 
         String encryptedPass = new BCryptPasswordEncoder().encode(data.password());
@@ -63,18 +67,18 @@ public class AuthService {
     }
 
     @Transactional
-    public ResponseEntity<Object> updateUserInfo(UserDetails userDetails, UserUpdateRequestDTO data) {
+    public ResponseEntity<?> updateUserInfo(UserDetails userDetails, UserUpdateRequestDTO data) {
         User currentUser = usersRepository.findByRegistration(userDetails.getUsername()).orElseThrow();
         boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (isAdmin) {
             if (data.uuid() != null) {
                 if (currentUser.getId() == data.uuid())
-                    return ResponseEntity.badRequest().body(new ErroResponseDTO("id do corpo da requisição não deve ser igual ao do usuario"));
+                    throw new BadRequestException("id do corpo(body) da requisição não deve ser igual ao do usuario");
 
-                if (usersRepository.findByRegistration(data.registration()).isPresent())
-                    return ResponseEntity.badRequest().body(new ErroResponseDTO("Matricula ja registrada"));
+                if (!usersRepository.findByRegistration(data.registration()).isPresent())
+                    throw new BadRequestException("Matricula ja registrada");
 
-                var anotherUser = usersRepository.findById(data.uuid()).orElseThrow();
+                var anotherUser = usersRepository.findById(data.uuid()).orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado"));
                 if (data.registration() != null && !data.registration().isBlank())
                     anotherUser.setRegistration(data.registration());
                 if (data.username() != null && !data.username().isBlank())
@@ -93,11 +97,11 @@ public class AuthService {
                 return ResponseEntity.ok(new UserUpdateResponseDTO(anotherUser.getId(), anotherUser.getRegistration(), anotherUser.getUsername(), anotherUser.getEmail(), anotherUser.getRole(), anotherUser.isEnabled()));
             } else {
                 if (data.password() != null && !data.password().isBlank())
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO("Usuario nao pode alterar a propria senha"));
+                    throw new BadRequestException("Usuario nao pode alterar a propria senha por essa rota");
 
                 if (data.registration() != null && !data.registration().isBlank()) {
                     if (usersRepository.findByRegistration(data.registration()).isPresent())
-                        return ResponseEntity.badRequest().body(new ErroResponseDTO("Matricula ja registrada"));
+                        throw new BadRequestException("Matricula ja registrada");
                     currentUser.setRegistration(data.registration());
                 }
                 if (data.email() != null && !data.email().isBlank())
@@ -115,16 +119,16 @@ public class AuthService {
             }
         } else {
             if (data.uuid() != null)
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO("Usuario precisa ser admin para editar contas de outros usuarios"));
+                throw new ForbiddenException("Usuario precisa ser admin para editar contas de outros usuarios");
 
             if (data.registration() != null)
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO("Usuario precisa ser admin para editar a matricula"));
+                throw new ForbiddenException("Usuario precisa ser admin para editar a matricula");
 
             if (data.enabled() != null)
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO("Usuario precisa ser admin para habilitar ou desabilitar a conta"));
+                throw new ForbiddenException("Usuario precisa ser admin para habilitar ou desabilitar a conta");
 
             if (data.password() != null)
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO("Usuario precisa ser admin e so pode alterar a senha caso seja de outro usuario"));
+                throw new ForbiddenException("Usuario precisa ser admin e so pode alterar a senha caso seja de outro usuario");
 
             if (data.email() != null && !data.email().isBlank())
                 currentUser.setEmail(data.email());

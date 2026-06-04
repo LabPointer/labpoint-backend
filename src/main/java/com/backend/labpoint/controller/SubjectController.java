@@ -1,8 +1,11 @@
 package com.backend.labpoint.controller;
 
 import com.backend.labpoint.domain.error.ErroResponseDTO;
+import com.backend.labpoint.domain.subject.DeleteSubjectRequestDTO;
 import com.backend.labpoint.domain.subject.Subject;
+import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.SubjectRepository;
+import com.backend.labpoint.service.SubjectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -30,7 +33,10 @@ public class SubjectController {
     @Autowired
     private SubjectRepository subjectRepository;
 
-    @Operation(summary = "Lista todas as matérias", description = "Lista todas as matérias cadastradas")
+    @Autowired
+    private SubjectService subjectService;
+
+    @Operation(summary = "Listar todas as matérias", description = "Lista todas as matérias cadastradas")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Matérias listadas com sucesso",
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = Subject.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
@@ -47,57 +53,50 @@ public class SubjectController {
         List<Subject> subjects = name == null ? subjectRepository.findAll() : subjectRepository.findByNameContaining(name, pageable);
 
         if (subjects.isEmpty())
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Materia(s) nao encontrada(s)");
 
         return ResponseEntity.ok(subjects);
     }
 
-    @Operation(summary = "Cria uma matéria", description = "Cria uma matéria no sistema")
+    @Operation(summary = "Listar todas as materias cacheadas", description = "Lista todas as matérias. Destinado ao autocomplete")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Matérias listadas com sucesso",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = Subject.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
+    })
+    @GetMapping("/cache")
+    public ResponseEntity<List<Subject>> getCachedSubjects() {
+        return ResponseEntity.ok(subjectService.getSubjects());
+    }
+
+    @Operation(summary = "Criar uma matéria", description = "Cria uma matéria no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Matéria criada com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Erro ao criar matéria", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PostMapping("/create")
-    public ResponseEntity<Object> createSubject(@RequestBody @NotBlank String name) {
-        if (subjectRepository.existsByName(name))
-            return ResponseEntity.badRequest().body(new ErroResponseDTO("Subject already exists"));
-        Subject subject = new Subject(null, name);
-        subjectRepository.save(subject);
+    public ResponseEntity<?> createSubject(@RequestBody @NotBlank String name) {
+        subjectService.createSubject(name);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Operation(summary = "Edita uma matéria", description = "Edita uma matéria no sistema")
+    @Operation(summary = "Editar uma matéria", description = "Edita uma matéria no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Matéria editada com sucesso", content = @Content(schema = @Schema(implementation = Subject.class, requiredMode = Schema.RequiredMode.REQUIRED))),
             @ApiResponse(responseCode = "400", description = "Erro ao editar matéria", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update/{id}")
-    public ResponseEntity<Object> updateSubject(@PathVariable Integer id, @RequestBody String newName) {
-        if (!subjectRepository.existsById(id))
-            return ResponseEntity.notFound().build();
-
-        Subject subject = subjectRepository.findById(id).orElseThrow();
-
-        if (subjectRepository.existsByName(newName))
-            return ResponseEntity.badRequest().body(new ErroResponseDTO("Subject already exists"));
-
-        subject.setName(newName);
-        subject = subjectRepository.save(subject);
-
-        return ResponseEntity.ok(subject);
+    public ResponseEntity<?> updateSubject(@PathVariable Integer id, @RequestBody String newName) {
+        return ResponseEntity.ok(subjectService.updateSubject(id, newName));
     }
 
-    @Operation(summary = "Deleta uma matéria", description = "Deleta uma matéria no sistema")
+    @Operation(summary = "Deletar uma matéria", description = "Deleta uma matéria no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Matéria deletada com sucesso", content = @Content),
             @ApiResponse(responseCode = "404", description = "Matéria não encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> deleteSubject(@PathVariable Integer id) {
-        if (!subjectRepository.existsById(id))
-            return ResponseEntity.notFound().build();
-
-        subjectRepository.deleteById(id);
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteSubject(@RequestBody DeleteSubjectRequestDTO data) {
+        subjectService.deleteSubjects(data.subjectIds());
         return ResponseEntity.noContent().build();
     }
 }

@@ -1,5 +1,9 @@
 package com.backend.labpoint.domain.error;
 
-public record ErroResponseDTO(String message) {
+import jakarta.validation.constraints.NotEmpty;
+
+public record ErroResponseDTO(
+        @NotEmpty
+        String message) {
 
 }

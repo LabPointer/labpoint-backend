@@ -1,9 +1,11 @@
 package com.backend.labpoint.domain.user;
 
+import jakarta.validation.constraints.Email;
+
 public record UserRequestDTO(
         String registration,
         String username,
-        String email,
+        @Email String email,
         UserRole role,
         Integer offset,
         Integer limit
