@@ -92,8 +92,8 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Login realizado com sucesso", content = @Content(schema = @Schema(implementation = LoginResponseDTO.class, requiredMode = Schema.RequiredMode.REQUIRED))),
             @ApiResponse(responseCode = "403", description = "Matricula ou senha incorretos, conta desabilitada ou conta trancada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> postLogin(@RequestBody @Valid LoginRequestDTO data) {
+    @PostMapping("/sign-in")
+    public ResponseEntity<LoginResponseDTO> postSignIn(@RequestBody @Valid LoginRequestDTO data) {
         UsernamePasswordAuthenticationToken registrationPasswordAuthentication = new UsernamePasswordAuthenticationToken(data.registration(),
                 data.password());
         Authentication auth = authenticationManager.authenticate(registrationPasswordAuthentication);
@@ -125,8 +125,8 @@ public class AuthController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Logout realizado com sucesso")
     })
-    @PostMapping("/logout")
-    public ResponseEntity<Void> PostLogout() {
+    @PostMapping("/sign-out")
+    public ResponseEntity<Void> postSignOut() {
         ResponseCookie deleteCookie = ResponseCookie.from("jwt-session", "")
                 .httpOnly(true)
                 .secure(true)
@@ -144,8 +144,8 @@ public class AuthController {
             @ApiResponse(responseCode = "201", description = "Usuário registrado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
-    @PostMapping("/register")
-    public ResponseEntity<?> postRegister(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid RegisterRequestDTO data) {
+    @PostMapping("/sign-up")
+    public ResponseEntity<?> postSignUp(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid RegisterRequestDTO data) {
         return authService.registerNewUser(userDetails, data);
     }
 

@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/spaces")
@@ -59,17 +60,20 @@ public class SpaceController {
         if (spaces == null || spaces.isEmpty())
             throw new ResourceNotFoundException("Espaço(s) nao encontrado(s)");
 
-        List<SpaceDTO> spacesResponse = new ArrayList<>();
-        for (Space space : spaces) {
-            List<SpaceResource> spaceResources = spaceService.getSpaceResourcesBySpaceId(space.getId());
-            List<SpaceSubject> spaceSubjects = spaceService.getSpaceSubjectsBySpaceId(space.getId());
+        List<SpaceDTO> spacesResponse = spaces.stream().map(space -> {
+            CompletableFuture<List<SpaceResource>> resourcesFuture = CompletableFuture.supplyAsync(() ->
+                    spaceService.getSpaceResourcesBySpaceId(space.getId()));
 
-            List<Integer> resourceIds = spaceResources.stream().map(sr -> sr.getResource().getId()).toList();
-            List<Integer> subjectIds = spaceSubjects.stream().map(ss -> ss.getSubject().getId()).toList();
-            SpaceDTO spaceResponse = new SpaceDTO(space.getId(), space.getName(), space.getCapacity(), resourceIds, subjectIds);
+            CompletableFuture<List<SpaceSubject>> subjectsFuture = CompletableFuture.supplyAsync(() ->
+                    spaceService.getSpaceSubjectsBySpaceId(space.getId()));
 
-            spacesResponse.add(spaceResponse);
-        }
+            CompletableFuture.allOf(resourcesFuture, subjectsFuture).join();
+
+            List<Integer> resourceIds = resourcesFuture.join().stream().map(sr -> sr.getResource().getId()).toList();
+            List<Integer> subjectIds = subjectsFuture.join().stream().map(ss -> ss.getSubject().getId()).toList();
+
+            return new SpaceDTO(space.getId(), space.getName(), space.getCapacity(), resourceIds, subjectIds);
+        }).toList();
 
         SpacesResponseDTO response = new SpacesResponseDTO(spacesResponse, params.offset() == null ? 0 : params.offset(), params.limit() == null ? 0 : params.limit(), total);
 
