@@ -1,5 +1,6 @@
 package com.backend.labpoint.repository;
 
+import com.backend.labpoint.domain.space.Space;
 import com.backend.labpoint.domain.subject.Subject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,9 @@ import java.util.List;
 
 @Repository
 public interface SubjectRepository extends JpaRepository<Subject, Integer> {
+    @Query("SELECT s FROM Subject s WHERE s.id in :ids")
+    List<Subject> findByIds(List<Integer> ids);
+
     List<Subject> findByName(String name);
 
     Boolean existsByName(String name);

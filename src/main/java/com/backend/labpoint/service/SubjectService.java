@@ -11,6 +11,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -21,6 +22,11 @@ public class SubjectService {
     @Cacheable("subjects")
     public List<Subject> getSubjects() {
         return subjectRepository.findAll();
+    }
+
+    public List<Subject> getSubjectsByIds(List<Integer> id) {
+
+        return subjectRepository.findByIds(id);
     }
 
     @CacheEvict(value = "subjects", allEntries = true)

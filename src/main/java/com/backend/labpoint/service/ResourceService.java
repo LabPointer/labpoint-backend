@@ -1,9 +1,11 @@
 package com.backend.labpoint.service;
 
 import com.backend.labpoint.domain.resource.Resource;
+import com.backend.labpoint.domain.subject.Subject;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.ResourceRepository;
+import com.backend.labpoint.repository.SubjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -11,16 +13,25 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
 public class ResourceService {
     @Autowired
     private ResourceRepository resourceRepository;
+    @Autowired
+    private SubjectRepository subjectRepository;
 
     @Cacheable("resources")
     public List<Resource> getResources() {
         return resourceRepository.findAll();
+    }
+
+    public List<Resource> getResourcesByIds(List<Integer> id) {
+        List<Resource> resources = resourceRepository.findByIds(id);
+
+        return resources;
     }
 
     @CacheEvict(value = "resources", allEntries = true)

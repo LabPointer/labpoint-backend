@@ -1,7 +1,7 @@
-INSERT INTO space (name, capacity, description) VALUES ('informatica 2', 20, 'Laboratorio de informatica');
-INSERT INTO space (name, capacity, description) VALUES ('informatica 8', 30, 'Laboratorio de informatica');
-INSERT INTO space (name, capacity, description) VALUES ('quimica analitica', 50, 'Laboratorio de quimica analitica');
-INSERT INTO space (name, capacity, description) VALUES ('auditorio', 150, 'Auditorio para palestras');
+INSERT INTO space (name, capacity, description, locked) VALUES ('informatica 2', 20, 'Laboratorio de informatica', false);
+INSERT INTO space (name, capacity, description, locked) VALUES ('informatica 8', 30, 'Laboratorio de informatica', false);
+INSERT INTO space (name, capacity, description, locked) VALUES ('quimica analitica', 50, 'Laboratorio de quimica analitica', true);
+INSERT INTO space (name, capacity, description, locked) VALUES ('auditorio', 150, 'Auditorio para palestras', false);
 
 -- Turmas
 INSERT INTO subject (name) VALUES ('ADS');

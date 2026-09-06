@@ -78,6 +78,10 @@ public class User implements UserDetails {
         }
     }
 
+    public String getNickname() {
+        return username;
+    }
+
     @Override
     public String getUsername() {
         return registration;

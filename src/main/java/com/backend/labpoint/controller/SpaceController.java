@@ -1,9 +1,13 @@
 package com.backend.labpoint.controller;
 
 import com.backend.labpoint.domain.error.ErroResponseDTO;
+import com.backend.labpoint.domain.resource.Resource;
 import com.backend.labpoint.domain.space.*;
+import com.backend.labpoint.domain.subject.Subject;
 import com.backend.labpoint.exception.ResourceNotFoundException;
+import com.backend.labpoint.service.ResourceService;
 import com.backend.labpoint.service.SpaceService;
+import com.backend.labpoint.service.SubjectService;
 import com.backend.labpoint.specification.SpaceSpecification;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,6 +38,12 @@ public class SpaceController {
     @Autowired
     private SpaceService spaceService;
 
+    @Autowired
+    private SubjectService subjectService;
+
+    @Autowired
+    private ResourceService resourceService;
+
     @Operation(summary = "Buscar por laboratorios", description = "Retorna uma lista de laboratorios")
     @ApiResponses(value = {
             // @ApiResponse(responseCode = "200", description = "Laboratorios encontrados",
@@ -48,7 +58,8 @@ public class SpaceController {
                 params.name(),
                 params.capacity(),
                 params.resources(),
-                params.subjects());
+                params.subjects(),
+                params.locked());
 
         int total = (int) spaceService.countSpaces(spec);
 
@@ -70,9 +81,11 @@ public class SpaceController {
             CompletableFuture.allOf(resourcesFuture, subjectsFuture).join();
 
             List<Integer> resourceIds = resourcesFuture.join().stream().map(sr -> sr.getResource().getId()).toList();
+            List<Resource> resources = resourceService.getResourcesByIds(resourceIds);
             List<Integer> subjectIds = subjectsFuture.join().stream().map(ss -> ss.getSubject().getId()).toList();
+            List<Subject> subjects = subjectService.getSubjectsByIds(subjectIds);
 
-            return new SpaceDTO(space.getId(), space.getName(), space.getCapacity(), resourceIds, subjectIds);
+            return new SpaceDTO(space.getId(), space.getName(), space.getCapacity(), space.getDescription(), resources, subjects, space.isLocked());
         }).toList();
 
         SpacesResponseDTO response = new SpacesResponseDTO(spacesResponse, params.offset() == null ? 0 : params.offset(), params.limit() == null ? 0 : params.limit(), total);

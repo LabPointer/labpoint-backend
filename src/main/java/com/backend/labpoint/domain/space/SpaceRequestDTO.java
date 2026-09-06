@@ -8,7 +8,8 @@ public record SpaceRequestDTO(
         Set<Integer> resources,
         Set<Integer> subjects,
         Integer offset,
-        Integer limit) {
+        Integer limit,
+        boolean locked) {
     public SpaceRequestDTO {
         if (name == null) name = "";
         if (resources == null) resources = Set.of();
@@ -16,5 +17,6 @@ public record SpaceRequestDTO(
         if (offset == null || offset < 0) offset = 0;
         if (limit == null || limit < 10) limit = 10;
         if (limit > 50) limit = 50;
+        locked = false;
     }
 }

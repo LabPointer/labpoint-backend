@@ -1,5 +1,7 @@
 package com.backend.labpoint.domain.space;
 
+import com.backend.labpoint.domain.resource.Resource;
+import com.backend.labpoint.domain.subject.Subject;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -12,7 +14,9 @@ public record SpaceDTO(
         String name,
         @NotNull
         int capacity,
-        List<Integer> resources,
-        List<Integer> subjects
+        String description,
+        List<Resource> resources,
+        List<Subject> subjects,
+        boolean locked
 ) {
 }

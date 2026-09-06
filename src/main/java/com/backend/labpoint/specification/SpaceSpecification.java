@@ -15,7 +15,7 @@ import java.util.Set;
 public class SpaceSpecification {
 
     public static Specification<Space> filters(String name, Integer capacity, Set<Integer> resources,
-                                               Set<Integer> subjects) {
+                                               Set<Integer> subjects, boolean locked) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -42,6 +42,8 @@ public class SpaceSpecification {
                         .where(spaceSubjectRoot.get("subject").get("id").in(subjects));
                 predicates.add(root.get("id").in(subjectSubquery));
             }
+
+            predicates.add(cb.equal(root.get("locked"), locked));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };

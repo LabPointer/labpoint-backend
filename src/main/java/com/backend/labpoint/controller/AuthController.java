@@ -117,7 +117,7 @@ public class AuthController {
         return ResponseEntity
                 .ok()
                 .header("Set-Cookie", jwtCookie.toString())
-                .body(new LoginResponseDTO(user.getUsername(), user.getRole().toString(),
+                .body(new LoginResponseDTO(user.getNickname(), user.getRole().toString(),
                         Instant.now().plus(maxAge).toEpochMilli()));
     }
 

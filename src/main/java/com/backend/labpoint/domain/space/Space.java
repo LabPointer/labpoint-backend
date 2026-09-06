@@ -28,6 +28,9 @@ public class Space {
     @Column(nullable = false)
     private int capacity;
 
+    @Column(nullable = false)
+    private boolean locked;
+
     public Space(String name, String description, int capacity) {
         this.name = name;
         this.description = description;
