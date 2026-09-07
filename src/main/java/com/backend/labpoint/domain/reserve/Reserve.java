@@ -15,6 +15,8 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "reserve")
@@ -31,16 +33,19 @@ public class Reserve {
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
-    @Column(name = "reserved_date", nullable = false)
-    private LocalDate reservedDate;
+    @Column(name = "reserved_date_from", nullable = false)
+    private LocalDate reservedDateFrom;
+
+    @Column(name = "reserved_date_to", nullable = false)
+    private LocalDate reservedDateTo;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "schedule", nullable = false)
-    private SchedulesEnum schedule;
+    @Column(name = "status", nullable = false)
+    private ScheduleStatusEnum status = ScheduleStatusEnum.CONFIRMED;
 
-    @Column(name = "locked", nullable = false)
-    private boolean locked = false;
+    @Column(name = "purpose", nullable = false)
+    private String purpose;
 
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -52,9 +57,14 @@ public class Reserve {
     @JoinColumn(name = "fk_space_id", nullable = false)
     private Space space;
 
-    public Reserve(LocalDate reservedDate, SchedulesEnum schedule, User user, Space space) {
-        this.reservedDate = reservedDate;
-        this.schedule = schedule;
+    @OneToMany(mappedBy = "reserve", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<ReserveSchedule> schedules = new ArrayList<>();
+
+    public Reserve(LocalDate reservedDateFrom, LocalDate reservedDateTo, ScheduleStatusEnum status, String purpose, User user, Space space) {
+        this.reservedDateFrom = reservedDateFrom;
+        this.reservedDateTo = reservedDateTo;
+        this.status = status;
+        this.purpose = purpose;
         this.user = user;
         this.space = space;
     }

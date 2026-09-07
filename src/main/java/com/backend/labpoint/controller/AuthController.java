@@ -60,7 +60,7 @@ public class AuthController {
     @Operation(summary = "Pesquisar por usuarios", description = "Filtra e retorna usuarios encontrados. OBS: A rota funciona apenas para admins")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Retorna lista de usuarios encontrados", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserRequestDTO.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
-            @ApiResponse(responseCode = "404", description = "Usuário nao encontrado", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Usuário nao encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @GetMapping("/users")
     public ResponseEntity<List<UserResponseDTO>> getUsers(@ParameterObject UserRequestDTO params) {
@@ -145,7 +145,7 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PostMapping("/sign-up")
-    public ResponseEntity<?> postSignUp(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid RegisterRequestDTO data) {
+    public ResponseEntity<Object> postSignUp(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid RegisterRequestDTO data) {
         return authService.registerNewUser(userDetails, data);
     }
 
@@ -155,17 +155,17 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update")
-    public ResponseEntity<?> patchUpdate(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid UserUpdateRequestDTO data) {
+    public ResponseEntity<Object> patchUpdate(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid UserUpdateRequestDTO data) {
         return authService.updateUserInfo(userDetails, data);
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> postResetPassword(@NotBlank @Email String email) {
+    public ResponseEntity<Object> postResetPassword(@NotBlank @Email String email) {
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/update-password")
-    public ResponseEntity<?> postUpdatePassword(@NotBlank String token, @NotBlank String password) {
+    public ResponseEntity<Object> postUpdatePassword(@NotBlank String token, @NotBlank String password) {
         return ResponseEntity.ok().build();
     }
 }

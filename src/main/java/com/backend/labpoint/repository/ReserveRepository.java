@@ -11,15 +11,8 @@ import java.util.List;
 
 @Repository
 public interface ReserveRepository extends JpaRepository<Reserve, Integer>, JpaSpecificationExecutor<Reserve> {
-    List<Reserve> findBySpace_IdAndReservedDate(Integer spaceId, LocalDate reservedDate);
+    List<Reserve> findBySpace_IdAndReservedDateFromAndReservedDateTo(Integer spaceId, LocalDate reservedDateFrom, LocalDate reservedDateTo);
 
     @Query("SELECT r FROM Reserve r WHERE r.id in :ids")
     List<Reserve> findByIds(List<Integer> ids);
-/*
-    @Query("SELECT r FROM Reserve r " +
-            "WHERE r.reservedDate = :dates " +
-            "AND r.space.id = :spaceId")
-    List<Reserve> findReserveByDate(@Param("spaceId") Long spaceId,
-                                    @Param("dates") LocalDate dates);
-*/
 }

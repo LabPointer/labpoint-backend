@@ -78,11 +78,20 @@ CREATE TYPE schedule_enum AS ENUM (
     'N_AULA_4'
 );
 
+CREATE TYPE schedule_status_enum AS ENUM (
+    'CONFIRMED',
+    'PENDING',
+    'LOCKED',
+    'CANCELED'
+);
+
 CREATE TABLE reserve(
     id SERIAL PRIMARY KEY NOT NULL,
     created_at timestamptz DEFAULT NOW(),
-    reserved_date DATE NOT NULL,
-    locked BOOLEAN DEFAULT false,
+    reserved_date_from DATE NOT NULL,
+    reserved_date_to DATE NOT NULL,
+    status schedule_status_enum DEFAULT 'CONFIRMED',
+    purpose VARCHAR(100) NOT NULL,
     fk_user_id UUID NOT NULL,
     fk_space_id INT NOT NULL,
     FOREIGN KEY (fk_user_id) REFERENCES users(id) ON DELETE CASCADE,

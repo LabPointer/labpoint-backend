@@ -46,7 +46,7 @@ public class AuthService {
     }
 
     @Transactional
-    public ResponseEntity<?> registerNewUser(UserDetails userDetails, RegisterRequestDTO data) {
+    public ResponseEntity<Object> registerNewUser(UserDetails userDetails, RegisterRequestDTO data) {
         if (usersRepository.findByRegistration(data.registration()).isPresent()) {
             throw new BadRequestException("Usuario ja existe");
         }
@@ -67,7 +67,7 @@ public class AuthService {
     }
 
     @Transactional
-    public ResponseEntity<?> updateUserInfo(UserDetails userDetails, UserUpdateRequestDTO data) {
+    public ResponseEntity<Object> updateUserInfo(UserDetails userDetails, UserUpdateRequestDTO data) {
         User currentUser = usersRepository.findByRegistration(userDetails.getUsername()).orElseThrow();
         boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (isAdmin) {
