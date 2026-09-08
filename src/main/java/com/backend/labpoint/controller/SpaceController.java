@@ -27,7 +27,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -99,7 +98,7 @@ public class SpaceController {
             @ApiResponse(responseCode = "400", description = "Erro ao criar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PostMapping("/create")
-    public ResponseEntity<?> postCreateSpace(@RequestBody @Valid CreateSpaceRequestDTO data) {
+    public ResponseEntity<Object> postCreateSpace(@RequestBody @Valid CreateSpaceRequestDTO data) {
         spaceService.createSpace(data.name(), data.description(), data.capacity(), data.resources(), data.subjects());
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -111,7 +110,7 @@ public class SpaceController {
             @ApiResponse(responseCode = "400", description = "Erro ao editar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update/{id}")
-    public ResponseEntity<?> patchSpace(@PathVariable Integer id, @RequestBody @Valid PatchSpaceRequestDTO data) {
+    public ResponseEntity<Object> patchSpace(@PathVariable Integer id, @RequestBody @Valid PatchSpaceRequestDTO data) {
         var updatedSpace = spaceService.updateSpace(id, data);
         return ResponseEntity.ok(updatedSpace);
     }

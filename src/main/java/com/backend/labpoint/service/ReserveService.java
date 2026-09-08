@@ -140,7 +140,7 @@ public class ReserveService {
     }
 
     @Transactional
-    public ResponseEntity<?> cancelReserveFromHistory(UserDetails userDetails, Integer id) {
+    public ResponseEntity<Void> cancelReserveFromHistory(UserDetails userDetails, Integer id) {
         User user = (User) userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Reserve reserve = reserveRepository.findById(id)

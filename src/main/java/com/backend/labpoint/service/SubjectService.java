@@ -25,7 +25,6 @@ public class SubjectService {
     }
 
     public List<Subject> getSubjectsByIds(List<Integer> id) {
-
         return subjectRepository.findByIds(id);
     }
 
