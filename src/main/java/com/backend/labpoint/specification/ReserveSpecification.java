@@ -4,6 +4,7 @@ import com.backend.labpoint.domain.reserve.Reserve;
 import com.backend.labpoint.domain.reserve.ReserveSchedule;
 import com.backend.labpoint.domain.reserve.SchedulesEnum;
 import jakarta.persistence.criteria.Predicate;
+import org.springframework.cglib.core.Local;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -112,8 +113,7 @@ public class ReserveSpecification {
         };
     }
 
-    public static Specification<ReserveSchedule> scheduleExists(List<Integer> reserveIds,
-            Set<SchedulesEnum> schedules) {
+    public static Specification<ReserveSchedule> scheduleExists(List<Integer> reserveIds, Set<SchedulesEnum> schedules) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -121,6 +121,24 @@ public class ReserveSpecification {
 
             if (schedules != null && !schedules.isEmpty()) {
                 predicates.add(root.get("schedule").in(schedules));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    public static Specification<Reserve> spaceHasReserveByDate(Integer spaceId, Integer reserveId, LocalDate dateFrom, LocalDate dateTo) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            predicates.add(cb.equal(root.get("space").get("id"), spaceId));
+
+            predicates.add(cb.notEqual(root.get("id"), reserveId));
+
+            if (dateFrom != null && dateTo != null) {
+                predicates.add(cb.and(
+                        cb.lessThanOrEqualTo(root.get("reservedDateFrom"), dateTo),
+                        cb.greaterThanOrEqualTo(root.get("reservedDateTo"), dateFrom)));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

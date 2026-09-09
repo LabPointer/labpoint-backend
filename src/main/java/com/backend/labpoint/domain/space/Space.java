@@ -1,10 +1,15 @@
 package com.backend.labpoint.domain.space;
 
+import com.backend.labpoint.domain.reserve.Reserve;
+import com.backend.labpoint.domain.reserve.ReserveSchedule;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "space")
@@ -30,6 +35,9 @@ public class Space {
 
     @Column(nullable = false)
     private boolean locked;
+
+    @OneToMany(mappedBy = "space", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Reserve> reserves = new ArrayList<>();
 
     public Space(String name, String description, int capacity) {
         this.name = name;

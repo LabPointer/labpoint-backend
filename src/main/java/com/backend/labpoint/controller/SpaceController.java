@@ -49,7 +49,7 @@ public class SpaceController {
             // content = @Content(array = @ArraySchema(schema = @Schema(implementation =
             // SpaceDTO.class, requiredMode = RequiredMode.REQUIRED)))),
             @ApiResponse(responseCode = "200", description = "Laboratorios encontrados", content = @Content(schema = @Schema(implementation = SpacesResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
-            @ApiResponse(responseCode = "404", description = "Nenhum laboratorio encontrado", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Nenhum laboratorio encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @GetMapping
     public ResponseEntity<SpacesResponseDTO> getSpaces(@ParameterObject @ModelAttribute SpaceRequestDTO params) {

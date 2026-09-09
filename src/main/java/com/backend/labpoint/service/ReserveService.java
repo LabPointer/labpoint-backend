@@ -1,6 +1,7 @@
 package com.backend.labpoint.service;
 
 import com.backend.labpoint.domain.reserve.*;
+import com.backend.labpoint.domain.reserve.ReserveHistoryDTO;
 import com.backend.labpoint.domain.space.Space;
 import com.backend.labpoint.domain.user.User;
 import com.backend.labpoint.exception.BadRequestException;
@@ -12,12 +13,9 @@ import com.backend.labpoint.repository.SpacesRepository;
 import com.backend.labpoint.repository.UserRepository;
 import com.backend.labpoint.specification.ReserveSpecification;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.crossstore.ChangeSetPersister;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Schedules;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +41,7 @@ public class ReserveService {
     private ReserveScheduleRepository reserveScheduleRepository;
 
     // Home reserve
+    @Transactional(readOnly = true)
     public ResponseEntity<List<SchedulesEnum>> existingSchedules(Integer spaceId, ExistingScheduleRequestDTO params) {
         LocalDate dateFrom = params.dateFrom();
         LocalDate dateTo = params.dateTo();
@@ -56,6 +55,7 @@ public class ReserveService {
         return ResponseEntity.ok(existingSchedules);
     }
 
+    @Transactional
     public ResponseEntity<?> createReserve(UserDetails userDetails, Integer spaceId,
             CreateReserveRequestDTO createReserveRequestDTO) {
         User user = userRepository.findByRegistration(userDetails.getUsername())
@@ -104,7 +104,21 @@ public class ReserveService {
     }
 
     // History
+    @Transactional(readOnly = true)
+    public ResponseEntity<ReserveDateDTO> getReserveDate(UserDetails userDetails, Integer reserveId) {
+        User user = userRepository.findByRegistration(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        Reserve reserve = reserveRepository.findById(reserveId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserve not found"));
+
+        if (reserve.getUser().getId() != user.getId())
+            throw new ForbiddenException("You are not allowed to access this reserve.");
+
+        return ResponseEntity.ok(new ReserveDateDTO(reserve.getReservedDateFrom(), reserve.getReservedDateTo()));
+    }
+
+    @Transactional(readOnly = true)
     public ResponseEntity<ReserveHistoryDTO> findHistoryByMonth(UserDetails userDetails, YearMonth yearMonth) {
         User user = userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -140,6 +154,53 @@ public class ReserveService {
     }
 
     @Transactional
+    public ResponseEntity<Void> editReserveDate(UserDetails userDetails, Integer id, ReserveDateDTO data) {
+        User user = (User) userRepository.findByRegistration(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado"));
+
+        Reserve reserve = reserveRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva nao encontrada"));
+
+        if (!reserve.getUser().getId().equals(user.getId()))
+            throw new ForbiddenException("Você não tem autorização para editar essa reserva");
+
+        Space space = reserve.getSpace();
+
+        Specification<Reserve> reserveSpecification = ReserveSpecification.spaceHasReserveByDate(
+                space.getId(),
+                reserve.getId(),
+                data.dateFrom(),
+                data.dateTo()
+        );
+
+        List<Reserve> previousReserves = reserveRepository.findAll(reserveSpecification);
+
+        if (!previousReserves.isEmpty()) {
+            List<SchedulesEnum> currentSchedules = reserve.getSchedules().stream()
+                    .map(ReserveSchedule::getSchedule)
+                    .toList();
+
+            List<SchedulesEnum> previousSchedules = previousReserves.stream()
+                    .flatMap(s -> s.getSchedules().stream())
+                    .map(ReserveSchedule::getSchedule)
+                    .toList();
+
+            boolean hasScheduleConflict = currentSchedules.stream().anyMatch(previousSchedules::contains);
+
+            if (hasScheduleConflict) {
+                throw new BadRequestException("Mudança de data conflita com os horarios ja reservados.");
+            }
+        }
+
+        reserve.setReservedDateFrom(data.dateFrom());
+        reserve.setReservedDateTo(data.dateTo());
+
+        reserveRepository.save(reserve);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @Transactional
     public ResponseEntity<Void> cancelReserveFromHistory(UserDetails userDetails, Integer id) {
         User user = (User) userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -151,20 +212,6 @@ public class ReserveService {
         reserve.setStatus(ScheduleStatusEnum.CANCELED);
 
         reserveRepository.save(reserve);
-
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-    }
-
-    @Transactional
-    public ResponseEntity<?> deleteReserve(User user, Set<Integer> ids) {
-        boolean isAdmin = user.getAuthorities().stream().anyMatch(a -> Objects.equals(a.getAuthority(), "ROLE_ADMIN"));
-        List<Reserve> reserves = reserveRepository.findAllById(ids);
-        if (reserves.isEmpty())
-            throw new ResourceNotFoundException("Reserva(s) nao encontrada(s)");
-        if (!isAdmin)
-            reserves.removeIf(r -> r.getUser().getId() != user.getId());
-
-        reserveRepository.deleteAll(reserves);
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
