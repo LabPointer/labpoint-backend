@@ -1,4 +1,4 @@
-package com.backend.labpoint.dto.user;
+package com.backend.labpoint.dto.auth;
 
 import com.backend.labpoint.entities.user.UserRole;
 import jakarta.validation.constraints.Email;

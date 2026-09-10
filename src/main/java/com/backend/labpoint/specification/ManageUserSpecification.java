@@ -1,0 +1,37 @@
+package com.backend.labpoint.specification;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.data.jpa.domain.Specification;
+
+import com.backend.labpoint.entities.user.User;
+import com.backend.labpoint.entities.user.UserRole;
+
+import jakarta.persistence.criteria.Predicate;
+
+public class ManageUserSpecification {
+    public static Specification<User> filters(String registration, String username, String email, UserRole role) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (registration != null && !registration.isBlank()) {
+                predicates.add(cb.like(root.get("registration"), "%" + registration + "%"));
+            }
+
+            if (username != null && !username.isBlank()) {
+                predicates.add(cb.like(root.get("username"), "%" + username + "%"));
+            }
+
+            if (email != null && !email.isBlank()) {
+                predicates.add(cb.like(root.get("email"), "%" + email + "%"));
+            }
+
+            if (role != null) {
+                predicates.add(cb.equal(root.get("role"), role));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+}

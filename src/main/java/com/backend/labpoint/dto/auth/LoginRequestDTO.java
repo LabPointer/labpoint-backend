@@ -1,4 +1,4 @@
-package com.backend.labpoint.dto.user;
+package com.backend.labpoint.dto.auth;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;

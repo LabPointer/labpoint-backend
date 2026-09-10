@@ -1,7 +1,6 @@
 package com.backend.labpoint.entities.user;
 
 import com.backend.labpoint.entities.reserve.Reserve;
-import com.backend.labpoint.entities.subject.SpaceSubject;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
