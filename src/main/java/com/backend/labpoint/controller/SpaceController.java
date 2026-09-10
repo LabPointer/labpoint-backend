@@ -1,6 +1,8 @@
 package com.backend.labpoint.controller;
 
 import com.backend.labpoint.dto.error.ErroResponseDTO;
+import com.backend.labpoint.dto.resource.ResourceDTO;
+import com.backend.labpoint.dto.subject.SubjectDTO;
 import com.backend.labpoint.entities.resource.Resource;
 import com.backend.labpoint.dto.space.*;
 import com.backend.labpoint.entities.subject.Subject;
@@ -74,18 +76,20 @@ public class SpaceController {
             throw new ResourceNotFoundException("Espaço(s) nao encontrado(s)");
 
         List<SpaceDTO> spacesResponse = spaces.stream().map(space -> {
-            CompletableFuture<List<SpaceResource>> resourcesFuture = CompletableFuture.supplyAsync(() ->
-                    spaceService.getSpaceResourcesBySpaceId(space.getId()));
+            CompletableFuture<List<SpaceResource>> resourcesFuture = CompletableFuture.supplyAsync(space::getResources);
 
-            CompletableFuture<List<SpaceSubject>> subjectsFuture = CompletableFuture.supplyAsync(() ->
-                    spaceService.getSpaceSubjectsBySpaceId(space.getId()));
+            CompletableFuture<List<SpaceSubject>> subjectsFuture = CompletableFuture.supplyAsync(space::getSubjects);
 
             CompletableFuture.allOf(resourcesFuture, subjectsFuture).join();
 
-            List<Integer> resourceIds = resourcesFuture.join().stream().map(sr -> sr.getResource().getId()).toList();
-            List<Resource> resources = resourceService.getResourcesByIds(resourceIds);
-            List<Integer> subjectIds = subjectsFuture.join().stream().map(ss -> ss.getSubject().getId()).toList();
-            List<Subject> subjects = subjectService.getSubjectsByIds(subjectIds);
+            List<ResourceDTO> resources = resourcesFuture.join().stream().map(sr -> {
+                Resource r = sr.getResource();
+                return new ResourceDTO(r.getId(), r.getName());
+            }).toList();
+            List<SubjectDTO> subjects = subjectsFuture.join().stream().map(sr -> {
+                    Subject s = sr.getSubject();
+                    return new SubjectDTO(s.getId(), s.getName());
+            }).toList();
 
             return new SpaceDTO(space.getId(), space.getName(), space.getCapacity(), space.getDescription(), resources, subjects, space.isLocked());
         }).toList();

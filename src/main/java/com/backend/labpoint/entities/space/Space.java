@@ -39,13 +39,13 @@ public class Space {
     private boolean locked;
 
     @OneToMany(mappedBy = "space", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<Reserve> reserves = new ArrayList<>();
-
-    @OneToMany(mappedBy = "space", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<SpaceResource> spaces = new ArrayList<>();
+    private List<SpaceResource> resources = new ArrayList<>();
 
     @OneToMany(mappedBy = "space", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<SpaceSubject> subjects = new ArrayList<>();
+
+    @OneToMany(mappedBy = "space", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Reserve> reserves = new ArrayList<>();
 
     public Space(String name, String description, int capacity) {
         this.name = name;
