@@ -1,9 +1,10 @@
 package com.backend.labpoint.controller;
 
-import com.backend.labpoint.domain.error.ErroResponseDTO;
-import com.backend.labpoint.domain.user.*;
+import com.backend.labpoint.dto.error.ErroResponseDTO;
+import com.backend.labpoint.dto.user.*;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.infra.security.TokenService;
+import com.backend.labpoint.entities.user.User;
 import com.backend.labpoint.service.AuthService;
 import com.backend.labpoint.specification.AuthSpecification;
 import io.swagger.v3.oas.annotations.Operation;

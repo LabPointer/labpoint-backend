@@ -1,10 +1,13 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.domain.resource.Resource;
-import com.backend.labpoint.domain.space.*;
-import com.backend.labpoint.domain.subject.Subject;
+import com.backend.labpoint.entities.resource.Resource;
+import com.backend.labpoint.dto.space.*;
+import com.backend.labpoint.entities.subject.Subject;
+import com.backend.labpoint.entities.subject.SpaceSubject;
+import com.backend.labpoint.entities.resource.SpaceResource;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
+import com.backend.labpoint.entities.space.Space;
 import com.backend.labpoint.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;

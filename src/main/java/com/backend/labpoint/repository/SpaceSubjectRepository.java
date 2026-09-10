@@ -1,6 +1,6 @@
 package com.backend.labpoint.repository;
 
-import com.backend.labpoint.domain.space.SpaceSubject;
+import com.backend.labpoint.entities.subject.SpaceSubject;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

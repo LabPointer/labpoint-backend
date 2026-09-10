@@ -1,9 +1,13 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.domain.reserve.*;
-import com.backend.labpoint.domain.reserve.ReserveHistoryDTO;
-import com.backend.labpoint.domain.space.Space;
-import com.backend.labpoint.domain.user.User;
+import com.backend.labpoint.dto.reserve.*;
+import com.backend.labpoint.dto.reserve.ReserveHistoryDTO;
+import com.backend.labpoint.entities.reserve.Reserve;
+import com.backend.labpoint.entities.space.Space;
+import com.backend.labpoint.entities.reserve.ScheduleStatusEnum;
+import com.backend.labpoint.entities.schedule.ReserveSchedule;
+import com.backend.labpoint.entities.schedule.SchedulesEnum;
+import com.backend.labpoint.entities.user.User;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ForbiddenException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
@@ -113,7 +117,7 @@ public class ReserveService {
                 .orElseThrow(() -> new ResourceNotFoundException("Reserve not found"));
 
         if (reserve.getUser().getId() != user.getId())
-            throw new ForbiddenException("You are not allowed to access this reserve.");
+            throw new ForbiddenException("You are not allowed to access this reserve.", false);
 
         return ResponseEntity.ok(new ReserveDateDTO(reserve.getReservedDateFrom(), reserve.getReservedDateTo()));
     }
@@ -162,7 +166,7 @@ public class ReserveService {
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva nao encontrada"));
 
         if (!reserve.getUser().getId().equals(user.getId()))
-            throw new ForbiddenException("Você não tem autorização para editar essa reserva");
+            throw new ForbiddenException("Você não tem autorização para editar essa reserva", false);
 
         Space space = reserve.getSpace();
 
@@ -207,7 +211,7 @@ public class ReserveService {
         Reserve reserve = reserveRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserve not found"));
         if (reserve.getUser().getId() != user.getId())
-            throw new ForbiddenException("You are not authorized to cancel this reserve");
+            throw new ForbiddenException("You are not authorized to cancel this reserve", false);
 
         reserve.setStatus(ScheduleStatusEnum.CANCELED);
 

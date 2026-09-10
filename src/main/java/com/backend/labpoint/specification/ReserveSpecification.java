@@ -1,12 +1,11 @@
 package com.backend.labpoint.specification;
 
-import com.backend.labpoint.domain.reserve.Reserve;
-import com.backend.labpoint.domain.reserve.ReserveSchedule;
-import com.backend.labpoint.domain.reserve.SchedulesEnum;
+import com.backend.labpoint.entities.reserve.Reserve;
+import com.backend.labpoint.entities.schedule.ReserveSchedule;
+import com.backend.labpoint.entities.schedule.SchedulesEnum;
+import com.backend.labpoint.entities.reserve.ScheduleStatusEnum;
 import jakarta.persistence.criteria.Predicate;
-import org.springframework.cglib.core.Local;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -107,7 +106,7 @@ public class ReserveSpecification {
             }
 
             predicates.add(
-                    cb.notEqual(root.get("status"), com.backend.labpoint.domain.reserve.ScheduleStatusEnum.CANCELED));
+                    cb.notEqual(root.get("status"), ScheduleStatusEnum.CANCELED));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };

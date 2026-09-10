@@ -34,7 +34,7 @@ public class SecurityFilter extends OncePerRequestFilter {
         if (token != null && !isPublicRoute) {
             String subject = tokenService.validateToken(token);
             UserDetails user = usersRepository.findByRegistration(subject)
-                    .orElseThrow(() -> new UnauthorizedException("User not found"));
+                    .orElseThrow(() -> new UnauthorizedException("User not found", true));
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);

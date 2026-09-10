@@ -1,6 +1,6 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.domain.subject.Subject;
+import com.backend.labpoint.entities.subject.Subject;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.SubjectRepository;
@@ -11,7 +11,6 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @Service

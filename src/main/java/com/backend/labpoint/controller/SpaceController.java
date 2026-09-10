@@ -1,10 +1,13 @@
 package com.backend.labpoint.controller;
 
-import com.backend.labpoint.domain.error.ErroResponseDTO;
-import com.backend.labpoint.domain.resource.Resource;
-import com.backend.labpoint.domain.space.*;
-import com.backend.labpoint.domain.subject.Subject;
+import com.backend.labpoint.dto.error.ErroResponseDTO;
+import com.backend.labpoint.entities.resource.Resource;
+import com.backend.labpoint.dto.space.*;
+import com.backend.labpoint.entities.subject.Subject;
+import com.backend.labpoint.entities.subject.SpaceSubject;
+import com.backend.labpoint.entities.resource.SpaceResource;
 import com.backend.labpoint.exception.ResourceNotFoundException;
+import com.backend.labpoint.entities.space.Space;
 import com.backend.labpoint.service.ResourceService;
 import com.backend.labpoint.service.SpaceService;
 import com.backend.labpoint.service.SubjectService;

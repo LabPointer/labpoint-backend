@@ -1,7 +1,7 @@
 package com.backend.labpoint.specification;
 
-import com.backend.labpoint.domain.user.User;
-import com.backend.labpoint.domain.user.UserRole;
+import com.backend.labpoint.entities.user.User;
+import com.backend.labpoint.entities.user.UserRole;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 

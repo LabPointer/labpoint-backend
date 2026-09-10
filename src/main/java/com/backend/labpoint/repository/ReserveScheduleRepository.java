@@ -1,8 +1,6 @@
 package com.backend.labpoint.repository;
 
-import com.backend.labpoint.domain.reserve.Reserve;
-import com.backend.labpoint.domain.reserve.ReserveSchedule;
-import com.backend.labpoint.domain.resource.Resource;
+import com.backend.labpoint.entities.schedule.ReserveSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
