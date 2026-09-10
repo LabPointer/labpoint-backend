@@ -6,10 +6,12 @@ Backend para do Labpoint, sistema de reservas de laboratórios.
 > Versão recomendada do [Java ou OpenJDK](https://adoptium.net/pt-BR/temurin/releases) é 25 LTS ou superior
 
 > [!WARNING]
-> Versão recomendada do [Maven](https://maven.apache.org/) é 3.8 ou superior
+> Versão recomendada do [Maven](https://maven.apache.org/) é 3.8 ou superior(adicionar as variaveis de ambiente)
 
 > [!WARNING]
-> Versão recomendada do [Docker](https://www.docker.com/) é 4 ou superior
+> Para o banco de dados, recomendo baixar o [Docker](https://www.docker.com/) ou [Postgres](https://www.postgresql.org/)
+>
+> Caso esteja usando o postgre nativo, nao se esqueça de configurar as credencias de acesso em `./src/main/resources/application.properties`
 
 # Iniciando
 
