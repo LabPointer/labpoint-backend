@@ -1,6 +1,6 @@
 package com.backend.labpoint.repository;
 
-import com.backend.labpoint.domain.space.SpaceResource;
+import com.backend.labpoint.entities.resource.SpaceResource;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;

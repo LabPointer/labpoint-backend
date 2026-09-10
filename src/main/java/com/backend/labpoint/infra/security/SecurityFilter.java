@@ -1,5 +1,6 @@
 package com.backend.labpoint.infra.security;
 
+import com.backend.labpoint.exception.UnauthorizedException;
 import com.backend.labpoint.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -26,12 +27,14 @@ public class SecurityFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
+            throws ServletException, IOException, UnauthorizedException {
+        boolean isPublicRoute = Arrays.asList("/docs/**", "/v3/**", "/auth/sign-in", "/auth/sign-up").contains(request.getServletPath());
+
         String token = recoverToken(request);
-        if (token != null) {
+        if (token != null && !isPublicRoute) {
             String subject = tokenService.validateToken(token);
             UserDetails user = usersRepository.findByRegistration(subject)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new UnauthorizedException("User not found", true));
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);

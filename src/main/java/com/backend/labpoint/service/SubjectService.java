@@ -1,6 +1,6 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.domain.subject.Subject;
+import com.backend.labpoint.entities.subject.Subject;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.SubjectRepository;
@@ -21,6 +21,10 @@ public class SubjectService {
     @Cacheable("subjects")
     public List<Subject> getSubjects() {
         return subjectRepository.findAll();
+    }
+
+    public List<Subject> getSubjectsByIds(List<Integer> id) {
+        return subjectRepository.findByIds(id);
     }
 
     @CacheEvict(value = "subjects", allEntries = true)

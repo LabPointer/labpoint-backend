@@ -1,6 +1,6 @@
 package com.backend.labpoint.repository;
 
-import com.backend.labpoint.domain.user.User;
+import com.backend.labpoint.entities.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;

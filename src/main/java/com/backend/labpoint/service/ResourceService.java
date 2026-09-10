@@ -1,6 +1,6 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.domain.resource.Resource;
+import com.backend.labpoint.entities.resource.Resource;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.ResourceRepository;
@@ -23,11 +23,17 @@ public class ResourceService {
         return resourceRepository.findAll();
     }
 
+    public List<Resource> getResourcesByIds(List<Integer> id) {
+        List<Resource> resources = resourceRepository.findByIds(id);
+
+        return resources;
+    }
+
     @CacheEvict(value = "resources", allEntries = true)
     public void createResource(String name) {
         if (resourceRepository.existsByName(name))
             throw new BadRequestException("Recurso já existe");
-        Resource newResource = new Resource(null, name);
+        Resource newResource = new Resource(name);
         resourceRepository.save(newResource);
     }
 

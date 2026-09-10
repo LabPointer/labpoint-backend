@@ -1,9 +1,8 @@
 package com.backend.labpoint.controller;
 
-
-import com.backend.labpoint.domain.error.ErroResponseDTO;
-import com.backend.labpoint.domain.reserve.*;
-import com.backend.labpoint.domain.user.User;
+import com.backend.labpoint.dto.error.ErroResponseDTO;
+import com.backend.labpoint.dto.reserve.*;
+import com.backend.labpoint.entities.schedule.SchedulesEnum;
 import com.backend.labpoint.service.ReserveService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -13,85 +12,86 @@ import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.NotEmpty;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.query.Param;
-import org.springframework.http.HttpStatus;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.util.Objects;
-import java.util.Set;
+import java.time.YearMonth;
+import java.util.List;
 
 @RestController
-@RequestMapping("/reserves")
-@Tag(name = "/reserves", description = "Endpoints para gerenciamento de reservas")
+@RequestMapping("/reserve")
+@Tag(name = "/reserve", description = "Endpoints para gerenciamento de reservas")
 public class ReserveController {
     @Autowired
     private ReserveService reserveService;
 
-    @Operation(summary = "Buscar reservas por espaço e data", description = "Retorna uma lista de reservas para um determinado espaço em uma data específica")
+    @Operation(summary = "Buscar historico de reservas do mes", description = "Retorna uma lista de reservas(confirmada, concluida e cancelada) de um mes especifico")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de reservas encontrada", content = @Content(array = @ArraySchema(schema = @Schema(implementation = ReserveResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))),
-            @ApiResponse(responseCode = "404", description = "Nenhuma reserva encontrada", content = @Content)
-    })
-    @GetMapping
-    public ResponseEntity<?> getReserves(@ParameterObject ReserveRequestDTO params) {
-        return reserveService.findReserves(params.yearMonth(), params.spaceName(), params.username(), params.registration());
-    }
-
-    @Operation(summary = "Buscar reservas por espaço e data", description = "Retorna uma lista de reservas para um determinado espaço em uma data específica")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de reservas encontrada", content = @Content(array = @ArraySchema(schema = @Schema(implementation = ReserveResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))),
+            @ApiResponse(responseCode = "200", description = "Lista de reservas encontrada", content = @Content(schema = @Schema(implementation = ReserveHistoryDTO.class, requiredMode = RequiredMode.REQUIRED))),
             @ApiResponse(responseCode = "404", description = "Nenhuma reserva encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
-    @GetMapping("/find/{spaceId}")
-    public ResponseEntity<?> getReservesFromSpace(@PathVariable Integer spaceId, @Param("dates") @NotEmpty Set<LocalDate> dates) {
-        return reserveService.findReservesBySpace(spaceId, dates);
+    @GetMapping
+    public ResponseEntity<ReserveHistoryDTO> getHistory(@AuthenticationPrincipal UserDetails userDetails, @RequestParam(name = "yearMonth") @DateTimeFormat(pattern = "yyyy-M") YearMonth yearMonth) {
+        return reserveService.findHistoryByMonth(userDetails, yearMonth);
     }
 
-    @Operation(summary = "Criar uma nova reserva", description = "Criar uma reserva para um espaço específico na data e horários fornecidos")
+    @Operation(summary = "Cria uma nova reserva", description = "Cria uma nova reserva para o espaço especificado, com base nas datas fornecidas e no usuário autenticado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Reserva criada com sucesso", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SchedulesEnum.class)))),
+            @ApiResponse(responseCode = "400", description = "Dados da reserva inválidos ou conflitantes", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
+            @ApiResponse(responseCode = "404", description = "Autenticação do usuario ou espaço não encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
+    })
+    @GetMapping("/existing-schedules/{spaceId}")
+    public ResponseEntity<List<SchedulesEnum>> getExistingSchedules(@PathVariable Integer spaceId, @ParameterObject ExistingScheduleRequestDTO params) {
+        return reserveService.existingSchedules(spaceId, params);
+    }
+
+    @Operation(summary = "Obtem a data da reserva pelo id", description = "Retorna a data da reserva")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Data da reserve", content = @Content(schema = @Schema(implementation = ReserveDateDTO.class, requiredMode = RequiredMode.REQUIRED))),
+            @ApiResponse(responseCode = "404", description = "Reserva nao encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
+    })
+    @GetMapping("/date-info/{reserveId}")
+    public ResponseEntity<ReserveDateDTO> getDateInfo(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer reserveId) {
+        return reserveService.getReserveDate(userDetails, reserveId);
+    }
+
+    @Operation(summary = "Edita a data da reserva", description = "Edita a data da reserva")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Reserva editada com sucesso", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Reserva conflita com horarios ja reservados", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
+            @ApiResponse(responseCode = "403", description = "Nao pode editar reserva de outro usuario", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
+            @ApiResponse(responseCode = "404", description = "Reserva nao encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
+    })
+    @PatchMapping("/edit-date/{reserveId}")
+    public ResponseEntity<Void> editReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer reserveId, @RequestBody ReserveDateDTO data) {
+        return reserveService.editReserveDate(userDetails, reserveId, data);
+    }
+
+    @Operation(summary = "Cria uma nova reserva", description = "Cria uma nova reserva para o espaço especificado, com base nas datas fornecidas e no usuário autenticado")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Reserva criada com sucesso", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Espaço não encontrado ou erro na criação da reserva", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
-            @ApiResponse(responseCode = "403", description = "Usuario nao é administrador", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
+            @ApiResponse(responseCode = "400", description = "Dados da reserva inválidos ou conflitantes", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
+            @ApiResponse(responseCode = "404", description = "Autenticação do usuario ou espaço não encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @PostMapping("/create/{spaceId}")
-    public ResponseEntity<?> postCreateReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer spaceId, @RequestBody CreateReserveRequestDTO data) {
-        String registration = userDetails.getUsername();
-        if (data.lock() != null && userDetails.getAuthorities().stream().anyMatch(a -> Objects.equals(a.getAuthority(), "ROLE_ADMIN"))) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO("Usuario precisa ser admin para bloquear reservas"));
-        }
-        User user = reserveService.findUserByRegistration(registration);
-        return reserveService.createReserve(user, spaceId, data);
+    public ResponseEntity<?> createReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer spaceId, @RequestBody CreateReserveRequestDTO body) {
+        return reserveService.createReserve(userDetails, spaceId, body);
     }
 
-    @Operation(summary = "Atualizar as informações da reserva", description = "Atualiza as informações da reserva")
+    @Operation(summary = "Cancela uma reserva do historico do usuario pelo id", description = "Marca a reserva como cancelada")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Reserva(s) deletadas com sucesso", content = @Content(schema = @Schema(implementation = Reserve.class, requiredMode = RequiredMode.REQUIRED))),
-            @ApiResponse(responseCode = "404", description = "Reserva(s) nao encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
-            @ApiResponse(responseCode = "403", description = "Usuario nao é administrador e tentou alterar a reserva de outro usuario", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
+            @ApiResponse(responseCode = "204", description = "Reserva cancelada", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Provavelmente esta alterando reserva de outro usuario", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
+            @ApiResponse(responseCode = "404", description = "Usuario ou reserva encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
-    @PatchMapping("/update/{reserveId}")
-    public ResponseEntity<?> updateReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer reserveId, @RequestBody UpdateReserveRequestDTO data) {
-        String registration = userDetails.getUsername();
-        User user = reserveService.findUserByRegistration(registration);
-        return reserveService.updateReserve(user, reserveId, data);
-    }
-
-    @Operation(summary = "Deletar um conjunto de reservas", description = "Deleta/cancela um conjunto de reservas do sistema")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Reserva(s) deletadas com sucesso", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Reserva(s) nao encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
-    })
-    @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteReserve(@AuthenticationPrincipal UserDetails userDetails, @RequestBody DeleteReserveRequestDTO data) {
-        String registration = userDetails.getUsername();
-        User user = reserveService.findUserByRegistration(registration);
-        return reserveService.deleteReserve(user, data.reserveIds());
+    @DeleteMapping("/history/cancel/{id}")
+    public ResponseEntity<Void> getHistoryByYearMonth(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer id) {
+        return reserveService.cancelReserveFromHistory(userDetails, id);
     }
 }

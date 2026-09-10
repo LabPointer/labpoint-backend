@@ -1,8 +1,8 @@
 package com.backend.labpoint.controller;
 
-import com.backend.labpoint.domain.error.ErroResponseDTO;
-import com.backend.labpoint.domain.resource.DeleteResourceRequestDTO;
-import com.backend.labpoint.domain.resource.Resource;
+import com.backend.labpoint.dto.error.ErroResponseDTO;
+import com.backend.labpoint.dto.resource.DeleteResourceRequestDTO;
+import com.backend.labpoint.entities.resource.Resource;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.ResourceRepository;
 import com.backend.labpoint.service.ResourceService;

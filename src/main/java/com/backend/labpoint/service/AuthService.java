@@ -1,9 +1,9 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.domain.user.RegisterRequestDTO;
-import com.backend.labpoint.domain.user.User;
-import com.backend.labpoint.domain.user.UserUpdateRequestDTO;
-import com.backend.labpoint.domain.user.UserUpdateResponseDTO;
+import com.backend.labpoint.dto.user.RegisterRequestDTO;
+import com.backend.labpoint.entities.user.User;
+import com.backend.labpoint.dto.user.UserUpdateRequestDTO;
+import com.backend.labpoint.dto.user.UserUpdateResponseDTO;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ForbiddenException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
@@ -46,7 +46,7 @@ public class AuthService {
     }
 
     @Transactional
-    public ResponseEntity<?> registerNewUser(UserDetails userDetails, RegisterRequestDTO data) {
+    public ResponseEntity<Object> registerNewUser(UserDetails userDetails, RegisterRequestDTO data) {
         if (usersRepository.findByRegistration(data.registration()).isPresent()) {
             throw new BadRequestException("Usuario ja existe");
         }
@@ -67,7 +67,7 @@ public class AuthService {
     }
 
     @Transactional
-    public ResponseEntity<?> updateUserInfo(UserDetails userDetails, UserUpdateRequestDTO data) {
+    public ResponseEntity<Object> updateUserInfo(UserDetails userDetails, UserUpdateRequestDTO data) {
         User currentUser = usersRepository.findByRegistration(userDetails.getUsername()).orElseThrow();
         boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (isAdmin) {
@@ -119,16 +119,16 @@ public class AuthService {
             }
         } else {
             if (data.uuid() != null)
-                throw new ForbiddenException("Usuario precisa ser admin para editar contas de outros usuarios");
+                throw new ForbiddenException("Usuario precisa ser admin para editar contas de outros usuarios", false);
 
             if (data.registration() != null)
-                throw new ForbiddenException("Usuario precisa ser admin para editar a matricula");
+                throw new ForbiddenException("Usuario precisa ser admin para editar a matricula", false);
 
             if (data.enabled() != null)
-                throw new ForbiddenException("Usuario precisa ser admin para habilitar ou desabilitar a conta");
+                throw new ForbiddenException("Usuario precisa ser admin para habilitar ou desabilitar a conta", false);
 
             if (data.password() != null)
-                throw new ForbiddenException("Usuario precisa ser admin e so pode alterar a senha caso seja de outro usuario");
+                throw new ForbiddenException("Usuario precisa ser admin e so pode alterar a senha caso seja de outro usuario", false);
 
             if (data.email() != null && !data.email().isBlank())
                 currentUser.setEmail(data.email());

@@ -1,9 +1,16 @@
 package com.backend.labpoint.controller;
 
-import com.backend.labpoint.domain.error.ErroResponseDTO;
-import com.backend.labpoint.domain.space.*;
+import com.backend.labpoint.dto.error.ErroResponseDTO;
+import com.backend.labpoint.entities.resource.Resource;
+import com.backend.labpoint.dto.space.*;
+import com.backend.labpoint.entities.subject.Subject;
+import com.backend.labpoint.entities.subject.SpaceSubject;
+import com.backend.labpoint.entities.resource.SpaceResource;
 import com.backend.labpoint.exception.ResourceNotFoundException;
+import com.backend.labpoint.entities.space.Space;
+import com.backend.labpoint.service.ResourceService;
 import com.backend.labpoint.service.SpaceService;
+import com.backend.labpoint.service.SubjectService;
 import com.backend.labpoint.specification.SpaceSpecification;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,8 +30,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/spaces")
@@ -33,13 +40,19 @@ public class SpaceController {
     @Autowired
     private SpaceService spaceService;
 
+    @Autowired
+    private SubjectService subjectService;
+
+    @Autowired
+    private ResourceService resourceService;
+
     @Operation(summary = "Buscar por laboratorios", description = "Retorna uma lista de laboratorios")
     @ApiResponses(value = {
             // @ApiResponse(responseCode = "200", description = "Laboratorios encontrados",
             // content = @Content(array = @ArraySchema(schema = @Schema(implementation =
             // SpaceDTO.class, requiredMode = RequiredMode.REQUIRED)))),
             @ApiResponse(responseCode = "200", description = "Laboratorios encontrados", content = @Content(schema = @Schema(implementation = SpacesResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
-            @ApiResponse(responseCode = "404", description = "Nenhum laboratorio encontrado", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Nenhum laboratorio encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @GetMapping
     public ResponseEntity<SpacesResponseDTO> getSpaces(@ParameterObject @ModelAttribute SpaceRequestDTO params) {
@@ -47,7 +60,8 @@ public class SpaceController {
                 params.name(),
                 params.capacity(),
                 params.resources(),
-                params.subjects());
+                params.subjects(),
+                params.locked());
 
         int total = (int) spaceService.countSpaces(spec);
 
@@ -59,17 +73,22 @@ public class SpaceController {
         if (spaces == null || spaces.isEmpty())
             throw new ResourceNotFoundException("Espaço(s) nao encontrado(s)");
 
-        List<SpaceDTO> spacesResponse = new ArrayList<>();
-        for (Space space : spaces) {
-            List<SpaceResource> spaceResources = spaceService.getSpaceResourcesBySpaceId(space.getId());
-            List<SpaceSubject> spaceSubjects = spaceService.getSpaceSubjectsBySpaceId(space.getId());
+        List<SpaceDTO> spacesResponse = spaces.stream().map(space -> {
+            CompletableFuture<List<SpaceResource>> resourcesFuture = CompletableFuture.supplyAsync(() ->
+                    spaceService.getSpaceResourcesBySpaceId(space.getId()));
 
-            List<Integer> resourceIds = spaceResources.stream().map(sr -> sr.getResource().getId()).toList();
-            List<Integer> subjectIds = spaceSubjects.stream().map(ss -> ss.getSubject().getId()).toList();
-            SpaceDTO spaceResponse = new SpaceDTO(space.getId(), space.getName(), space.getCapacity(), resourceIds, subjectIds);
+            CompletableFuture<List<SpaceSubject>> subjectsFuture = CompletableFuture.supplyAsync(() ->
+                    spaceService.getSpaceSubjectsBySpaceId(space.getId()));
 
-            spacesResponse.add(spaceResponse);
-        }
+            CompletableFuture.allOf(resourcesFuture, subjectsFuture).join();
+
+            List<Integer> resourceIds = resourcesFuture.join().stream().map(sr -> sr.getResource().getId()).toList();
+            List<Resource> resources = resourceService.getResourcesByIds(resourceIds);
+            List<Integer> subjectIds = subjectsFuture.join().stream().map(ss -> ss.getSubject().getId()).toList();
+            List<Subject> subjects = subjectService.getSubjectsByIds(subjectIds);
+
+            return new SpaceDTO(space.getId(), space.getName(), space.getCapacity(), space.getDescription(), resources, subjects, space.isLocked());
+        }).toList();
 
         SpacesResponseDTO response = new SpacesResponseDTO(spacesResponse, params.offset() == null ? 0 : params.offset(), params.limit() == null ? 0 : params.limit(), total);
 
@@ -82,7 +101,7 @@ public class SpaceController {
             @ApiResponse(responseCode = "400", description = "Erro ao criar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PostMapping("/create")
-    public ResponseEntity<?> postCreateSpace(@RequestBody @Valid CreateSpaceRequestDTO data) {
+    public ResponseEntity<Object> postCreateSpace(@RequestBody @Valid CreateSpaceRequestDTO data) {
         spaceService.createSpace(data.name(), data.description(), data.capacity(), data.resources(), data.subjects());
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -94,7 +113,7 @@ public class SpaceController {
             @ApiResponse(responseCode = "400", description = "Erro ao editar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update/{id}")
-    public ResponseEntity<?> patchSpace(@PathVariable Integer id, @RequestBody @Valid PatchSpaceRequestDTO data) {
+    public ResponseEntity<Object> patchSpace(@PathVariable Integer id, @RequestBody @Valid PatchSpaceRequestDTO data) {
         var updatedSpace = spaceService.updateSpace(id, data);
         return ResponseEntity.ok(updatedSpace);
     }

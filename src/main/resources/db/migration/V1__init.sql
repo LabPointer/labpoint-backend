@@ -34,7 +34,8 @@ CREATE TABLE space(
     id SERIAL PRIMARY KEY NOT NULL,
     name varchar(32) UNIQUE NOT NULL,
     description varchar(128),
-    capacity INT NOT NULL
+    capacity INT NOT NULL,
+    locked BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE space_subject(
@@ -77,16 +78,31 @@ CREATE TYPE schedule_enum AS ENUM (
     'N_AULA_4'
 );
 
+CREATE TYPE schedule_status_enum AS ENUM (
+    'CONFIRMED',
+    'PENDING',
+    'LOCKED',
+    'CANCELED'
+);
+
 CREATE TABLE reserve(
     id SERIAL PRIMARY KEY NOT NULL,
     created_at timestamptz DEFAULT NOW(),
-    reserved_date DATE NOT NULL,
-    schedule schedule_enum NOT NULL,
-    locked BOOLEAN DEFAULT false,
+    reserved_date_from DATE NOT NULL,
+    reserved_date_to DATE NOT NULL,
+    status schedule_status_enum DEFAULT 'CONFIRMED',
+    purpose VARCHAR(100) NOT NULL,
     fk_user_id UUID NOT NULL,
     fk_space_id INT NOT NULL,
     FOREIGN KEY (fk_user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (fk_space_id) REFERENCES space(id) ON DELETE CASCADE,
-    CONSTRAINT uq_space_schedule UNIQUE (fk_space_id, schedule)
+    FOREIGN KEY (fk_space_id) REFERENCES space(id) ON DELETE CASCADE
+);
+
+CREATE TABLE reserve_schedule(
+    id SERIAL PRIMARY KEY NOT NULL,
+    schedule schedule_enum NOT NULL,
+    fk_reserve_id INT NOT NULL,
+    FOREIGN KEY (fk_reserve_id) REFERENCES reserve(id) ON DELETE CASCADE,
+    CONSTRAINT uq_space_schedule UNIQUE (fk_reserve_id, schedule)
 );
 

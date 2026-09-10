@@ -1,6 +1,6 @@
 package com.backend.labpoint.exception;
 
-import com.backend.labpoint.domain.error.ErroResponseDTO;
+import com.backend.labpoint.dto.error.ErroResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -12,37 +12,37 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @ControllerAdvice
 public class GlobalHandlerException {
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<?> handleResourceNotFoundException(ResourceNotFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErroResponseDTO(e.getMessage()));
+    public ResponseEntity<ErroResponseDTO> handleResourceNotFoundException(ResourceNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErroResponseDTO(e.getMessage(), false));
     }
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<?> handleBadRequestException(BadRequestException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErroResponseDTO(e.getMessage()));
+    public ResponseEntity<ErroResponseDTO> handleBadRequestException(BadRequestException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErroResponseDTO(e.getMessage(), false));
     }
 
     @ExceptionHandler(ForbiddenException.class)
-    public ResponseEntity<?> handleForbiddenException(ForbiddenException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO(e.getMessage()));
+    public ResponseEntity<ErroResponseDTO> handleForbiddenException(ForbiddenException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO(e.getMessage(), e.isLogout()));
     }
 
     @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<?> handleUnauthorizedException(UnauthorizedException e) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErroResponseDTO(e.getMessage()));
+    public ResponseEntity<ErroResponseDTO> handleUnauthorizedException(UnauthorizedException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErroResponseDTO(e.getMessage(), e.isLogout()));
     }
 
     @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<?> handleDisabledException(DisabledException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO(e.getMessage()));
+    public ResponseEntity<ErroResponseDTO> handleDisabledException(DisabledException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO(e.getMessage(), false));
     }
 
     @ExceptionHandler(LockedException.class)
-    public ResponseEntity<?> handleLockedException(LockedException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO(e.getMessage()));
+    public ResponseEntity<ErroResponseDTO> handleLockedException(LockedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO(e.getMessage(), false));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<?> handleLockedException(BadCredentialsException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO(e.getMessage()));
+    public ResponseEntity<ErroResponseDTO> handleLockedException(BadCredentialsException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO(e.getMessage(), false));
     }
 }

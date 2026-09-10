@@ -1,9 +1,10 @@
 package com.backend.labpoint.controller;
 
-import com.backend.labpoint.domain.error.ErroResponseDTO;
-import com.backend.labpoint.domain.user.*;
+import com.backend.labpoint.dto.error.ErroResponseDTO;
+import com.backend.labpoint.dto.user.*;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.infra.security.TokenService;
+import com.backend.labpoint.entities.user.User;
 import com.backend.labpoint.service.AuthService;
 import com.backend.labpoint.specification.AuthSpecification;
 import io.swagger.v3.oas.annotations.Operation;
@@ -60,7 +61,7 @@ public class AuthController {
     @Operation(summary = "Pesquisar por usuarios", description = "Filtra e retorna usuarios encontrados. OBS: A rota funciona apenas para admins")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Retorna lista de usuarios encontrados", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserRequestDTO.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
-            @ApiResponse(responseCode = "404", description = "Usuário nao encontrado", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Usuário nao encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @GetMapping("/users")
     public ResponseEntity<List<UserResponseDTO>> getUsers(@ParameterObject UserRequestDTO params) {
@@ -92,8 +93,8 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Login realizado com sucesso", content = @Content(schema = @Schema(implementation = LoginResponseDTO.class, requiredMode = Schema.RequiredMode.REQUIRED))),
             @ApiResponse(responseCode = "403", description = "Matricula ou senha incorretos, conta desabilitada ou conta trancada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> postLogin(@RequestBody @Valid LoginRequestDTO data) {
+    @PostMapping("/sign-in")
+    public ResponseEntity<LoginResponseDTO> postSignIn(@RequestBody @Valid LoginRequestDTO data) {
         UsernamePasswordAuthenticationToken registrationPasswordAuthentication = new UsernamePasswordAuthenticationToken(data.registration(),
                 data.password());
         Authentication auth = authenticationManager.authenticate(registrationPasswordAuthentication);
@@ -117,7 +118,7 @@ public class AuthController {
         return ResponseEntity
                 .ok()
                 .header("Set-Cookie", jwtCookie.toString())
-                .body(new LoginResponseDTO(user.getUsername(), user.getRole().toString(),
+                .body(new LoginResponseDTO(user.getNickname(), user.getRole().toString(),
                         Instant.now().plus(maxAge).toEpochMilli()));
     }
 
@@ -125,8 +126,8 @@ public class AuthController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Logout realizado com sucesso")
     })
-    @PostMapping("/logout")
-    public ResponseEntity<Void> PostLogout() {
+    @PostMapping("/sign-out")
+    public ResponseEntity<Void> postSignOut() {
         ResponseCookie deleteCookie = ResponseCookie.from("jwt-session", "")
                 .httpOnly(true)
                 .secure(true)
@@ -144,8 +145,8 @@ public class AuthController {
             @ApiResponse(responseCode = "201", description = "Usuário registrado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
-    @PostMapping("/register")
-    public ResponseEntity<?> postRegister(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid RegisterRequestDTO data) {
+    @PostMapping("/sign-up")
+    public ResponseEntity<Object> postSignUp(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid RegisterRequestDTO data) {
         return authService.registerNewUser(userDetails, data);
     }
 
@@ -155,17 +156,17 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update")
-    public ResponseEntity<?> patchUpdate(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid UserUpdateRequestDTO data) {
+    public ResponseEntity<Object> patchUpdate(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid UserUpdateRequestDTO data) {
         return authService.updateUserInfo(userDetails, data);
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> postResetPassword(@NotBlank @Email String email) {
+    public ResponseEntity<Object> postResetPassword(@NotBlank @Email String email) {
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/update-password")
-    public ResponseEntity<?> postUpdatePassword(@NotBlank String token, @NotBlank String password) {
+    public ResponseEntity<Object> postUpdatePassword(@NotBlank String token, @NotBlank String password) {
         return ResponseEntity.ok().build();
     }
 }
