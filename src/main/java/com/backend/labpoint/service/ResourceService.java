@@ -4,7 +4,6 @@ import com.backend.labpoint.entities.resource.Resource;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.ResourceRepository;
-import com.backend.labpoint.repository.SubjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -18,8 +17,6 @@ import java.util.Set;
 public class ResourceService {
     @Autowired
     private ResourceRepository resourceRepository;
-    @Autowired
-    private SubjectRepository subjectRepository;
 
     @Cacheable("resources")
     public List<Resource> getResources() {
@@ -36,7 +33,7 @@ public class ResourceService {
     public void createResource(String name) {
         if (resourceRepository.existsByName(name))
             throw new BadRequestException("Recurso já existe");
-        Resource newResource = new Resource(null, name);
+        Resource newResource = new Resource(name);
         resourceRepository.save(newResource);
     }
 
