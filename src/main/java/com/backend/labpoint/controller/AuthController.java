@@ -1,7 +1,7 @@
 package com.backend.labpoint.controller;
 
 import com.backend.labpoint.dto.auth.ForgotPasswordRequestDTO;
-import com.backend.labpoint.dto.auth.LoginRequestDTO;
+import com.backend.labpoint.dto.auth.SignInRequestDTO;
 import com.backend.labpoint.dto.auth.RegisterRequestDTO;
 import com.backend.labpoint.dto.auth.SignInCookie;
 import com.backend.labpoint.dto.auth.UpdatePasswordRequestDTO;
@@ -59,7 +59,7 @@ public class AuthController {
             @ApiResponse(responseCode = "403", description = "Matricula ou senha incorretos, conta desabilitada ou conta trancada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @PostMapping("/sign-in")
-    public ResponseEntity<Object> postSignIn(@RequestBody @Valid LoginRequestDTO data) {
+    public ResponseEntity<Object> postSignIn(@RequestBody @Valid SignInRequestDTO data) {
         UsernamePasswordAuthenticationToken registrationPasswordAuthentication = new UsernamePasswordAuthenticationToken(data.registration(),
                 data.password());
         Authentication auth = authenticationManager.authenticate(registrationPasswordAuthentication);

@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.backend.labpoint.dto.error.ErroResponseDTO;
-import com.backend.labpoint.dto.user.UserRequestDTO;
-import com.backend.labpoint.dto.user.UserResponseDTO;
-import com.backend.labpoint.dto.user.UserUpdateRequestDTO;
+import com.backend.labpoint.dto.user.ManageUserRequestDTO;
+import com.backend.labpoint.dto.user.ManageUserResponseDTO;
+import com.backend.labpoint.dto.user.ManageUserUpdateRequestDTO;
 import com.backend.labpoint.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,11 +37,11 @@ public class ManageUserController {
 
     @Operation(summary = "Pesquisar por usuarios", description = "Filtra e retorna usuarios encontrados. OBS: A rota funciona apenas para admins")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Retorna lista de usuarios encontrados", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserRequestDTO.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
+            @ApiResponse(responseCode = "200", description = "Retorna lista de usuarios encontrados", content = @Content(array = @ArraySchema(schema = @Schema(implementation = ManageUserRequestDTO.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
             @ApiResponse(responseCode = "404", description = "Usuário nao encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @GetMapping
-    public ResponseEntity<List<UserResponseDTO>> getUsers(@ParameterObject UserRequestDTO params) {
+    public ResponseEntity<List<ManageUserResponseDTO>> getUsers(@ParameterObject ManageUserRequestDTO params) {
         return userService.getUsers(params);
     }
 
@@ -51,7 +51,7 @@ public class ManageUserController {
             @ApiResponse(responseCode = "400", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update")
-    public ResponseEntity<Void> patchUpdate(@RequestBody @Valid UserUpdateRequestDTO data) {
+    public ResponseEntity<Void> patchUpdate(@RequestBody @Valid ManageUserUpdateRequestDTO data) {
         return userService.updateUserInfo(data);
     }
 }

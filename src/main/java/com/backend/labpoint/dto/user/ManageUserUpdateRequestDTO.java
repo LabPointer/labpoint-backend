@@ -2,7 +2,7 @@ package com.backend.labpoint.dto.user;
 
 import com.backend.labpoint.entities.user.UserRole;
 
-public record UserUpdateRequestDTO(
+public record ManageUserUpdateRequestDTO(
         String registration,
         String username,
         String email,

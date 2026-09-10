@@ -2,8 +2,8 @@ package com.backend.labpoint.service;
 
 import com.backend.labpoint.entities.user.User;
 import com.backend.labpoint.dto.auth.RegisterRequestDTO;
-import com.backend.labpoint.dto.user.UserUpdateRequestDTO;
-import com.backend.labpoint.dto.user.UserUpdateResponseDTO;
+import com.backend.labpoint.dto.user.ManageUserUpdateRequestDTO;
+import com.backend.labpoint.dto.user.ManageUserUpdateResponseDTO;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ForbiddenException;
 import com.backend.labpoint.exception.ResourceNotFoundException;

@@ -1,6 +1,4 @@
-package com.backend.labpoint.dto.user;
-
-import com.backend.labpoint.entities.subject.Subject;
+package com.backend.labpoint.entities.subject;
 
 import com.backend.labpoint.entities.user.User;
 import jakarta.persistence.*;

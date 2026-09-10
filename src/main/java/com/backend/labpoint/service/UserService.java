@@ -7,12 +7,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.backend.labpoint.dto.user.UserRequestDTO;
-import com.backend.labpoint.dto.user.UserResponseDTO;
-import com.backend.labpoint.dto.user.UserUpdateRequestDTO;
+import com.backend.labpoint.dto.user.ManageUserRequestDTO;
+import com.backend.labpoint.dto.user.ManageUserResponseDTO;
+import com.backend.labpoint.dto.user.ManageUserUpdateRequestDTO;
 import com.backend.labpoint.entities.user.User;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.UserRepository;
@@ -26,7 +27,7 @@ public class UserService {
     private UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public ResponseEntity<List<UserResponseDTO>> getUsers(UserRequestDTO params) {
+    public ResponseEntity<List<ManageUserResponseDTO>> getUsers(ManageUserRequestDTO params) {
         int pageSize = params.limit() > 0 ? params.limit() : 10;
         int pageNumber = params.offset() / pageSize;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
@@ -35,8 +36,8 @@ public class UserService {
                 params.role());
 
         List<User> users = userRepository.findAll(spec, pageable).getContent();
-        List<UserResponseDTO> userResponseDTOs = users.stream()
-                .map(user -> new UserResponseDTO(user.getUsername(), user.getEmail(), user.getRegistration(), user.getRole(), user.isEnabled(), UUIDExtractor.getLocalDateFromUuidV7(user.getId())))
+        List<ManageUserResponseDTO> userResponseDTOs = users.stream()
+                .map(user -> new ManageUserResponseDTO(user.getUsername(), user.getEmail(), user.getRegistration(), user.getRole(), user.isEnabled(), UUIDExtractor.getLocalDateFromUuidV7(user.getId())))
                 .toList();
         
         if (userResponseDTOs == null || userResponseDTOs.isEmpty())
@@ -46,7 +47,7 @@ public class UserService {
     }
 
     @Transactional
-    public ResponseEntity<Void> updateUserInfo(UserUpdateRequestDTO data) {
+    public ResponseEntity<Void> updateUserInfo(ManageUserUpdateRequestDTO data) {
         User user = userRepository.findByRegistration(data.registration())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado"));
 

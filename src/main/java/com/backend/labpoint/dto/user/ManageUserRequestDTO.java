@@ -3,7 +3,7 @@ package com.backend.labpoint.dto.user;
 import com.backend.labpoint.entities.user.UserRole;
 import jakarta.validation.constraints.Email;
 
-public record UserRequestDTO(
+public record ManageUserRequestDTO(
         String registration,
         String username,
         @Email String email,
@@ -11,7 +11,7 @@ public record UserRequestDTO(
         Integer offset,
         Integer limit
 ) {
-    public UserRequestDTO {
+    public ManageUserRequestDTO {
         if (offset == null) offset = 0;
         offset = offset < 0 ? 0 : offset;
         if (limit == null) limit = 20;

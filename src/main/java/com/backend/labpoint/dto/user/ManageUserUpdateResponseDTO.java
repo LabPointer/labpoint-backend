@@ -1,17 +1,17 @@
 package com.backend.labpoint.dto.user;
 
-import java.time.LocalDate;
-
 import com.backend.labpoint.entities.user.UserRole;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
-public record UserResponseDTO(
+import java.util.UUID;
+
+public record ManageUserUpdateResponseDTO(
+        UUID id,
         @NotEmpty String registration,
         @NotEmpty String username,
         @NotEmpty String email,
-        @NotEmpty UserRole role,
-        @NotNull boolean enabled,
-        @NotNull LocalDate createdAt
-) {
+        @NotNull UserRole role,
+        Boolean enabled) {
+
 }

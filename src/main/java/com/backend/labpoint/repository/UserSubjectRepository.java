@@ -1,9 +1,10 @@
 package com.backend.labpoint.repository;
 
-import com.backend.labpoint.dto.user.UserSubject;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import com.backend.labpoint.entities.subject.UserSubject;
 
 import java.util.Optional;
 
