@@ -1,5 +1,6 @@
 package com.backend.labpoint.service;
 
+import com.backend.labpoint.dto.resource.ResourceDTO;
 import com.backend.labpoint.entities.resource.Resource;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
@@ -19,14 +20,12 @@ public class ResourceService {
     private ResourceRepository resourceRepository;
 
     @Cacheable("resources")
-    public List<Resource> getResources() {
-        return resourceRepository.findAll();
+    public List<ResourceDTO> getResources() {
+        return resourceRepository.findAll().stream().map(r -> new ResourceDTO(r.getId(), r.getName())).toList();
     }
 
-    public List<Resource> getResourcesByIds(List<Integer> id) {
-        List<Resource> resources = resourceRepository.findByIds(id);
-
-        return resources;
+    public List<ResourceDTO> getResourcesByIds(List<Integer> id) {
+        return resourceRepository.findByIds(id).stream().map(r -> new ResourceDTO(r.getId(), r.getName())).toList();
     }
 
     @CacheEvict(value = "resources", allEntries = true)
@@ -38,7 +37,7 @@ public class ResourceService {
     }
 
     @CachePut("resources")
-    public Resource updateResource(Integer id, String newName) {
+    public ResourceDTO updateResource(Integer id, String newName) {
         Resource resource = resourceRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Recurso nao encontrado"));
 
         if (resourceRepository.existsByName(newName))
@@ -47,7 +46,7 @@ public class ResourceService {
         resource.setName(newName);
         resource = resourceRepository.save(resource);
 
-        return resource;
+        return new ResourceDTO(resource.getId(), resource.getName());
     }
 
     @CacheEvict(value = "resources", allEntries = true)

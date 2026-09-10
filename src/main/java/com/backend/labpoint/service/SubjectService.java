@@ -1,5 +1,6 @@
 package com.backend.labpoint.service;
 
+import com.backend.labpoint.dto.subject.SubjectDTO;
 import com.backend.labpoint.entities.subject.Subject;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
@@ -19,12 +20,12 @@ public class SubjectService {
     private SubjectRepository subjectRepository;
 
     @Cacheable("subjects")
-    public List<Subject> getSubjects() {
-        return subjectRepository.findAll();
+    public List<SubjectDTO> getSubjects() {
+        return subjectRepository.findAll().stream().map(s -> new SubjectDTO(s.getId(), s.getName())).toList();
     }
 
-    public List<Subject> getSubjectsByIds(List<Integer> id) {
-        return subjectRepository.findByIds(id);
+    public List<SubjectDTO> getSubjectsByIds(List<Integer> id) {
+        return subjectRepository.findByIds(id).stream().map(s -> new SubjectDTO(s.getId(), s.getName())).toList();
     }
 
     @CacheEvict(value = "subjects", allEntries = true)
@@ -36,7 +37,7 @@ public class SubjectService {
     }
 
     @CachePut("subjects")
-    public Subject updateSubject(Integer id, String newName) {
+    public SubjectDTO updateSubject(Integer id, String newName) {
         Subject subject = subjectRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Recurso nao encontrado"));
 
         if (subjectRepository.existsByName(newName))
@@ -45,7 +46,7 @@ public class SubjectService {
         subject.setName(newName);
         subject = subjectRepository.save(subject);
 
-        return subject;
+        return new SubjectDTO(subject.getId(), subject.getName());
     }
 
     @CacheEvict(value = "subjects", allEntries = true)

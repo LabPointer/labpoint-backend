@@ -10,5 +10,5 @@ import java.util.List;
 public record ReserveResponseDTO(
         @NotNull LocalDate reservedDate,
 
-        @NotEmpty List<Reserve> reserves) {
+        @NotEmpty List<ReserveDTO> reserves) {
 }

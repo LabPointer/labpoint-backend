@@ -2,6 +2,7 @@ package com.backend.labpoint.controller;
 
 import com.backend.labpoint.dto.error.ErroResponseDTO;
 import com.backend.labpoint.dto.resource.DeleteResourceRequestDTO;
+import com.backend.labpoint.dto.resource.ResourceDTO;
 import com.backend.labpoint.entities.resource.Resource;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.ResourceRepository;
@@ -41,7 +42,7 @@ public class ResourceController {
             @ApiResponse(responseCode = "404", description = "Nenhum recurso encontrado", content = @Content)
     })
     @GetMapping
-    public ResponseEntity<List<Resource>> getResources(@RequestParam(required = false) String name, @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
+    public ResponseEntity<List<ResourceDTO>> getResources(@RequestParam(required = false) String name, @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
         int limit = size == null ? 10 : size;
         if (limit > 50) limit = 50;
         if (limit < 10) limit = 10;
@@ -52,7 +53,9 @@ public class ResourceController {
         if (resources.isEmpty())
             throw new ResourceNotFoundException("Recurso(s) nao encontrado(s)");
 
-        return ResponseEntity.ok().body(resources);
+        List<ResourceDTO> resourceDTOs = resources.stream().map(r -> new ResourceDTO(r.getId(), r.getName())).toList();
+
+        return ResponseEntity.ok().body(resourceDTOs);
     }
 
     @Operation(summary = "Listar recursos cache", description = "Retorna uma lista de recursos. Destinado ao autocomplete.")
@@ -60,7 +63,7 @@ public class ResourceController {
             @ApiResponse(responseCode = "200", description = "Recursos encontrados", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Resource.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
     })
     @GetMapping("/cache")
-    public ResponseEntity<List<Resource>> getResourcesCache() {
+    public ResponseEntity<List<ResourceDTO>> getResourcesCache() {
         return ResponseEntity.ok(resourceService.getResources());
     }
 
@@ -70,7 +73,7 @@ public class ResourceController {
             @ApiResponse(responseCode = "400", description = "Erro ao criar recurso", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PostMapping("/create")
-    public ResponseEntity<?> postCreateResource(@RequestBody @NotBlank String name) {
+    public ResponseEntity<Object> postCreateResource(@RequestBody @NotBlank String name) {
         resourceService.createResource(name);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -82,7 +85,7 @@ public class ResourceController {
             @ApiResponse(responseCode = "400", description = "Erro ao editar recurso", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update/{id}")
-    public ResponseEntity<?> updateResource(@PathVariable Integer id, @RequestBody String newName) {
+    public ResponseEntity<ResourceDTO> updateResource(@PathVariable Integer id, @RequestBody String newName) {
         return ResponseEntity.ok(resourceService.updateResource(id, newName));
     }
 
@@ -92,7 +95,7 @@ public class ResourceController {
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteResource(@RequestBody DeleteResourceRequestDTO data) {
+    public ResponseEntity<Object> deleteResource(@RequestBody DeleteResourceRequestDTO data) {
         resourceService.deleteResources(data.resourceIds());
         return ResponseEntity.noContent().build();
     }

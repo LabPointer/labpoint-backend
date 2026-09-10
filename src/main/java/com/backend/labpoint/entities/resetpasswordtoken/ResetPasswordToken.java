@@ -1,4 +1,4 @@
-package com.backend.labpoint.dto.auth;
+package com.backend.labpoint.entities.resetpasswordtoken;
 
 import com.backend.labpoint.entities.user.User;
 import jakarta.persistence.*;
