@@ -1,7 +1,7 @@
 package com.backend.labpoint.service;
 
 import com.backend.labpoint.entities.user.User;
-import com.backend.labpoint.dto.auth.RegisterRequestDTO;
+import com.backend.labpoint.dto.auth.SignUpRequestDTO;
 import com.backend.labpoint.dto.user.ManageUserUpdateRequestDTO;
 import com.backend.labpoint.dto.user.ManageUserUpdateResponseDTO;
 import com.backend.labpoint.exception.BadRequestException;
@@ -40,7 +40,7 @@ public class AuthService {
     }
 
     @Transactional
-    public ResponseEntity<Object> registerNewUser(UserDetails userDetails, RegisterRequestDTO data) {
+    public ResponseEntity<Object> registerNewUser(UserDetails userDetails, SignUpRequestDTO data) {
         if (userRepository.findByRegistration(data.registration()).isPresent()) {
             throw new BadRequestException("Usuario ja existe");
         }

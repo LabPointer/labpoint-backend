@@ -12,6 +12,8 @@ import com.backend.labpoint.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,7 +91,7 @@ public class SpaceService {
     }
 
     @Transactional
-    public PatchSpaceResponseDTO updateSpace(Integer id, PatchSpaceRequestDTO dto) {
+    public void updateSpace(Integer id, PatchSpaceRequestDTO dto) {
         if (spaceRepository.existsByName(dto.name()))
             throw new BadRequestException("Nome do espaço ja existe");
         Space space = spaceRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Espaço nao encontrado"));
@@ -128,7 +130,7 @@ public class SpaceService {
             createSpaceSubject(spaceSubject);
         }
 
-        return new PatchSpaceResponseDTO(id, dto.name(), dto.capacity(), dto.resources().stream().toList(), dto.subjects().stream().toList());
+        spaceRepository.save(space);
     }
 
     @Transactional
