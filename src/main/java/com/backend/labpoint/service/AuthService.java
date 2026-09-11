@@ -1,9 +1,9 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.dto.user.RegisterRequestDTO;
 import com.backend.labpoint.entities.user.User;
-import com.backend.labpoint.dto.user.UserUpdateRequestDTO;
-import com.backend.labpoint.dto.user.UserUpdateResponseDTO;
+import com.backend.labpoint.dto.auth.SignUpRequestDTO;
+import com.backend.labpoint.dto.user.ManageUserUpdateRequestDTO;
+import com.backend.labpoint.dto.user.ManageUserUpdateResponseDTO;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ForbiddenException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
@@ -24,12 +24,6 @@ import java.util.List;
 public class AuthService {
 
     @Autowired
-    private AuthorizationService authorizationService;
-
-    @Autowired
-    private UserRepository usersRepository;
-
-    @Autowired
     private UserRepository userRepository;
 
     @Transactional(readOnly = true)
@@ -46,8 +40,8 @@ public class AuthService {
     }
 
     @Transactional
-    public ResponseEntity<Object> registerNewUser(UserDetails userDetails, RegisterRequestDTO data) {
-        if (usersRepository.findByRegistration(data.registration()).isPresent()) {
+    public ResponseEntity<Object> registerNewUser(UserDetails userDetails, SignUpRequestDTO data) {
+        if (userRepository.findByRegistration(data.registration()).isPresent()) {
             throw new BadRequestException("Usuario ja existe");
         }
 
@@ -61,83 +55,8 @@ public class AuthService {
             user.setEnabled(data.enabled());
         }
 
-        usersRepository.save(user);
+        userRepository.save(user);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    @Transactional
-    public ResponseEntity<Object> updateUserInfo(UserDetails userDetails, UserUpdateRequestDTO data) {
-        User currentUser = usersRepository.findByRegistration(userDetails.getUsername()).orElseThrow();
-        boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        if (isAdmin) {
-            if (data.uuid() != null) {
-                if (currentUser.getId() == data.uuid())
-                    throw new BadRequestException("id do corpo(body) da requisição não deve ser igual ao do usuario");
-
-                if (!usersRepository.findByRegistration(data.registration()).isPresent())
-                    throw new BadRequestException("Matricula ja registrada");
-
-                var anotherUser = usersRepository.findById(data.uuid()).orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado"));
-                if (data.registration() != null && !data.registration().isBlank())
-                    anotherUser.setRegistration(data.registration());
-                if (data.username() != null && !data.username().isBlank())
-                    anotherUser.setRegistration(data.registration());
-                if (data.email() != null && !data.email().isBlank())
-                    anotherUser.setEmail(data.email());
-                if (data.password() != null && !data.password().isBlank())
-                    anotherUser.setPassword(new BCryptPasswordEncoder().encode(data.password()));
-                if (data.role() != null)
-                    anotherUser.setRole(data.role());
-                if (data.enabled() != null)
-                    anotherUser.setEnabled(data.enabled());
-
-                anotherUser = usersRepository.save(anotherUser);
-
-                return ResponseEntity.ok(new UserUpdateResponseDTO(anotherUser.getId(), anotherUser.getRegistration(), anotherUser.getUsername(), anotherUser.getEmail(), anotherUser.getRole(), anotherUser.isEnabled()));
-            } else {
-                if (data.password() != null && !data.password().isBlank())
-                    throw new BadRequestException("Usuario nao pode alterar a propria senha por essa rota");
-
-                if (data.registration() != null && !data.registration().isBlank()) {
-                    if (usersRepository.findByRegistration(data.registration()).isPresent())
-                        throw new BadRequestException("Matricula ja registrada");
-                    currentUser.setRegistration(data.registration());
-                }
-                if (data.email() != null && !data.email().isBlank())
-                    currentUser.setEmail(data.email());
-                if (data.username() != null && !data.username().isBlank())
-                    currentUser.setUsername(data.username());
-                if (data.role() != null)
-                    currentUser.setRole(data.role());
-                if (data.enabled() != null)
-                    currentUser.setEnabled(data.enabled());
-
-                currentUser = usersRepository.save(currentUser);
-
-                return ResponseEntity.ok(new UserUpdateResponseDTO(null, currentUser.getRegistration(), currentUser.getUsername(), currentUser.getEmail(), currentUser.getRole(), null));
-            }
-        } else {
-            if (data.uuid() != null)
-                throw new ForbiddenException("Usuario precisa ser admin para editar contas de outros usuarios", false);
-
-            if (data.registration() != null)
-                throw new ForbiddenException("Usuario precisa ser admin para editar a matricula", false);
-
-            if (data.enabled() != null)
-                throw new ForbiddenException("Usuario precisa ser admin para habilitar ou desabilitar a conta", false);
-
-            if (data.password() != null)
-                throw new ForbiddenException("Usuario precisa ser admin e so pode alterar a senha caso seja de outro usuario", false);
-
-            if (data.email() != null && !data.email().isBlank())
-                currentUser.setEmail(data.email());
-            if (data.username() != null && !data.username().isBlank())
-                currentUser.setUsername(data.username());
-
-            currentUser = usersRepository.save(currentUser);
-
-            return ResponseEntity.ok(new UserUpdateResponseDTO(null, currentUser.getRegistration(), currentUser.getUsername(), currentUser.getEmail(), currentUser.getRole(), null));
-        }
     }
 }

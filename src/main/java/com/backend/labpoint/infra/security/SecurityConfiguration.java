@@ -37,6 +37,7 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.GET, "/auth/users").hasRole("ADMIN")
                                 .requestMatchers(HttpMethod.POST, "/auth/sign-in").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/auth/sign-up").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/auth/sign-out").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/auth/update").hasRole("ADMIN")
                                 // Spaces
                                 .requestMatchers(HttpMethod.POST, "/spaces/create").hasRole("ADMIN")
@@ -50,6 +51,12 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.POST, "/subjects/create").hasRole("ADMIN")
                                 .requestMatchers(HttpMethod.PATCH, "/subjects/update/**").hasRole("ADMIN")
                                 .requestMatchers(HttpMethod.DELETE, "/subjects/delete/**").hasRole("ADMIN")
+                                // Manage users
+                                .requestMatchers(HttpMethod.GET, "/manage-user/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.POST, "/manage-user/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PATCH, "/manage-user/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PUT, "/manage-user/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/manage-user/**").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

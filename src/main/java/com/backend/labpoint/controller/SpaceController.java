@@ -10,9 +10,7 @@ import com.backend.labpoint.entities.subject.SpaceSubject;
 import com.backend.labpoint.entities.resource.SpaceResource;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.entities.space.Space;
-import com.backend.labpoint.service.ResourceService;
 import com.backend.labpoint.service.SpaceService;
-import com.backend.labpoint.service.SubjectService;
 import com.backend.labpoint.specification.SpaceSpecification;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -42,12 +40,6 @@ public class SpaceController {
     @Autowired
     private SpaceService spaceService;
 
-    @Autowired
-    private SubjectService subjectService;
-
-    @Autowired
-    private ResourceService resourceService;
-
     @Operation(summary = "Buscar por laboratorios", description = "Retorna uma lista de laboratorios")
     @ApiResponses(value = {
             // @ApiResponse(responseCode = "200", description = "Laboratorios encontrados",
@@ -65,10 +57,8 @@ public class SpaceController {
                 params.subjects(),
                 params.locked());
 
-        int total = (int) spaceService.countSpaces(spec);
-
         int offset = params.offset() != null ? params.offset() : 0;
-        int limit = params.limit() != null ? params.limit() : 10;
+        int limit = params.limit() != null ? params.limit() + 1 : 11;
         Pageable pageable = PageRequest.of(offset / limit, limit, Sort.by("name").ascending());
 
         List<Space> spaces = spaceService.getSpaces(spec, pageable);
@@ -94,7 +84,7 @@ public class SpaceController {
             return new SpaceDTO(space.getId(), space.getName(), space.getCapacity(), space.getDescription(), resources, subjects, space.isLocked());
         }).toList();
 
-        SpacesResponseDTO response = new SpacesResponseDTO(spacesResponse, params.offset() == null ? 0 : params.offset(), params.limit() == null ? 0 : params.limit(), total);
+        SpacesResponseDTO response = new SpacesResponseDTO(spacesResponse, params.offset() == null ? 0 : params.offset(), params.limit() == null ? 0 : params.limit());
 
         return ResponseEntity.ok(response);
     }
@@ -105,7 +95,7 @@ public class SpaceController {
             @ApiResponse(responseCode = "400", description = "Erro ao criar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PostMapping("/create")
-    public ResponseEntity<Object> postCreateSpace(@RequestBody @Valid CreateSpaceRequestDTO data) {
+    public ResponseEntity<Void> postCreateSpace(@RequestBody @Valid CreateSpaceRequestDTO data) {
         spaceService.createSpace(data.name(), data.description(), data.capacity(), data.resources(), data.subjects());
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -117,9 +107,9 @@ public class SpaceController {
             @ApiResponse(responseCode = "400", description = "Erro ao editar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update/{id}")
-    public ResponseEntity<Object> patchSpace(@PathVariable Integer id, @RequestBody @Valid PatchSpaceRequestDTO data) {
-        var updatedSpace = spaceService.updateSpace(id, data);
-        return ResponseEntity.ok(updatedSpace);
+    public ResponseEntity<Void> patchSpace(@PathVariable Integer id, @RequestBody @Valid PatchSpaceRequestDTO data) {
+        spaceService.updateSpace(id, data);
+        return ResponseEntity.created(null).build();
     }
 
     @Operation(summary = "Deletar um espaço", description = "Deleta um espaço do sistema")

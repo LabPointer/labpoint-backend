@@ -8,8 +8,7 @@ import java.util.List;
 public record SpacesResponseDTO(
         @NotEmpty List<SpaceDTO> spaces,
         @NotNull int offset,
-        @NotNull int limit,
-        @NotNull int total
+        @NotNull int limit
 ) {
 
 }
