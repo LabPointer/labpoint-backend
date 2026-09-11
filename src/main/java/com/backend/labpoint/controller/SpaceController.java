@@ -1,17 +1,8 @@
 package com.backend.labpoint.controller;
 
 import com.backend.labpoint.dto.error.ErroResponseDTO;
-import com.backend.labpoint.dto.resource.ResourceDTO;
-import com.backend.labpoint.dto.subject.SubjectDTO;
-import com.backend.labpoint.entities.resource.Resource;
 import com.backend.labpoint.dto.space.*;
-import com.backend.labpoint.entities.subject.Subject;
-import com.backend.labpoint.entities.subject.SpaceSubject;
-import com.backend.labpoint.entities.resource.SpaceResource;
-import com.backend.labpoint.exception.ResourceNotFoundException;
-import com.backend.labpoint.entities.space.Space;
 import com.backend.labpoint.service.SpaceService;
-import com.backend.labpoint.specification.SpaceSpecification;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,16 +13,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/spaces")
@@ -50,43 +34,7 @@ public class SpaceController {
     })
     @GetMapping
     public ResponseEntity<SpacesResponseDTO> getSpaces(@ParameterObject @ModelAttribute SpaceRequestDTO params) {
-        Specification<Space> spec = SpaceSpecification.filters(
-                params.name(),
-                params.capacity(),
-                params.resources(),
-                params.subjects(),
-                params.locked());
-
-        int offset = params.offset() != null ? params.offset() : 0;
-        int limit = params.limit() != null ? params.limit() + 1 : 11;
-        Pageable pageable = PageRequest.of(offset / limit, limit, Sort.by("name").ascending());
-
-        List<Space> spaces = spaceService.getSpaces(spec, pageable);
-        if (spaces == null || spaces.isEmpty())
-            throw new ResourceNotFoundException("Espaço(s) nao encontrado(s)");
-
-        List<SpaceDTO> spacesResponse = spaces.stream().map(space -> {
-            CompletableFuture<List<SpaceResource>> resourcesFuture = CompletableFuture.supplyAsync(space::getResources);
-
-            CompletableFuture<List<SpaceSubject>> subjectsFuture = CompletableFuture.supplyAsync(space::getSubjects);
-
-            CompletableFuture.allOf(resourcesFuture, subjectsFuture).join();
-
-            List<ResourceDTO> resources = resourcesFuture.join().stream().map(sr -> {
-                Resource r = sr.getResource();
-                return new ResourceDTO(r.getId(), r.getName());
-            }).toList();
-            List<SubjectDTO> subjects = subjectsFuture.join().stream().map(sr -> {
-                    Subject s = sr.getSubject();
-                    return new SubjectDTO(s.getId(), s.getName());
-            }).toList();
-
-            return new SpaceDTO(space.getId(), space.getName(), space.getCapacity(), space.getDescription(), resources, subjects, space.isLocked());
-        }).toList();
-
-        SpacesResponseDTO response = new SpacesResponseDTO(spacesResponse, params.offset() == null ? 0 : params.offset(), params.limit() == null ? 0 : params.limit());
-
-        return ResponseEntity.ok(response);
+        return spaceService.getSpaces(params);
     }
 
     @Operation(summary = "Criar um novo espaço", description = "Cria um novo espaço no sistema")
