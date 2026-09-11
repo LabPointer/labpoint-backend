@@ -102,10 +102,21 @@ public class AuthController {
                 .maxAge(maxAge)
                 .build();
 
+        ResponseCookie authCookie = ResponseCookie
+                .from("is-authenticated", "true")
+                .httpOnly(false)
+                .secure(false)
+                .path("/")
+                .sameSite("Lax")
+                .secure(false)
+                .maxAge(maxAge)
+                .build();
+
         return ResponseEntity
                 .ok()
                 .header("Set-Cookie", jwtCookie.toString())
                 .header("Set-Cookie", sessionCookie.toString())
+                .header("Set-Cookie", authCookie.toString())
                 .build();
     }
 
@@ -150,10 +161,21 @@ public class AuthController {
                 .maxAge(maxAge)
                 .build();
 
+        ResponseCookie authCookie = ResponseCookie
+                .from("is-authenticated", "true")
+                .httpOnly(false)
+                .secure(false)
+                .path("/")
+                .sameSite("Lax")
+                .secure(false)
+                .maxAge(maxAge)
+                .build();
+
         return ResponseEntity
                 .ok()
                 .header("Set-Cookie", jwtCookie.toString())
                 .header("Set-Cookie", sessionCookie.toString())
+                .header("Set-Cookie", authCookie.toString())
                 .build();
     }
 
@@ -181,9 +203,19 @@ public class AuthController {
                 .secure(false)
                 .build();
 
+        ResponseCookie deleteAuthCookie = ResponseCookie.from("is-authenticated", "")
+                .httpOnly(false)
+                .secure(false)
+                .path("/")
+                .sameSite("Lax")
+                .secure(false)
+                .maxAge(0)
+                .build();
+
         return ResponseEntity.ok()
                 .header("Set-Cookie", deleteJwtCookie.toString())
                 .header("Set-Cookie", deleteSessionCookie.toString())
+                .header("Set-Cookie", deleteAuthCookie.toString())
                 .build();
     }
 

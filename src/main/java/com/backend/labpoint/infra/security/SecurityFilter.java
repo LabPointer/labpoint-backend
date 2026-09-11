@@ -28,7 +28,7 @@ public class SecurityFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException, UnauthorizedException {
-        boolean isPublicRoute = Arrays.asList("/docs/**", "/v3/**", "/auth/sign-in", "/auth/sign-up").contains(request.getServletPath());
+        boolean isPublicRoute = Arrays.asList("/docs/**", "/v3/**", "/auth/sign-in", "/auth/sign-up", "/auth/sign-out").contains(request.getServletPath());
 
         String token = recoverToken(request);
         if (token != null && !isPublicRoute) {
