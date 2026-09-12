@@ -12,7 +12,6 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 public class ReserveSpecification {
     public static Specification<Reserve> filters(YearMonth yearMonth, String spaceName, String username,

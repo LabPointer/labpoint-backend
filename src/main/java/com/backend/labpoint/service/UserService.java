@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +17,6 @@ import com.backend.labpoint.entities.user.User;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.UserRepository;
 import com.backend.labpoint.specification.ManageUserSpecification;
-import com.backend.labpoint.utils.UUIDExtractor;
 
 @Service 
 public class UserService {
