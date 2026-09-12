@@ -47,7 +47,7 @@ public class ReserveController {
             @ApiResponse(responseCode = "404", description = "Autenticação do usuario ou espaço não encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @GetMapping("/existing-schedules/{spaceId}")
-    public ResponseEntity<List<SchedulesEnum>> getExistingSchedules(@PathVariable Integer spaceId, @ParameterObject ExistingScheduleRequestDTO params) {
+    public ResponseEntity<List<SchedulesEnum>> getExistingSchedules(@PathVariable Long spaceId, @ParameterObject ExistingScheduleRequestDTO params) {
         return reserveService.existingSchedules(spaceId, params);
     }
 
@@ -57,7 +57,7 @@ public class ReserveController {
             @ApiResponse(responseCode = "404", description = "Reserva nao encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @GetMapping("/date-info/{reserveId}")
-    public ResponseEntity<ReserveDateDTO> getDateInfo(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer reserveId) {
+    public ResponseEntity<ReserveDateDTO> getDateInfo(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long reserveId) {
         return reserveService.getReserveDate(userDetails, reserveId);
     }
 
@@ -69,7 +69,7 @@ public class ReserveController {
             @ApiResponse(responseCode = "404", description = "Reserva nao encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @PatchMapping("/edit-date/{reserveId}")
-    public ResponseEntity<Void> editReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer reserveId, @RequestBody ReserveDateDTO data) {
+    public ResponseEntity<Void> editReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long reserveId, @RequestBody ReserveDateDTO data) {
         return reserveService.editReserveDate(userDetails, reserveId, data);
     }
 
@@ -80,7 +80,7 @@ public class ReserveController {
             @ApiResponse(responseCode = "404", description = "Autenticação do usuario ou espaço não encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @PostMapping("/create/{spaceId}")
-    public ResponseEntity<?> createReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer spaceId, @RequestBody CreateReserveRequestDTO body) {
+    public ResponseEntity<?> createReserve(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long spaceId, @RequestBody CreateReserveRequestDTO body) {
         return reserveService.createReserve(userDetails, spaceId, body);
     }
 
@@ -91,7 +91,7 @@ public class ReserveController {
             @ApiResponse(responseCode = "404", description = "Usuario ou reserva encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @DeleteMapping("/history/cancel/{id}")
-    public ResponseEntity<Void> getHistoryByYearMonth(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Integer id) {
+    public ResponseEntity<Void> getHistoryByYearMonth(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
         return reserveService.cancelReserveFromHistory(userDetails, id);
     }
 }

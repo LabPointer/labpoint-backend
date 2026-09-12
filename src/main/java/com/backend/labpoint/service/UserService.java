@@ -37,7 +37,7 @@ public class UserService {
 
         List<User> users = userRepository.findAll(spec, pageable).getContent();
         List<ManageUserResponseDTO> userResponseDTOs = users.stream()
-                .map(user -> new ManageUserResponseDTO(user.getUsername(), user.getEmail(), user.getRegistration(), user.getRole(), user.isEnabled(), UUIDExtractor.getLocalDateFromUuidV7(user.getId())))
+                .map(user -> new ManageUserResponseDTO(user.getUsername(), user.getEmail(), user.getRegistration(), user.getRole(), user.isEnabled(), user.getCreatedAt()))
                 .toList();
         
         if (userResponseDTOs == null || userResponseDTOs.isEmpty())

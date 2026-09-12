@@ -93,22 +93,22 @@ public class SpaceService {
     }
 
     @Transactional(readOnly = true)
-    public List<SpaceResource> getSpaceResourcesBySpaceId(Integer spaceId) {
+    public List<SpaceResource> getSpaceResourcesBySpaceId(Long spaceId) {
         return spaceResourceRepository.findSpaceResourceBySpaceId(spaceId);
     }
 
     @Transactional(readOnly = true)
-    public List<SpaceSubject> getSpaceSubjectsBySpaceId(Integer spaceId) {
+    public List<SpaceSubject> getSpaceSubjectsBySpaceId(Long spaceId) {
         return spaceSubjectRepository.findSpaceSubjectBySpaceId(spaceId);
     }
 
     @Transactional
-    public void createSpace(String name, String description, int capacity, Set<Integer> resources, Set<Integer> subjects) {
+    public void createSpace(String name, String description, int capacity, Set<Long> resources, Set<Long> subjects) {
         boolean hasSpace = spaceRepository.existsByName(name);
         if (hasSpace)
             throw new BadRequestException("Espaço ja existe");
 
-        Space newSpace = new Space(name, description, capacity);
+        Space newSpace = new Space(name, description, capacity, true);
         newSpace = spaceRepository.save(newSpace);
 
         for (var r : resources) {
@@ -136,7 +136,7 @@ public class SpaceService {
     }
 
     @Transactional
-    public void updateSpace(Integer id, PatchSpaceRequestDTO dto) {
+    public void updateSpace(Long id, PatchSpaceRequestDTO dto) {
         if (spaceRepository.existsByName(dto.name()))
             throw new BadRequestException("Nome do espaço ja existe");
         Space space = spaceRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Espaço nao encontrado"));
@@ -179,7 +179,7 @@ public class SpaceService {
     }
 
     @Transactional
-    public void deleteSpaces(Set<Integer> ids) {
+    public void deleteSpaces(Set<Long> ids) {
         List<Space> spaces = spaceRepository.findByIds(ids.stream().toList());
         if (spaces.isEmpty())
             throw new ResourceNotFoundException("Espaço(s) nao encontrado(s)");

@@ -9,9 +9,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ResourceRepository extends JpaRepository<Resource, Integer> {
+public interface ResourceRepository extends JpaRepository<Resource, Long> {
     @Query("SELECT r FROM Resource r WHERE r.id in :ids")
-    List<Resource> findByIds(List<Integer> ids);
+    List<Resource> findByIds(List<Long> ids);
 
     List<Resource> findByName(String name);
 

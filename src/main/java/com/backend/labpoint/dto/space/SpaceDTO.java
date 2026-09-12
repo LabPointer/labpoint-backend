@@ -11,7 +11,7 @@ import java.util.List;
 
 public record SpaceDTO(
         @NotNull
-        int id,
+        Long id,
         @NotBlank
         String name,
         @NotNull

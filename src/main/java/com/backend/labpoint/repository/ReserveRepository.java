@@ -10,9 +10,9 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Repository
-public interface ReserveRepository extends JpaRepository<Reserve, Integer>, JpaSpecificationExecutor<Reserve> {
-    List<Reserve> findBySpace_IdAndReservedDateFromAndReservedDateTo(Integer spaceId, LocalDate reservedDateFrom, LocalDate reservedDateTo);
+public interface ReserveRepository extends JpaRepository<Reserve, Long>, JpaSpecificationExecutor<Reserve> {
+    List<Reserve> findBySpace_IdAndReservedDateFromAndReservedDateTo(Long spaceId, LocalDate reservedDateFrom, LocalDate reservedDateTo);
 
     @Query("SELECT r FROM Reserve r WHERE r.id in :ids")
-    List<Reserve> findByIds(List<Integer> ids);
+    List<Reserve> findByIds(List<Long> ids);
 }

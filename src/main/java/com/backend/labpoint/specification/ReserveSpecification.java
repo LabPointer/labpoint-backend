@@ -3,7 +3,7 @@ package com.backend.labpoint.specification;
 import com.backend.labpoint.entities.reserve.Reserve;
 import com.backend.labpoint.entities.schedule.ReserveSchedule;
 import com.backend.labpoint.entities.schedule.SchedulesEnum;
-import com.backend.labpoint.entities.reserve.ScheduleStatusEnum;
+import com.backend.labpoint.entities.reserve.ReserveStatusEnum;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -71,7 +71,7 @@ public class ReserveSpecification {
         };
     }
 
-    public static Specification<Reserve> history(YearMonth yearMonth, UUID uuid) {
+    public static Specification<Reserve> history(YearMonth yearMonth, Long id) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -85,15 +85,15 @@ public class ReserveSpecification {
                 ));
             }
 
-            if (uuid != null) {
-                predicates.add(cb.equal(root.get("user").get("id"), uuid));
+            if (id != null) {
+                predicates.add(cb.equal(root.get("user").get("id"), id));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
 
-    public static Specification<Reserve> exists(int spaceId, LocalDate dateFrom, LocalDate dateTo) {
+    public static Specification<Reserve> exists(long spaceId, LocalDate dateFrom, LocalDate dateTo) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -106,13 +106,13 @@ public class ReserveSpecification {
             }
 
             predicates.add(
-                    cb.notEqual(root.get("status"), ScheduleStatusEnum.CANCELED));
+                    cb.notEqual(root.get("status"), ReserveStatusEnum.CANCELED));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
 
-    public static Specification<ReserveSchedule> scheduleExists(List<Integer> reserveIds, Set<SchedulesEnum> schedules) {
+    public static Specification<ReserveSchedule> scheduleExists(List<Long> reserveIds, Set<SchedulesEnum> schedules) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -126,7 +126,7 @@ public class ReserveSpecification {
         };
     }
 
-    public static Specification<Reserve> spaceHasReserveByDate(Integer spaceId, Integer reserveId, LocalDate dateFrom, LocalDate dateTo) {
+    public static Specification<Reserve> spaceHasReserveByDate(Long spaceId, Long reserveId, LocalDate dateFrom, LocalDate dateTo) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 

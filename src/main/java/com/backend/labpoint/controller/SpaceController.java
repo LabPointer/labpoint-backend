@@ -55,7 +55,7 @@ public class SpaceController {
             @ApiResponse(responseCode = "400", description = "Erro ao editar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update/{id}")
-    public ResponseEntity<Void> patchSpace(@PathVariable Integer id, @RequestBody @Valid PatchSpaceRequestDTO data) {
+    public ResponseEntity<Void> patchSpace(@PathVariable Long id, @RequestBody @Valid PatchSpaceRequestDTO data) {
         spaceService.updateSpace(id, data);
         return ResponseEntity.created(null).build();
     }

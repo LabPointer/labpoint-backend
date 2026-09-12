@@ -9,9 +9,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface SubjectRepository extends JpaRepository<Subject, Integer> {
+public interface SubjectRepository extends JpaRepository<Subject, Long> {
     @Query("SELECT s FROM Subject s WHERE s.id in :ids")
-    List<Subject> findByIds(List<Integer> ids);
+    List<Subject> findByIds(List<Long> ids);
 
     List<Subject> findByName(String name);
 

@@ -9,8 +9,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface SpaceSubjectRepository extends JpaRepository<SpaceSubject, Integer> {
+public interface SpaceSubjectRepository extends JpaRepository<SpaceSubject, Long> {
 
     @Query("SELECT ss FROM SpaceSubject ss WHERE ss.space.id = :spaceId")
-    List<SpaceSubject> findSpaceSubjectBySpaceId(@Param("spaceId") Integer spaceId);
+    List<SpaceSubject> findSpaceSubjectBySpaceId(@Param("spaceId") Long spaceId);
 }

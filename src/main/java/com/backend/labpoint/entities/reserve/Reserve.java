@@ -28,7 +28,7 @@ import java.util.List;
 public class Reserve {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
@@ -43,7 +43,7 @@ public class Reserve {
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "status", nullable = false)
-    private ScheduleStatusEnum status = ScheduleStatusEnum.CONFIRMED;
+    private ReserveStatusEnum status = ReserveStatusEnum.CONFIRMED;
 
     @Column(name = "purpose", nullable = false)
     private String purpose;
@@ -61,7 +61,7 @@ public class Reserve {
     @OneToMany(mappedBy = "reserve", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ReserveSchedule> schedules = new ArrayList<>();
 
-    public Reserve(LocalDate reservedDateFrom, LocalDate reservedDateTo, ScheduleStatusEnum status, String purpose, User user, Space space) {
+    public Reserve(LocalDate reservedDateFrom, LocalDate reservedDateTo, ReserveStatusEnum status, String purpose, User user, Space space) {
         this.reservedDateFrom = reservedDateFrom;
         this.reservedDateTo = reservedDateTo;
         this.status = status;

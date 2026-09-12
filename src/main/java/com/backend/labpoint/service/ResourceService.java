@@ -24,7 +24,7 @@ public class ResourceService {
         return resourceRepository.findAll().stream().map(r -> new ResourceDTO(r.getId(), r.getName())).toList();
     }
 
-    public List<ResourceDTO> getResourcesByIds(List<Integer> id) {
+    public List<ResourceDTO> getResourcesByIds(List<Long> id) {
         return resourceRepository.findByIds(id).stream().map(r -> new ResourceDTO(r.getId(), r.getName())).toList();
     }
 
@@ -37,7 +37,7 @@ public class ResourceService {
     }
 
     @CachePut("resources")
-    public ResourceDTO updateResource(Integer id, String newName) {
+    public ResourceDTO updateResource(Long id, String newName) {
         Resource resource = resourceRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Recurso nao encontrado"));
 
         if (resourceRepository.existsByName(newName))
@@ -50,7 +50,7 @@ public class ResourceService {
     }
 
     @CacheEvict(value = "resources", allEntries = true)
-    public void deleteResources(Set<Integer> ids) {
+    public void deleteResources(Set<Long> ids) {
         List<Resource> resources = resourceRepository.findAllById(ids);
         if (resources.isEmpty())
             throw new ResourceNotFoundException("Recurso(s) nao encontrado(s)");

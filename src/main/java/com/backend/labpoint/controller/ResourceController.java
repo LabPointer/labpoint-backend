@@ -85,7 +85,7 @@ public class ResourceController {
             @ApiResponse(responseCode = "400", description = "Erro ao editar recurso", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update/{id}")
-    public ResponseEntity<ResourceDTO> updateResource(@PathVariable Integer id, @RequestBody String newName) {
+    public ResponseEntity<ResourceDTO> updateResource(@PathVariable Long id, @RequestBody String newName) {
         return ResponseEntity.ok(resourceService.updateResource(id, newName));
     }
 

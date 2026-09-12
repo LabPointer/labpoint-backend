@@ -1,10 +1,9 @@
 package com.backend.labpoint.service;
 
 import com.backend.labpoint.dto.reserve.*;
-import com.backend.labpoint.dto.reserve.ReserveHistoryDTO;
 import com.backend.labpoint.entities.reserve.Reserve;
 import com.backend.labpoint.entities.space.Space;
-import com.backend.labpoint.entities.reserve.ScheduleStatusEnum;
+import com.backend.labpoint.entities.reserve.ReserveStatusEnum;
 import com.backend.labpoint.entities.schedule.ReserveSchedule;
 import com.backend.labpoint.entities.schedule.SchedulesEnum;
 import com.backend.labpoint.entities.user.User;
@@ -46,22 +45,21 @@ public class ReserveService {
 
     // Home reserve
     @Transactional(readOnly = true)
-    public ResponseEntity<List<SchedulesEnum>> existingSchedules(Integer spaceId, ExistingScheduleRequestDTO params) {
+    public ResponseEntity<List<SchedulesEnum>> existingSchedules(Long spaceId, ExistingScheduleRequestDTO params) {
         LocalDate dateFrom = params.dateFrom();
         LocalDate dateTo = params.dateTo();
         Specification<Reserve> reserveSpecification = ReserveSpecification.exists(spaceId, dateFrom, dateTo);
         List<Reserve> existingReserves = reserveRepository.findAll(reserveSpecification);
-        List<Integer> reserveIds = existingReserves.stream().map(Reserve::getId).toList();
-
-        List<SchedulesEnum> existingSchedules = reserveScheduleRepository.findByReserveIdIn(reserveIds).stream()
-                .map(ReserveSchedule::getSchedule).toList();
+        List<SchedulesEnum> existingSchedules = existingReserves.stream()
+                .flatMap(reserve -> reserve.getSchedules().stream())
+                .map(ReserveSchedule::getSchedule)
+                .toList();
 
         return ResponseEntity.ok(existingSchedules);
     }
 
     @Transactional
-    public ResponseEntity<?> createReserve(UserDetails userDetails, Integer spaceId,
-            CreateReserveRequestDTO createReserveRequestDTO) {
+    public ResponseEntity<?> createReserve(UserDetails userDetails, Long spaceId, CreateReserveRequestDTO createReserveRequestDTO) {
         User user = userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Space space = spaceRepository.findById(spaceId)
@@ -76,7 +74,7 @@ public class ReserveService {
                 createReserveRequestDTO.dateFrom(), createReserveRequestDTO.dateTo());
         List<Reserve> existingReserves = reserveRepository.findAll(reserveSpecification);
         if (!existingReserves.isEmpty()) {
-            List<Integer> reserveIds = existingReserves.stream().map(Reserve::getId).collect(Collectors.toList());
+            List<Long> reserveIds = existingReserves.stream().map(Reserve::getId).collect(Collectors.toList());
 
             Specification<ReserveSchedule> reserveScheduleSpecification = ReserveSpecification
                     .scheduleExists(reserveIds, createReserveRequestDTO.schedules());
@@ -94,7 +92,7 @@ public class ReserveService {
         reserve.setSpace(space);
         reserve.setReservedDateFrom(createReserveRequestDTO.dateFrom());
         reserve.setReservedDateTo(createReserveRequestDTO.dateTo());
-        reserve.setStatus(ScheduleStatusEnum.CONFIRMED);
+        reserve.setStatus(ReserveStatusEnum.CONFIRMED);
         reserve.setPurpose(createReserveRequestDTO.purpose());
 
         Reserve newReserve = reserveRepository.save(reserve);
@@ -109,7 +107,7 @@ public class ReserveService {
 
     // History
     @Transactional(readOnly = true)
-    public ResponseEntity<ReserveDateDTO> getReserveDate(UserDetails userDetails, Integer reserveId) {
+    public ResponseEntity<ReserveDateDTO> getReserveDate(UserDetails userDetails, Long reserveId) {
         User user = userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -145,7 +143,7 @@ public class ReserveService {
             LocalDate hoje = LocalDate.now();
             ReserveSummaryDTO reserveSummary = new ReserveSummaryDTO(reserve.getId(), reserve.getSpace().getName(), reserve.getSpace().getCapacity(), reserve.getReservedDateFrom(), reserve.getReservedDateTo(), reserve.getStatus(), reserve.getPurpose());
             List<SchedulesEnum> schedulesEnum = schedules.stream().map(ReserveSchedule::getSchedule).toList();
-            if (reserve.getStatus().equals(ScheduleStatusEnum.CANCELED)) {
+            if (reserve.getStatus().equals(ReserveStatusEnum.CANCELED)) {
                 canceled.add(new ReserveScheduleDTO(reserveSummary, schedulesEnum));
             } else if (reserve.getReservedDateTo().isBefore(hoje)) {
                 concluded.add(new ReserveScheduleDTO(reserveSummary, schedulesEnum));
@@ -158,7 +156,7 @@ public class ReserveService {
     }
 
     @Transactional
-    public ResponseEntity<Void> editReserveDate(UserDetails userDetails, Integer id, ReserveDateDTO data) {
+    public ResponseEntity<Void> editReserveDate(UserDetails userDetails, Long id, ReserveDateDTO data) {
         User user = (User) userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado"));
 
@@ -205,7 +203,7 @@ public class ReserveService {
     }
 
     @Transactional
-    public ResponseEntity<Void> cancelReserveFromHistory(UserDetails userDetails, Integer id) {
+    public ResponseEntity<Void> cancelReserveFromHistory(UserDetails userDetails, Long id) {
         User user = (User) userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Reserve reserve = reserveRepository.findById(id)
@@ -213,7 +211,7 @@ public class ReserveService {
         if (reserve.getUser().getId() != user.getId())
             throw new ForbiddenException("You are not authorized to cancel this reserve", false);
 
-        reserve.setStatus(ScheduleStatusEnum.CANCELED);
+        reserve.setStatus(ReserveStatusEnum.CANCELED);
 
         reserveRepository.save(reserve);
 

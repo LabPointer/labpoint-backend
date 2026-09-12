@@ -87,7 +87,7 @@ public class SubjectController {
             @ApiResponse(responseCode = "400", description = "Erro ao editar matéria", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/update/{id}")
-    public ResponseEntity<SubjectDTO> updateSubject(@PathVariable Integer id, @RequestBody String newName) {
+    public ResponseEntity<SubjectDTO> updateSubject(@PathVariable Long id, @RequestBody String newName) {
         return ResponseEntity.ok(subjectService.updateSubject(id, newName));
     }
 

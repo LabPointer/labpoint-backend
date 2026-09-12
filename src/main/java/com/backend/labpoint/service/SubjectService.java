@@ -24,7 +24,7 @@ public class SubjectService {
         return subjectRepository.findAll().stream().map(s -> new SubjectDTO(s.getId(), s.getName())).toList();
     }
 
-    public List<SubjectDTO> getSubjectsByIds(List<Integer> id) {
+    public List<SubjectDTO> getSubjectsByIds(List<Long> id) {
         return subjectRepository.findByIds(id).stream().map(s -> new SubjectDTO(s.getId(), s.getName())).toList();
     }
 
@@ -37,7 +37,7 @@ public class SubjectService {
     }
 
     @CachePut("subjects")
-    public SubjectDTO updateSubject(Integer id, String newName) {
+    public SubjectDTO updateSubject(Long id, String newName) {
         Subject subject = subjectRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Recurso nao encontrado"));
 
         if (subjectRepository.existsByName(newName))
@@ -50,7 +50,7 @@ public class SubjectService {
     }
 
     @CacheEvict(value = "subjects", allEntries = true)
-    public void deleteSubjects(Set<Integer> ids) {
+    public void deleteSubjects(Set<Long> ids) {
         List<Subject> subjects = subjectRepository.findAllById(ids);
         if (subjects.isEmpty())
             throw new ResourceNotFoundException("Recurso(s) nao encontrado(s)");
