@@ -1,8 +1,9 @@
 package com.backend.labpoint.entities.reserve;
 
+import com.backend.labpoint.entities.account.Account;
 import com.backend.labpoint.entities.schedule.ReserveSchedule;
 import com.backend.labpoint.entities.space.Space;
-import com.backend.labpoint.entities.user.User;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -51,7 +52,7 @@ public class Reserve {
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "fk_user_id", nullable = false)
-    private User user;
+    private Account user;
 
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -61,7 +62,7 @@ public class Reserve {
     @OneToMany(mappedBy = "reserve", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ReserveSchedule> schedules = new ArrayList<>();
 
-    public Reserve(LocalDate reservedDateFrom, LocalDate reservedDateTo, ReserveStatusEnum status, String purpose, User user, Space space) {
+    public Reserve(LocalDate reservedDateFrom, LocalDate reservedDateTo, ReserveStatusEnum status, String purpose, Account user, Space space) {
         this.reservedDateFrom = reservedDateFrom;
         this.reservedDateTo = reservedDateTo;
         this.status = status;

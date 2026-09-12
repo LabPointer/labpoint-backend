@@ -1,9 +1,9 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.entities.user.User;
 import com.backend.labpoint.dto.auth.SignUpRequestDTO;
+import com.backend.labpoint.entities.account.Account;
 import com.backend.labpoint.exception.BadRequestException;
-import com.backend.labpoint.repository.UserRepository;
+import com.backend.labpoint.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -20,16 +20,16 @@ import java.util.List;
 public class AuthService {
 
     @Autowired
-    private UserRepository userRepository;
+    private AccountRepository userRepository;
 
     @Transactional(readOnly = true)
-    public long countUsers(Specification<User> spec) {
+    public long countUsers(Specification<Account> spec) {
         return userRepository.count(spec);
     }
 
     @Transactional(readOnly = true)
-    public List<User> getUsers(Specification<User> spec, Pageable pageable) {
-        List<User> users = userRepository.findAll(spec, pageable).getContent();
+    public List<Account> getUsers(Specification<Account> spec, Pageable pageable) {
+        List<Account> users = userRepository.findAll(spec, pageable).getContent();
         if (users == null || users.isEmpty())
             throw new RuntimeException("Nenhum usuario encontrado");
         return users;
@@ -42,7 +42,7 @@ public class AuthService {
         }
 
         String encryptedPass = new BCryptPasswordEncoder().encode(data.password());
-        User user = new User(data.username(), data.email(), data.registration(), encryptedPass, data.role());
+        Account user = new Account(data.username(), data.email(), data.registration(), encryptedPass, data.role());
         if (
                 userDetails != null &&
                         userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")) &&

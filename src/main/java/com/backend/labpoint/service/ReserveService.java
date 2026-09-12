@@ -1,19 +1,19 @@
 package com.backend.labpoint.service;
 
 import com.backend.labpoint.dto.reserve.*;
+import com.backend.labpoint.entities.account.Account;
 import com.backend.labpoint.entities.reserve.Reserve;
 import com.backend.labpoint.entities.space.Space;
 import com.backend.labpoint.entities.reserve.ReserveStatusEnum;
 import com.backend.labpoint.entities.schedule.ReserveSchedule;
 import com.backend.labpoint.entities.schedule.SchedulesEnum;
-import com.backend.labpoint.entities.user.User;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ForbiddenException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.ReserveRepository;
 import com.backend.labpoint.repository.ReserveScheduleRepository;
 import com.backend.labpoint.repository.SpacesRepository;
-import com.backend.labpoint.repository.UserRepository;
+import com.backend.labpoint.repository.AccountRepository;
 import com.backend.labpoint.specification.ReserveSpecification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 public class ReserveService {
 
     @Autowired
-    private UserRepository userRepository;
+    private AccountRepository userRepository;
 
     @Autowired
     private SpacesRepository spaceRepository;
@@ -60,7 +60,7 @@ public class ReserveService {
 
     @Transactional
     public ResponseEntity<?> createReserve(UserDetails userDetails, Long spaceId, CreateReserveRequestDTO createReserveRequestDTO) {
-        User user = userRepository.findByRegistration(userDetails.getUsername())
+        Account user = userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Space space = spaceRepository.findById(spaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Space not found"));
@@ -108,7 +108,7 @@ public class ReserveService {
     // History
     @Transactional(readOnly = true)
     public ResponseEntity<ReserveDateDTO> getReserveDate(UserDetails userDetails, Long reserveId) {
-        User user = userRepository.findByRegistration(userDetails.getUsername())
+        Account user = userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Reserve reserve = reserveRepository.findById(reserveId)
@@ -122,7 +122,7 @@ public class ReserveService {
 
     @Transactional(readOnly = true)
     public ResponseEntity<ReserveHistoryDTO> findHistoryByMonth(UserDetails userDetails, YearMonth yearMonth) {
-        User user = userRepository.findByRegistration(userDetails.getUsername())
+        Account user = userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Specification<Reserve> reserveHistory = ReserveSpecification.history(yearMonth, user.getId());
@@ -157,7 +157,7 @@ public class ReserveService {
 
     @Transactional
     public ResponseEntity<Void> editReserveDate(UserDetails userDetails, Long id, ReserveDateDTO data) {
-        User user = (User) userRepository.findByRegistration(userDetails.getUsername())
+        Account user = (Account) userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado"));
 
         Reserve reserve = reserveRepository.findById(id)
@@ -204,7 +204,7 @@ public class ReserveService {
 
     @Transactional
     public ResponseEntity<Void> cancelReserveFromHistory(UserDetails userDetails, Long id) {
-        User user = (User) userRepository.findByRegistration(userDetails.getUsername())
+        Account user = (Account) userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Reserve reserve = reserveRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserve not found"));

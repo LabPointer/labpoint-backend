@@ -1,4 +1,4 @@
-package com.backend.labpoint.entities.user;
+package com.backend.labpoint.entities.account;
 
 import com.backend.labpoint.entities.reserve.Reserve;
 import jakarta.persistence.*;
@@ -16,12 +16,12 @@ import java.util.Collection;
 import java.util.List;
 
 @Entity
-@Table(name = "users")
+@Table(name = "account")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class User implements UserDetails {
+public class Account implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -40,7 +40,7 @@ public class User implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserRole role;
+    private AccountRole role;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean enabled = false;
@@ -51,7 +51,7 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Reserve> reserves = new ArrayList<>();
 
-    public User(String username, String email, String registration, String password, UserRole role) {
+    public Account(String username, String email, String registration, String password, AccountRole role) {
         this.username = username;
         this.email = email;
         this.registration = registration;
@@ -59,7 +59,7 @@ public class User implements UserDetails {
         this.role = role;
     }
 
-    public User(String username, String email, String registration, String password, UserRole role, boolean enabled) {
+    public Account(String username, String email, String registration, String password, AccountRole role, boolean enabled) {
         this.username = username;
         this.email = email;
         this.registration = registration;
@@ -70,13 +70,13 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (role == UserRole.OWNER) {
+        if (role == AccountRole.OWNER) {
             return List.of(
                     new SimpleGrantedAuthority("ROLE_OWNER"),
                     new SimpleGrantedAuthority("ROLE_ADMIN"),
                     new SimpleGrantedAuthority("ROLE_USER")
             );
-        } else if (role == UserRole.ADMIN) {
+        } else if (role == AccountRole.ADMIN) {
             return List.of(
                     new SimpleGrantedAuthority("ROLE_ADMIN"),
                     new SimpleGrantedAuthority("ROLE_USER")

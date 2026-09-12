@@ -13,27 +13,27 @@ import org.springframework.transaction.annotation.Transactional;
 import com.backend.labpoint.dto.user.ManageUserRequestDTO;
 import com.backend.labpoint.dto.user.ManageUserResponseDTO;
 import com.backend.labpoint.dto.user.ManageUserUpdateRequestDTO;
-import com.backend.labpoint.entities.user.User;
+import com.backend.labpoint.entities.account.Account;
 import com.backend.labpoint.exception.ResourceNotFoundException;
-import com.backend.labpoint.repository.UserRepository;
-import com.backend.labpoint.specification.ManageUserSpecification;
+import com.backend.labpoint.repository.AccountRepository;
+import com.backend.labpoint.specification.AccountSpecification;
 
 @Service 
-public class UserService {
+public class AccountService {
     
     @Autowired
-    private UserRepository userRepository;
+    private AccountRepository userRepository;
 
     @Transactional(readOnly = true)
-    public ResponseEntity<List<ManageUserResponseDTO>> getUsers(ManageUserRequestDTO params) {
+    public ResponseEntity<List<ManageUserResponseDTO>> getAccount(ManageUserRequestDTO params) {
         int pageSize = params.limit() > 0 ? params.limit() : 10;
         int pageNumber = params.offset() / pageSize;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
 
-        Specification<User> spec = ManageUserSpecification.filters(params.username(), params.email(), params.registration(),
+        Specification<Account> spec = AccountSpecification.filters(params.username(), params.email(), params.registration(),
                 params.role());
 
-        List<User> users = userRepository.findAll(spec, pageable).getContent();
+        List<Account> users = userRepository.findAll(spec, pageable).getContent();
         List<ManageUserResponseDTO> userResponseDTOs = users.stream()
                 .map(user -> new ManageUserResponseDTO(user.getUsername(), user.getEmail(), user.getRegistration(), user.getRole(), user.isEnabled(), user.getCreatedAt()))
                 .toList();
@@ -45,8 +45,8 @@ public class UserService {
     }
 
     @Transactional
-    public ResponseEntity<Void> updateUserInfo(ManageUserUpdateRequestDTO data) {
-        User user = userRepository.findByRegistration(data.registration())
+    public ResponseEntity<Void> updateAccountInfo(ManageUserUpdateRequestDTO data) {
+        Account user = userRepository.findByRegistration(data.registration())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado"));
 
         if (data.username() != null && !data.username().isBlank()) {

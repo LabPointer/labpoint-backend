@@ -1,6 +1,5 @@
 package com.backend.labpoint.entities.resetpasswordtoken;
 
-import com.backend.labpoint.entities.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+
+import com.backend.labpoint.entities.account.Account;
 
 @Entity
 @Table(name = "password_reset_token")
@@ -22,7 +23,7 @@ public class PasswordResetToken {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private Account user;
 
     @Column(name = "token_hash", nullable = false, unique = true)
     private String tokenHash;

@@ -1,6 +1,7 @@
 package com.backend.labpoint.entities.subject;
 
-import com.backend.labpoint.entities.user.User;
+import com.backend.labpoint.entities.account.Account;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,7 +21,7 @@ public class UserSubject {
 
     @ManyToOne
     @JoinColumn(name = "fk_user_id", nullable = false)
-    private User user;
+    private Account user;
 
     @ManyToOne
     @JoinColumn(name = "fk_subject_id", nullable = false)

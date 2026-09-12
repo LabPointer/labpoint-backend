@@ -7,10 +7,10 @@ import com.backend.labpoint.dto.auth.SignUpRequestDTO;
 import com.backend.labpoint.dto.auth.SignInCookie;
 import com.backend.labpoint.dto.auth.UpdatePasswordRequestDTO;
 import com.backend.labpoint.dto.error.ErroResponseDTO;
+import com.backend.labpoint.entities.account.Account;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.infra.security.TokenService;
-import com.backend.labpoint.repository.UserRepository;
-import com.backend.labpoint.entities.user.User;
+import com.backend.labpoint.repository.AccountRepository;
 import com.backend.labpoint.service.AuthService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -54,7 +54,7 @@ public class AuthController {
     private TokenService tokenService;
 
     @Autowired
-    private UserRepository userRepository;
+    private AccountRepository userRepository;
 
     @Value("${api.security.token.age}")
     private int tokenMaxAge;
@@ -69,7 +69,7 @@ public class AuthController {
         UsernamePasswordAuthenticationToken registrationPasswordAuthentication = new UsernamePasswordAuthenticationToken(data.registration(),
                 data.password());
         Authentication auth = authenticationManager.authenticate(registrationPasswordAuthentication);
-        User user = (User) auth.getPrincipal();
+        Account user = (Account) auth.getPrincipal();
         if (user == null)
             throw new ResourceNotFoundException("Usuario nao encontrado");
         String token = tokenService.generateToken(user);
@@ -101,21 +101,10 @@ public class AuthController {
                 .maxAge(maxAge)
                 .build();
 
-        ResponseCookie authCookie = ResponseCookie
-                .from("is-authenticated", "true")
-                .httpOnly(false)
-                .secure(false)
-                .path("/")
-                .sameSite("Lax")
-                .secure(false)
-                .maxAge(maxAge)
-                .build();
-
         return ResponseEntity
                 .ok()
                 .header("Set-Cookie", jwtCookie.toString())
                 .header("Set-Cookie", sessionCookie.toString())
-                .header("Set-Cookie", authCookie.toString())
                 .build();
     }
 
@@ -126,7 +115,7 @@ public class AuthController {
     })
     @PostMapping("/refresh")
     public ResponseEntity<Object> getRefresh(@AuthenticationPrincipal UserDetails userDetails) {
-        User user = userRepository.findByRegistration(userDetails.getUsername())
+        Account user = userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado"));
         if (user == null)
             throw new ResourceNotFoundException("Usuario nao encontrado");
@@ -160,21 +149,10 @@ public class AuthController {
                 .maxAge(maxAge)
                 .build();
 
-        ResponseCookie authCookie = ResponseCookie
-                .from("is-authenticated", "true")
-                .httpOnly(false)
-                .secure(false)
-                .path("/")
-                .sameSite("Lax")
-                .secure(false)
-                .maxAge(maxAge)
-                .build();
-
         return ResponseEntity
                 .ok()
                 .header("Set-Cookie", jwtCookie.toString())
                 .header("Set-Cookie", sessionCookie.toString())
-                .header("Set-Cookie", authCookie.toString())
                 .build();
     }
 
@@ -202,19 +180,9 @@ public class AuthController {
                 .secure(false)
                 .build();
 
-        ResponseCookie deleteAuthCookie = ResponseCookie.from("is-authenticated", "")
-                .httpOnly(false)
-                .secure(false)
-                .path("/")
-                .sameSite("Lax")
-                .secure(false)
-                .maxAge(0)
-                .build();
-
         return ResponseEntity.ok()
                 .header("Set-Cookie", deleteJwtCookie.toString())
                 .header("Set-Cookie", deleteSessionCookie.toString())
-                .header("Set-Cookie", deleteAuthCookie.toString())
                 .build();
     }
 
@@ -255,7 +223,6 @@ public class AuthController {
     })
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> postForgotPassword(@Valid @RequestBody ForgotPasswordRequestDTO data) {
-        
         return ResponseEntity.accepted().build();
     }
 

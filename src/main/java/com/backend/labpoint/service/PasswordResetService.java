@@ -11,10 +11,10 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.backend.labpoint.entities.account.Account;
 import com.backend.labpoint.entities.resetpasswordtoken.PasswordResetToken;
-import com.backend.labpoint.entities.user.User;
 import com.backend.labpoint.repository.PasswordResetTokenRepository;
-import com.backend.labpoint.repository.UserRepository;
+import com.backend.labpoint.repository.AccountRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -22,7 +22,7 @@ import jakarta.transaction.Transactional;
 public class PasswordResetService {
 
     @Autowired 
-    private UserRepository userRepository;
+    private AccountRepository userRepository;
 
     @Autowired 
     private PasswordResetTokenRepository tokenRepository;
@@ -35,14 +35,14 @@ public class PasswordResetService {
 
     @Transactional
     public void solicitarReset(String email) {
-        Optional<User> usuarioOpt = userRepository.findByEmail(email);
+        Optional<Account> usuarioOpt = userRepository.findByEmail(email);
 
         // Não revela se o email existe ou não
         if (usuarioOpt.isEmpty()) {
             return;
         }
 
-        User usuario = usuarioOpt.get();
+        Account usuario = usuarioOpt.get();
 
         // Invalida tokens anteriores não usados (evita múltiplos válidos ao mesmo tempo)
         // TODO: Implementar a lógica para invalidar tokens anteriores

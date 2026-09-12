@@ -14,7 +14,7 @@ import com.backend.labpoint.dto.error.ErroResponseDTO;
 import com.backend.labpoint.dto.user.ManageUserRequestDTO;
 import com.backend.labpoint.dto.user.ManageUserResponseDTO;
 import com.backend.labpoint.dto.user.ManageUserUpdateRequestDTO;
-import com.backend.labpoint.service.UserService;
+import com.backend.labpoint.service.AccountService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -28,12 +28,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @Controller
-@RequestMapping("/user")
-@Tag(name = "/user", description = "Endpoints para gerenciamento de usuários")
-public class UserController {
+@RequestMapping("/account")
+@Tag(name = "/account", description = "Endpoints para gerenciamento de contas")
+public class AccountController {
 
     @Autowired
-    private UserService userService;
+    private AccountService userService;
 
     @Operation(summary = "Pesquisar por usuarios", description = "Filtra e retorna usuarios encontrados. OBS: A rota funciona apenas para admins")
     @ApiResponses(value = {
@@ -42,7 +42,7 @@ public class UserController {
     })
     @GetMapping("/manage/search")
     public ResponseEntity<List<ManageUserResponseDTO>> getUsers(@ParameterObject ManageUserRequestDTO params) {
-        return userService.getUsers(params);
+        return userService.getAccount(params);
     }
 
     @Operation(summary = "Atualizar as informações do usuario", description = "Atualiza as informações do usuario no sistema")
@@ -52,6 +52,6 @@ public class UserController {
     })
     @PatchMapping("/manage/update")
     public ResponseEntity<Void> patchUpdate(@RequestBody @Valid ManageUserUpdateRequestDTO data) {
-        return userService.updateUserInfo(data);
+        return userService.updateAccountInfo(data);
     }
 }
