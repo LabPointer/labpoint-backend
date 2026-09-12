@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/labpoint
+    username: labpoint
+    password: labpoint
+  
+  flyway:
+    enabled: true
+
+# --- OpenAPI / Swagger / Scalar ---
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  scalar:
+    path: /docs
+
+scalar:
+  path: /docs
