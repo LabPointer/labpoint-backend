@@ -33,9 +33,11 @@ Abra http://localhost:8080/docs no seu navegador para ver a documentação das r
 
 - [Spring Boot](https://start.spring.io/)
 
-## Application properties
+## application.yaml
 
 - spring.datasource.url=jdbc:[url do banco de dados]()
 - spring.datasource.username=[usuario do banco de dados]()
 - spring.datasource.password=[senha do banco de dados]()
 - spring.jpa.properties.hibernate.dialect=[dialecto do banco de dados]()
+- spring.mail.username=[gmail para mail server]()
+- spring.mail.username=[aplication password para do gmail]()
