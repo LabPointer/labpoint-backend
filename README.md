@@ -11,7 +11,7 @@ Backend para do Labpoint, sistema de reservas de laboratórios.
 > [!WARNING]
 > Para o banco de dados, recomendo baixar o [Docker](https://www.docker.com/) ou [Postgres](https://www.postgresql.org/)
 >
-> Caso esteja usando o postgre nativo, nao se esqueça de configurar as credencias de acesso em `./src/main/resources/application.properties`
+> Caso esteja usando o postgre nativo, nao se esqueça de configurar as credencias de acesso em `./src/main/resources/application-dev.yaml`
 
 # Iniciando
 
@@ -25,9 +25,9 @@ mvn spring-boot:run
 - `mvn clean install` - Limpa o projeto e instala as dependências
 - `mvn spring-boot:run` - Inicia o servidor de desenvolvimento
 
-Abra http://localhost:3001/ no seu navegador para ver o resultado.
+Abra http://localhost:8080/ no seu navegador para ver o resultado.
 
-Abra http://localhost:3001/docs no seu navegador para ver a documentação das rotas.
+Abra http://localhost:8080/docs no seu navegador para ver a documentação das rotas.
 
 ## Packages
 
