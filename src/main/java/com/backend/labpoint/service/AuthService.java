@@ -2,11 +2,7 @@ package com.backend.labpoint.service;
 
 import com.backend.labpoint.entities.user.User;
 import com.backend.labpoint.dto.auth.SignUpRequestDTO;
-import com.backend.labpoint.dto.user.ManageUserUpdateRequestDTO;
-import com.backend.labpoint.dto.user.ManageUserUpdateResponseDTO;
 import com.backend.labpoint.exception.BadRequestException;
-import com.backend.labpoint.exception.ForbiddenException;
-import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;

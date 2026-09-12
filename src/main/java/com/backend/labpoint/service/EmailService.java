@@ -12,7 +12,7 @@ public class EmailService {
     private final TemplateEngine templateEngine;
 
     @Value("${spring.mail.username}")
-    private String remetente;
+    private String sender;
 
     public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine) {
         this.mailSender = mailSender;

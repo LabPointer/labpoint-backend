@@ -12,7 +12,6 @@ import com.backend.labpoint.infra.security.TokenService;
 import com.backend.labpoint.repository.UserRepository;
 import com.backend.labpoint.entities.user.User;
 import com.backend.labpoint.service.AuthService;
-import com.backend.labpoint.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -256,6 +255,7 @@ public class AuthController {
     })
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> postForgotPassword(@Valid @RequestBody ForgotPasswordRequestDTO data) {
+        
         return ResponseEntity.accepted().build();
     }
 
