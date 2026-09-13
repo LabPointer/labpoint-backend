@@ -48,7 +48,7 @@ public class Account implements UserDetails {
     @Column(name = "created_at", nullable = false)
     private LocalDate createdAt;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "account", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Reserve> reserves = new ArrayList<>();
 
     public Account(String username, String email, String registration, String password, AccountRole role) {
@@ -57,6 +57,7 @@ public class Account implements UserDetails {
         this.registration = registration;
         this.password = password;
         this.role = role;
+        this.createdAt = LocalDate.now();
     }
 
     public Account(String username, String email, String registration, String password, AccountRole role, boolean enabled) {
@@ -66,6 +67,7 @@ public class Account implements UserDetails {
         this.password = password;
         this.role = role;
         this.enabled = enabled;
+        this.createdAt = LocalDate.now();
     }
 
     @Override

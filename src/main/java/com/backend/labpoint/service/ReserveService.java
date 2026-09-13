@@ -88,7 +88,7 @@ public class ReserveService {
         }
 
         Reserve reserve = new Reserve();
-        reserve.setUser(user);
+        reserve.setAccount(user);
         reserve.setSpace(space);
         reserve.setReservedDateFrom(createReserveRequestDTO.dateFrom());
         reserve.setReservedDateTo(createReserveRequestDTO.dateTo());
@@ -114,7 +114,7 @@ public class ReserveService {
         Reserve reserve = reserveRepository.findById(reserveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserve not found"));
 
-        if (reserve.getUser().getId() != user.getId())
+        if (reserve.getAccount().getId() != user.getId())
             throw new ForbiddenException("You are not allowed to access this reserve.", false);
 
         return ResponseEntity.ok(new ReserveDateDTO(reserve.getReservedDateFrom(), reserve.getReservedDateTo()));
@@ -163,7 +163,7 @@ public class ReserveService {
         Reserve reserve = reserveRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva nao encontrada"));
 
-        if (!reserve.getUser().getId().equals(user.getId()))
+        if (!reserve.getAccount().getId().equals(user.getId()))
             throw new ForbiddenException("Você não tem autorização para editar essa reserva", false);
 
         Space space = reserve.getSpace();
@@ -208,7 +208,7 @@ public class ReserveService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Reserve reserve = reserveRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserve not found"));
-        if (reserve.getUser().getId() != user.getId())
+        if (reserve.getAccount().getId() != user.getId())
             throw new ForbiddenException("You are not authorized to cancel this reserve", false);
 
         reserve.setStatus(ReserveStatusEnum.CANCELED);

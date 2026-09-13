@@ -1,5 +1,6 @@
 package com.backend.labpoint.service;
 
+import com.backend.labpoint.dto.auth.ForgotPasswordRequestDTO;
 import com.backend.labpoint.dto.auth.SignUpRequestDTO;
 import com.backend.labpoint.entities.account.Account;
 import com.backend.labpoint.exception.BadRequestException;
@@ -20,16 +21,16 @@ import java.util.List;
 public class AuthService {
 
     @Autowired
-    private AccountRepository userRepository;
+    private AccountRepository accountRepository;
 
     @Transactional(readOnly = true)
-    public long countUsers(Specification<Account> spec) {
-        return userRepository.count(spec);
+    public long countAccount(Specification<Account> spec) {
+        return accountRepository.count(spec);
     }
 
     @Transactional(readOnly = true)
     public List<Account> getUsers(Specification<Account> spec, Pageable pageable) {
-        List<Account> users = userRepository.findAll(spec, pageable).getContent();
+        List<Account> users = accountRepository.findAll(spec, pageable).getContent();
         if (users == null || users.isEmpty())
             throw new RuntimeException("Nenhum usuario encontrado");
         return users;
@@ -37,7 +38,7 @@ public class AuthService {
 
     @Transactional
     public ResponseEntity<Object> registerNewUser(UserDetails userDetails, SignUpRequestDTO data) {
-        if (userRepository.findByRegistration(data.registration()).isPresent()) {
+        if (accountRepository.findByRegistration(data.registration()).isPresent()) {
             throw new BadRequestException("Usuario ja existe");
         }
 
@@ -51,8 +52,15 @@ public class AuthService {
             user.setEnabled(data.enabled());
         }
 
-        userRepository.save(user);
+        accountRepository.save(user);
 
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Transactional
+    public ResponseEntity<Object> createPasswordResetRequest(UserDetails userDetails, ForgotPasswordRequestDTO data) {
+        Account user = accountRepository.findByEmail(data.email())
+                .orElseThrow(() -> new BadRequestException("Usuario nao encontrado"));
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }

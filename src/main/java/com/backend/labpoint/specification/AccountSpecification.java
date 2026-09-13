@@ -24,7 +24,7 @@ public class AccountSpecification {
             }
 
             if (email != null && !email.isBlank()) {
-                predicates.add(cb.like(root.get("email"), "%" + email + "%"));
+                predicates.add(cb.like(root.get("templates/email"), "%" + email + "%"));
             }
 
             if (role != null) {

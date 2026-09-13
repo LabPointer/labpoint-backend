@@ -9,19 +9,19 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "user_subject")
+@Table(name = "account_subject")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserSubject {
+public class AccountSubject {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "fk_user_id", nullable = false)
-    private Account user;
+    @JoinColumn(name = "fk_account_id", nullable = false)
+    private Account account;
 
     @ManyToOne
     @JoinColumn(name = "fk_subject_id", nullable = false)

@@ -1,18 +1,18 @@
 package com.backend.labpoint.service;
 
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.UUID;
 
+import com.backend.labpoint.entities.password.PasswordResetToken;
+import com.backend.labpoint.exception.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.backend.labpoint.entities.account.Account;
-import com.backend.labpoint.entities.resetpasswordtoken.PasswordResetToken;
 import com.backend.labpoint.repository.PasswordResetTokenRepository;
 import com.backend.labpoint.repository.AccountRepository;
 
@@ -22,60 +22,66 @@ import jakarta.transaction.Transactional;
 public class PasswordResetService {
 
     @Autowired 
-    private AccountRepository userRepository;
+    private AccountRepository accountRepository;
 
     @Autowired 
-    private PasswordResetTokenRepository tokenRepository;
-
-    @Autowired 
-    private EmailService emailService;
+    private PasswordResetTokenRepository passwordResetTokenRepository;
 
     private static final int TOKEN_BYTES = 32;
     private static final int EXPIRACAO_MINUTOS = 30;
 
     @Transactional
-    public void solicitarReset(String email) {
-        Optional<Account> usuarioOpt = userRepository.findByEmail(email);
+    public String createRequest(String email) {
+        Optional<Account> accountOpt = accountRepository.findByEmail(email);
 
-        // Não revela se o email existe ou não
-        if (usuarioOpt.isEmpty()) {
-            return;
+        if (accountOpt.isEmpty()) {
+            return null;
         }
 
-        Account usuario = usuarioOpt.get();
+        Account account = accountOpt.get();
 
-        // Invalida tokens anteriores não usados (evita múltiplos válidos ao mesmo tempo)
-        // TODO: Implementar a lógica para invalidar tokens anteriores
-        //tokenRepository.invalidarTokensAnteriores(usuario.getId());
+        PasswordResetToken passResetToken = new PasswordResetToken(null, account, LocalDateTime.now().plusMinutes(EXPIRACAO_MINUTOS), null);
+        passResetToken = passwordResetTokenRepository.save(passResetToken);
 
-        // Gera token aleatório seguro
-        String tokenPuro = gerarTokenSeguro();
-        String tokenHash = hashToken(tokenPuro);
+        String token = passResetToken.getId().toString();
 
-        PasswordResetToken resetToken = new PasswordResetToken();
-        resetToken.setUser(usuario);
-        resetToken.setTokenHash(tokenHash);
-        resetToken.setExpiresAt(LocalDateTime.now().plusMinutes(EXPIRACAO_MINUTOS));
-        tokenRepository.save(resetToken);
-
-        String link = "https://labpoint.senai.br/redefinir-senha?token=" + tokenPuro;
-        //emailService.enviarEmailResetSenha(usuario.getEmail(), usuario.getNome(), link);
+        return Base64.getEncoder().encodeToString(token.getBytes());
     }
 
-    private String gerarTokenSeguro() {
-        SecureRandom random = new SecureRandom();
-        byte[] bytes = new byte[TOKEN_BYTES];
-        random.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
+    public void resetPassword(String token, String password) {
+        String decodedToken;
 
-    private String hashToken(String token) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            byte[] decodedBytes = Base64.getDecoder().decode(token);
+            decodedToken = new String(decodedBytes, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid token");
         }
+
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(decodedToken);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid token");
+        }
+
+        Optional<PasswordResetToken> passwordResetTokenOpt = passwordResetTokenRepository.findById(uuid);
+        if (passwordResetTokenOpt.isEmpty()) {
+            throw new BadRequestException("Invalid token");
+        }
+
+        PasswordResetToken passwordResetToken = passwordResetTokenOpt.get();
+
+        LocalDateTime now = LocalDateTime.now();
+        if (passwordResetToken.getExpiresAt().isBefore(now)) {
+            throw new BadRequestException("Token expired");
+        }
+
+        Account account = passwordResetToken.getAccount();
+        String encryptedPass = new BCryptPasswordEncoder().encode(password);
+        account.setPassword(encryptedPass);
+        accountRepository.save(account);
+
+        passwordResetTokenRepository.delete(passwordResetToken);
     }
 }

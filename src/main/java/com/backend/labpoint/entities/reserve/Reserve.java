@@ -51,8 +51,8 @@ public class Reserve {
 
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "fk_user_id", nullable = false)
-    private Account user;
+    @JoinColumn(name = "fk_account_id", nullable = false)
+    private Account account;
 
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -62,12 +62,12 @@ public class Reserve {
     @OneToMany(mappedBy = "reserve", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ReserveSchedule> schedules = new ArrayList<>();
 
-    public Reserve(LocalDate reservedDateFrom, LocalDate reservedDateTo, ReserveStatusEnum status, String purpose, Account user, Space space) {
+    public Reserve(LocalDate reservedDateFrom, LocalDate reservedDateTo, ReserveStatusEnum status, String purpose, Account account, Space space) {
         this.reservedDateFrom = reservedDateFrom;
         this.reservedDateTo = reservedDateTo;
         this.status = status;
         this.purpose = purpose;
-        this.user = user;
+        this.account = account;
         this.space = space;
     }
 }

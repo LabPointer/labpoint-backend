@@ -36,13 +36,13 @@ public class ReserveSpecification {
 
             if (username != null && !username.isBlank()) {
                 predicates.add(cb.equal(
-                        root.get("user").get("username"),
+                        root.get("account").get("username"),
                         username));
             }
 
             if (registration != null && !registration.isBlank()) {
                 predicates.add(cb.equal(
-                        root.get("user").get("registration"),
+                        root.get("account").get("registration"),
                         username));
             }
 
@@ -85,7 +85,7 @@ public class ReserveSpecification {
             }
 
             if (id != null) {
-                predicates.add(cb.equal(root.get("user").get("id"), id));
+                predicates.add(cb.equal(root.get("account").get("id"), id));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

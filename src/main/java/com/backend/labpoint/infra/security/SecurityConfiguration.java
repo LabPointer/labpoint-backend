@@ -38,6 +38,8 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.POST, "/auth/sign-in").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/auth/sign-up").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/auth/sign-out").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/auth/forgot-password").permitAll()
+                                .requestMatchers(HttpMethod.PATCH, "/auth/reset-password/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/auth/update").hasRole("ADMIN")
                                 // Spaces
                                 .requestMatchers(HttpMethod.POST, "/spaces/create").hasRole("ADMIN")
