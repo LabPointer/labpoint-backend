@@ -5,13 +5,13 @@ import java.util.List;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import com.backend.labpoint.entities.user.User;
-import com.backend.labpoint.entities.user.UserRole;
+import com.backend.labpoint.entities.account.Account;
+import com.backend.labpoint.entities.account.AccountRole;
 
 import jakarta.persistence.criteria.Predicate;
 
-public class ManageUserSpecification {
-    public static Specification<User> filters(String registration, String username, String email, UserRole role) {
+public class AccountSpecification {
+    public static Specification<Account> filters(String registration, String username, String email, AccountRole role) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -24,7 +24,7 @@ public class ManageUserSpecification {
             }
 
             if (email != null && !email.isBlank()) {
-                predicates.add(cb.like(root.get("email"), "%" + email + "%"));
+                predicates.add(cb.like(root.get("templates/email"), "%" + email + "%"));
             }
 
             if (role != null) {

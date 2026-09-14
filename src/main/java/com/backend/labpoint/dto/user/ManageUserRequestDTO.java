@@ -1,13 +1,14 @@
 package com.backend.labpoint.dto.user;
 
-import com.backend.labpoint.entities.user.UserRole;
+import com.backend.labpoint.entities.account.AccountRole;
+
 import jakarta.validation.constraints.Email;
 
 public record ManageUserRequestDTO(
         String registration,
         String username,
         @Email String email,
-        UserRole role,
+        AccountRole role,
         Integer offset,
         Integer limit
 ) {

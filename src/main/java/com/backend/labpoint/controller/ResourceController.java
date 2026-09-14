@@ -2,10 +2,11 @@ package com.backend.labpoint.controller;
 
 import com.backend.labpoint.dto.error.ErroResponseDTO;
 import com.backend.labpoint.dto.resource.DeleteResourceRequestDTO;
+import com.backend.labpoint.dto.resource.ResourceCreateRequestDTO;
 import com.backend.labpoint.dto.resource.ResourceDTO;
+import com.backend.labpoint.dto.resource.ResourceRequestDTO;
+import com.backend.labpoint.dto.resource.ResourceUpdateRequestDTO;
 import com.backend.labpoint.entities.resource.Resource;
-import com.backend.labpoint.exception.ResourceNotFoundException;
-import com.backend.labpoint.repository.ResourceRepository;
 import com.backend.labpoint.service.ResourceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -15,11 +16,9 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.NotBlank;
+
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,9 +30,6 @@ import java.util.List;
 @Tag(name = "/resources", description = "Endpoints para pesquisa de recursos")
 public class ResourceController {
     @Autowired
-    private ResourceRepository resourceRepository;
-
-    @Autowired
     private ResourceService resourceService;
 
     @Operation(summary = "Buscar por recursos", description = "Retorna uma lista de recursos.")
@@ -42,29 +38,8 @@ public class ResourceController {
             @ApiResponse(responseCode = "404", description = "Nenhum recurso encontrado", content = @Content)
     })
     @GetMapping
-    public ResponseEntity<List<ResourceDTO>> getResources(@RequestParam(required = false) String name, @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
-        int limit = size == null ? 10 : size;
-        if (limit > 50) limit = 50;
-        if (limit < 10) limit = 10;
-        int offset = page == null ? 0 : (page - 1) * limit;
-        if (offset < 0) offset = 0;
-        Pageable pageable = PageRequest.of(offset, limit, Sort.by("name").ascending());
-        List<Resource> resources = name == null ? resourceRepository.findAll() : resourceRepository.findByNameLike(name, pageable);
-        if (resources.isEmpty())
-            throw new ResourceNotFoundException("Recurso(s) nao encontrado(s)");
-
-        List<ResourceDTO> resourceDTOs = resources.stream().map(r -> new ResourceDTO(r.getId(), r.getName())).toList();
-
-        return ResponseEntity.ok().body(resourceDTOs);
-    }
-
-    @Operation(summary = "Listar recursos cache", description = "Retorna uma lista de recursos. Destinado ao autocomplete.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Recursos encontrados", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Resource.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
-    })
-    @GetMapping("/cache")
-    public ResponseEntity<List<ResourceDTO>> getResourcesCache() {
-        return ResponseEntity.ok(resourceService.getResources());
+    public ResponseEntity<List<ResourceDTO>> getResources(@ParameterObject ResourceRequestDTO params) {
+        return resourceService.getResources(params);
     }
 
     @Operation(summary = "Criar um recurso", description = "Cria um recurso no sistema")
@@ -72,9 +47,9 @@ public class ResourceController {
             @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Erro ao criar recurso", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
-    @PostMapping("/create")
-    public ResponseEntity<Object> postCreateResource(@RequestBody @NotBlank String name) {
-        resourceService.createResource(name);
+    @PostMapping("/manage/create")
+    public ResponseEntity<Object> postCreateResource(@RequestBody ResourceCreateRequestDTO data) {
+        resourceService.createResource(data.name());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -84,9 +59,9 @@ public class ResourceController {
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Erro ao editar recurso", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
-    @PatchMapping("/update/{id}")
-    public ResponseEntity<ResourceDTO> updateResource(@PathVariable Integer id, @RequestBody String newName) {
-        return ResponseEntity.ok(resourceService.updateResource(id, newName));
+    @PatchMapping("/manage/update/{id}")
+    public ResponseEntity<ResourceDTO> updateResource(@PathVariable Long id, @RequestBody ResourceUpdateRequestDTO data) {
+        return ResponseEntity.ok(resourceService.updateResource(id, data.name()));
     }
 
     @Operation(summary = "Deletar um recurso", description = "Deleta um recurso no sistema")
@@ -94,7 +69,7 @@ public class ResourceController {
             @ApiResponse(responseCode = "204", description = "Recurso deletado com sucesso", content = @Content),
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
-    @DeleteMapping("/delete")
+    @DeleteMapping("/manage/delete")
     public ResponseEntity<Object> deleteResource(@RequestBody DeleteResourceRequestDTO data) {
         resourceService.deleteResources(data.resourceIds());
         return ResponseEntity.noContent().build();

@@ -45,4 +45,9 @@ public class GlobalHandlerException {
     public ResponseEntity<ErroResponseDTO> handleLockedException(BadCredentialsException e) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponseDTO(e.getMessage(), false));
     }
+
+    @ExceptionHandler(InternalServerException.class)
+    public ResponseEntity<ErroResponseDTO> handleLockedException(InternalServerException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErroResponseDTO(e.getMessage(), false));
+    }
 }

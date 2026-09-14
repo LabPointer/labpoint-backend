@@ -1,6 +1,7 @@
 package com.backend.labpoint.dto.auth;
 
-import com.backend.labpoint.entities.user.UserRole;
+import com.backend.labpoint.entities.account.AccountRole;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -21,6 +22,6 @@ public record SignUpRequestDTO(
         @Size(min = 5, max = 16)
         String password,
         @NotNull(message = "Campo username nao pode ser nulo ou vazio!")
-        UserRole role,
+        AccountRole role,
         Boolean enabled) {
 }

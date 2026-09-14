@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface SpaceResourceRepository extends JpaRepository<SpaceResource, Integer>, JpaSpecificationExecutor<SpaceResource> {
+public interface SpaceResourceRepository extends JpaRepository<SpaceResource, Long>, JpaSpecificationExecutor<SpaceResource> {
     @Query("SELECT sr FROM SpaceResource sr WHERE sr.space.id = :spaceId")
-    List<SpaceResource> findSpaceResourceBySpaceId(@Param("spaceId") Integer spaceId);
+    List<SpaceResource> findSpaceResourceBySpaceId(@Param("spaceId") Long spaceId);
 }

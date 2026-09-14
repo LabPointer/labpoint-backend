@@ -1,14 +1,16 @@
 package com.backend.labpoint.service;
 
 import com.backend.labpoint.dto.resource.ResourceDTO;
+import com.backend.labpoint.dto.resource.ResourceRequestDTO;
 import com.backend.labpoint.entities.resource.Resource;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.ResourceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,16 +21,24 @@ public class ResourceService {
     @Autowired
     private ResourceRepository resourceRepository;
 
-    @Cacheable("resources")
-    public List<ResourceDTO> getResources() {
-        return resourceRepository.findAll().stream().map(r -> new ResourceDTO(r.getId(), r.getName())).toList();
+    public ResponseEntity<List<ResourceDTO>> getResources(ResourceRequestDTO params) {
+        int limit = params.limit() == null ? 11 : params.limit() + 1;
+        int offset = params.offset() == null ? 0 : params.offset();
+        Pageable pageable = PageRequest.of(offset, limit, Sort.by("name").ascending());
+
+        List<Resource> resources = params.name() == null ? resourceRepository.findAll(pageable).getContent() : resourceRepository.findByNameLike(params.name(), pageable);
+        if (resources.isEmpty())
+            throw new ResourceNotFoundException("Recurso(s) nao encontrado(s)");
+
+        List<ResourceDTO> resourceDTOs = resources.stream().map(r -> new ResourceDTO(r.getId(), r.getName())).toList();
+
+        return ResponseEntity.ok().body(resourceDTOs);
     }
 
-    public List<ResourceDTO> getResourcesByIds(List<Integer> id) {
+    public List<ResourceDTO> getResourcesByIds(List<Long> id) {
         return resourceRepository.findByIds(id).stream().map(r -> new ResourceDTO(r.getId(), r.getName())).toList();
     }
 
-    @CacheEvict(value = "resources", allEntries = true)
     public void createResource(String name) {
         if (resourceRepository.existsByName(name))
             throw new BadRequestException("Recurso já existe");
@@ -36,8 +46,7 @@ public class ResourceService {
         resourceRepository.save(newResource);
     }
 
-    @CachePut("resources")
-    public ResourceDTO updateResource(Integer id, String newName) {
+    public ResourceDTO updateResource(Long id, String newName) {
         Resource resource = resourceRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Recurso nao encontrado"));
 
         if (resourceRepository.existsByName(newName))
@@ -49,8 +58,7 @@ public class ResourceService {
         return new ResourceDTO(resource.getId(), resource.getName());
     }
 
-    @CacheEvict(value = "resources", allEntries = true)
-    public void deleteResources(Set<Integer> ids) {
+    public void deleteResources(Set<Long> ids) {
         List<Resource> resources = resourceRepository.findAllById(ids);
         if (resources.isEmpty())
             throw new ResourceNotFoundException("Recurso(s) nao encontrado(s)");

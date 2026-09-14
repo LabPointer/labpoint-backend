@@ -1,9 +1,6 @@
 package com.backend.labpoint.entities.resource;
 
-import com.backend.labpoint.entities.schedule.ReserveSchedule;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,11 +18,9 @@ import java.util.List;
 public class Resource {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @NotNull
-    private Integer id;
+    private Long id;
 
-    @Column(nullable = false, length = 32, unique = true)
-    @NotBlank
+    @Column(nullable = false, length = 64, unique = true)
     private String name;
 
     @OneToMany(mappedBy = "resource", fetch = FetchType.LAZY, cascade = CascadeType.ALL)

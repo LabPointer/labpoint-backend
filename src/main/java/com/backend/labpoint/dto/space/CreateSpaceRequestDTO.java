@@ -19,9 +19,9 @@ public record CreateSpaceRequestDTO(
         @Min(value = 1, message = "Campo capacity deve ser no minimo 1 ou mais!")
         Integer capacity,
 
-        Set<Integer> resources,
+        Set<Long> resources,
 
-        Set<Integer> subjects
+        Set<Long> subjects
 ) {
     public CreateSpaceRequestDTO {
         if (resources == null) resources = Set.of();

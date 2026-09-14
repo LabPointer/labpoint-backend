@@ -4,7 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.backend.labpoint.entities.user.User;
+import com.backend.labpoint.entities.account.Account;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,7 @@ public class TokenService {
     @Value("${api.security.token.age}")
     private long tokenMaxAge;
 
-    public String generateToken(User user) {
+    public String generateToken(Account user) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             String token = JWT.create()

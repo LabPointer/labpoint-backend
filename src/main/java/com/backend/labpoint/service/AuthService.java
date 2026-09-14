@@ -1,13 +1,9 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.entities.user.User;
 import com.backend.labpoint.dto.auth.SignUpRequestDTO;
-import com.backend.labpoint.dto.user.ManageUserUpdateRequestDTO;
-import com.backend.labpoint.dto.user.ManageUserUpdateResponseDTO;
+import com.backend.labpoint.entities.account.Account;
 import com.backend.labpoint.exception.BadRequestException;
-import com.backend.labpoint.exception.ForbiddenException;
-import com.backend.labpoint.exception.ResourceNotFoundException;
-import com.backend.labpoint.repository.UserRepository;
+import com.backend.labpoint.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -22,18 +18,17 @@ import java.util.List;
 
 @Service
 public class AuthService {
-
     @Autowired
-    private UserRepository userRepository;
+    private AccountRepository accountRepository;
 
     @Transactional(readOnly = true)
-    public long countUsers(Specification<User> spec) {
-        return userRepository.count(spec);
+    public long countAccount(Specification<Account> spec) {
+        return accountRepository.count(spec);
     }
 
     @Transactional(readOnly = true)
-    public List<User> getUsers(Specification<User> spec, Pageable pageable) {
-        List<User> users = userRepository.findAll(spec, pageable).getContent();
+    public List<Account> getUsers(Specification<Account> spec, Pageable pageable) {
+        List<Account> users = accountRepository.findAll(spec, pageable).getContent();
         if (users == null || users.isEmpty())
             throw new RuntimeException("Nenhum usuario encontrado");
         return users;
@@ -41,12 +36,12 @@ public class AuthService {
 
     @Transactional
     public ResponseEntity<Object> registerNewUser(UserDetails userDetails, SignUpRequestDTO data) {
-        if (userRepository.findByRegistration(data.registration()).isPresent()) {
+        if (accountRepository.findByRegistration(data.registration()).isPresent()) {
             throw new BadRequestException("Usuario ja existe");
         }
 
         String encryptedPass = new BCryptPasswordEncoder().encode(data.password());
-        User user = new User(data.username(), data.email(), data.registration(), encryptedPass, data.role());
+        Account user = new Account(data.username(), data.email(), data.registration(), encryptedPass, data.role());
         if (
                 userDetails != null &&
                         userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")) &&
@@ -55,7 +50,7 @@ public class AuthService {
             user.setEnabled(data.enabled());
         }
 
-        userRepository.save(user);
+        accountRepository.save(user);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

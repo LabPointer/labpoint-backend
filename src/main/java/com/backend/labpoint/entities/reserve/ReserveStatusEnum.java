@@ -1,13 +1,14 @@
 package com.backend.labpoint.entities.reserve;
 
-public enum ScheduleStatusEnum {
+public enum ReserveStatusEnum {
     CONFIRMED("CONFIRMED"),
-    PENDING("PNDING"),
+    PENDING("PENDING"),
+    ABSENT("ABSENT"),
     LOCKED("LOCKED"),
     CANCELED("CANCELED");
     private final String description;
 
-    ScheduleStatusEnum(String description) {
+    ReserveStatusEnum(String description) {
         this.description = description;
     }
 

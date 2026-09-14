@@ -1,6 +1,5 @@
 package com.backend.labpoint.dto.reserve;
 
-import com.backend.labpoint.entities.reserve.Reserve;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 

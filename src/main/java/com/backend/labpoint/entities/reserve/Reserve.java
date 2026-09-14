@@ -1,8 +1,9 @@
 package com.backend.labpoint.entities.reserve;
 
+import com.backend.labpoint.entities.account.Account;
 import com.backend.labpoint.entities.schedule.ReserveSchedule;
 import com.backend.labpoint.entities.space.Space;
-import com.backend.labpoint.entities.user.User;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -28,7 +29,7 @@ import java.util.List;
 public class Reserve {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
@@ -43,15 +44,15 @@ public class Reserve {
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "status", nullable = false)
-    private ScheduleStatusEnum status = ScheduleStatusEnum.CONFIRMED;
+    private ReserveStatusEnum status = ReserveStatusEnum.CONFIRMED;
 
     @Column(name = "purpose", nullable = false)
     private String purpose;
 
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "fk_user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "fk_account_id", nullable = false)
+    private Account account;
 
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -61,12 +62,12 @@ public class Reserve {
     @OneToMany(mappedBy = "reserve", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ReserveSchedule> schedules = new ArrayList<>();
 
-    public Reserve(LocalDate reservedDateFrom, LocalDate reservedDateTo, ScheduleStatusEnum status, String purpose, User user, Space space) {
+    public Reserve(LocalDate reservedDateFrom, LocalDate reservedDateTo, ReserveStatusEnum status, String purpose, Account account, Space space) {
         this.reservedDateFrom = reservedDateFrom;
         this.reservedDateTo = reservedDateTo;
         this.status = status;
         this.purpose = purpose;
-        this.user = user;
+        this.account = account;
         this.space = space;
     }
 }

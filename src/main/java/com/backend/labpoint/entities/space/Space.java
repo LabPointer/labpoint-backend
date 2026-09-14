@@ -2,7 +2,6 @@ package com.backend.labpoint.entities.space;
 
 import com.backend.labpoint.entities.reserve.Reserve;
 import com.backend.labpoint.entities.resource.SpaceResource;
-import com.backend.labpoint.entities.schedule.ReserveSchedule;
 import com.backend.labpoint.entities.subject.SpaceSubject;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -20,13 +19,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Space {
-    private static final long serialVersionUID = 1L;
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
-    @Column(nullable = false, length = 32)
+    @Column(nullable = false, length = 64, unique = true)
     private String name;
 
     @Column(length = 256)
@@ -47,10 +44,11 @@ public class Space {
     @OneToMany(mappedBy = "space", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Reserve> reserves = new ArrayList<>();
 
-    public Space(String name, String description, int capacity) {
+    public Space(String name, String description, int capacity, boolean locked) {
         this.name = name;
         this.description = description;
         this.capacity = capacity;
+        this.locked = locked;
     }
 
 }

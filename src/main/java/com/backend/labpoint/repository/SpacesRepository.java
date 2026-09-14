@@ -10,11 +10,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface SpacesRepository extends JpaRepository<Space, Integer>, JpaSpecificationExecutor<Space> {
+public interface SpacesRepository extends JpaRepository<Space, Long>, JpaSpecificationExecutor<Space> {
     @Query("SELECT s FROM Space s WHERE s.id in :ids")
-    List<Space> findByIds(List<Integer> ids);
+    List<Space> findByIds(List<Long> ids);
 
-    Optional<Space> findById(Integer id);
+    Optional<Space> findById(Long id);
 
     boolean existsByName(String name);
 

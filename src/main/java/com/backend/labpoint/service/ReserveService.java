@@ -1,20 +1,19 @@
 package com.backend.labpoint.service;
 
 import com.backend.labpoint.dto.reserve.*;
-import com.backend.labpoint.dto.reserve.ReserveHistoryDTO;
+import com.backend.labpoint.entities.account.Account;
 import com.backend.labpoint.entities.reserve.Reserve;
 import com.backend.labpoint.entities.space.Space;
-import com.backend.labpoint.entities.reserve.ScheduleStatusEnum;
+import com.backend.labpoint.entities.reserve.ReserveStatusEnum;
 import com.backend.labpoint.entities.schedule.ReserveSchedule;
 import com.backend.labpoint.entities.schedule.SchedulesEnum;
-import com.backend.labpoint.entities.user.User;
 import com.backend.labpoint.exception.BadRequestException;
 import com.backend.labpoint.exception.ForbiddenException;
 import com.backend.labpoint.exception.ResourceNotFoundException;
 import com.backend.labpoint.repository.ReserveRepository;
 import com.backend.labpoint.repository.ReserveScheduleRepository;
 import com.backend.labpoint.repository.SpacesRepository;
-import com.backend.labpoint.repository.UserRepository;
+import com.backend.labpoint.repository.AccountRepository;
 import com.backend.labpoint.specification.ReserveSpecification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
@@ -33,7 +32,7 @@ import java.util.stream.Collectors;
 public class ReserveService {
 
     @Autowired
-    private UserRepository userRepository;
+    private AccountRepository userRepository;
 
     @Autowired
     private SpacesRepository spaceRepository;
@@ -46,23 +45,22 @@ public class ReserveService {
 
     // Home reserve
     @Transactional(readOnly = true)
-    public ResponseEntity<List<SchedulesEnum>> existingSchedules(Integer spaceId, ExistingScheduleRequestDTO params) {
+    public ResponseEntity<List<SchedulesEnum>> existingSchedules(Long spaceId, ExistingScheduleRequestDTO params) {
         LocalDate dateFrom = params.dateFrom();
         LocalDate dateTo = params.dateTo();
         Specification<Reserve> reserveSpecification = ReserveSpecification.exists(spaceId, dateFrom, dateTo);
         List<Reserve> existingReserves = reserveRepository.findAll(reserveSpecification);
-        List<Integer> reserveIds = existingReserves.stream().map(Reserve::getId).toList();
-
-        List<SchedulesEnum> existingSchedules = reserveScheduleRepository.findByReserveIdIn(reserveIds).stream()
-                .map(ReserveSchedule::getSchedule).toList();
+        List<SchedulesEnum> existingSchedules = existingReserves.stream()
+                .flatMap(reserve -> reserve.getSchedules().stream())
+                .map(ReserveSchedule::getSchedule)
+                .toList();
 
         return ResponseEntity.ok(existingSchedules);
     }
 
     @Transactional
-    public ResponseEntity<?> createReserve(UserDetails userDetails, Integer spaceId,
-            CreateReserveRequestDTO createReserveRequestDTO) {
-        User user = userRepository.findByRegistration(userDetails.getUsername())
+    public ResponseEntity<?> createReserve(UserDetails userDetails, Long spaceId, CreateReserveRequestDTO createReserveRequestDTO) {
+        Account user = userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Space space = spaceRepository.findById(spaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Space not found"));
@@ -76,7 +74,7 @@ public class ReserveService {
                 createReserveRequestDTO.dateFrom(), createReserveRequestDTO.dateTo());
         List<Reserve> existingReserves = reserveRepository.findAll(reserveSpecification);
         if (!existingReserves.isEmpty()) {
-            List<Integer> reserveIds = existingReserves.stream().map(Reserve::getId).collect(Collectors.toList());
+            List<Long> reserveIds = existingReserves.stream().map(Reserve::getId).collect(Collectors.toList());
 
             Specification<ReserveSchedule> reserveScheduleSpecification = ReserveSpecification
                     .scheduleExists(reserveIds, createReserveRequestDTO.schedules());
@@ -90,11 +88,11 @@ public class ReserveService {
         }
 
         Reserve reserve = new Reserve();
-        reserve.setUser(user);
+        reserve.setAccount(user);
         reserve.setSpace(space);
         reserve.setReservedDateFrom(createReserveRequestDTO.dateFrom());
         reserve.setReservedDateTo(createReserveRequestDTO.dateTo());
-        reserve.setStatus(ScheduleStatusEnum.CONFIRMED);
+        reserve.setStatus(ReserveStatusEnum.CONFIRMED);
         reserve.setPurpose(createReserveRequestDTO.purpose());
 
         Reserve newReserve = reserveRepository.save(reserve);
@@ -109,14 +107,14 @@ public class ReserveService {
 
     // History
     @Transactional(readOnly = true)
-    public ResponseEntity<ReserveDateDTO> getReserveDate(UserDetails userDetails, Integer reserveId) {
-        User user = userRepository.findByRegistration(userDetails.getUsername())
+    public ResponseEntity<ReserveDateDTO> getReserveDate(UserDetails userDetails, Long reserveId) {
+        Account user = userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Reserve reserve = reserveRepository.findById(reserveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserve not found"));
 
-        if (reserve.getUser().getId() != user.getId())
+        if (reserve.getAccount().getId() != user.getId())
             throw new ForbiddenException("You are not allowed to access this reserve.", false);
 
         return ResponseEntity.ok(new ReserveDateDTO(reserve.getReservedDateFrom(), reserve.getReservedDateTo()));
@@ -124,7 +122,7 @@ public class ReserveService {
 
     @Transactional(readOnly = true)
     public ResponseEntity<ReserveHistoryDTO> findHistoryByMonth(UserDetails userDetails, YearMonth yearMonth) {
-        User user = userRepository.findByRegistration(userDetails.getUsername())
+        Account user = userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Specification<Reserve> reserveHistory = ReserveSpecification.history(yearMonth, user.getId());
@@ -145,7 +143,7 @@ public class ReserveService {
             LocalDate hoje = LocalDate.now();
             ReserveSummaryDTO reserveSummary = new ReserveSummaryDTO(reserve.getId(), reserve.getSpace().getName(), reserve.getSpace().getCapacity(), reserve.getReservedDateFrom(), reserve.getReservedDateTo(), reserve.getStatus(), reserve.getPurpose());
             List<SchedulesEnum> schedulesEnum = schedules.stream().map(ReserveSchedule::getSchedule).toList();
-            if (reserve.getStatus().equals(ScheduleStatusEnum.CANCELED)) {
+            if (reserve.getStatus().equals(ReserveStatusEnum.CANCELED)) {
                 canceled.add(new ReserveScheduleDTO(reserveSummary, schedulesEnum));
             } else if (reserve.getReservedDateTo().isBefore(hoje)) {
                 concluded.add(new ReserveScheduleDTO(reserveSummary, schedulesEnum));
@@ -158,14 +156,14 @@ public class ReserveService {
     }
 
     @Transactional
-    public ResponseEntity<Void> editReserveDate(UserDetails userDetails, Integer id, ReserveDateDTO data) {
-        User user = (User) userRepository.findByRegistration(userDetails.getUsername())
+    public ResponseEntity<Void> editReserveDate(UserDetails userDetails, Long id, ReserveDateDTO data) {
+        Account user = (Account) userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado"));
 
         Reserve reserve = reserveRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva nao encontrada"));
 
-        if (!reserve.getUser().getId().equals(user.getId()))
+        if (!reserve.getAccount().getId().equals(user.getId()))
             throw new ForbiddenException("Você não tem autorização para editar essa reserva", false);
 
         Space space = reserve.getSpace();
@@ -205,15 +203,15 @@ public class ReserveService {
     }
 
     @Transactional
-    public ResponseEntity<Void> cancelReserveFromHistory(UserDetails userDetails, Integer id) {
-        User user = (User) userRepository.findByRegistration(userDetails.getUsername())
+    public ResponseEntity<Void> cancelReserveFromHistory(UserDetails userDetails, Long id) {
+        Account user = (Account) userRepository.findByRegistration(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Reserve reserve = reserveRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserve not found"));
-        if (reserve.getUser().getId() != user.getId())
+        if (reserve.getAccount().getId() != user.getId())
             throw new ForbiddenException("You are not authorized to cancel this reserve", false);
 
-        reserve.setStatus(ScheduleStatusEnum.CANCELED);
+        reserve.setStatus(ReserveStatusEnum.CANCELED);
 
         reserveRepository.save(reserve);
 

@@ -16,7 +16,7 @@ import lombok.Setter;
 public class SpaceSubject {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "fk_space_id", nullable = false)
