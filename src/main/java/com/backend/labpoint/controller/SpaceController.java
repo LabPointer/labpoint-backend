@@ -42,7 +42,7 @@ public class SpaceController {
             @ApiResponse(responseCode = "201", description = "Espaço criado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Erro ao criar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
-    @PostMapping("/create")
+    @PostMapping("/manage/create")
     public ResponseEntity<Void> postCreateSpace(@RequestBody @Valid CreateSpaceRequestDTO data) {
         spaceService.createSpace(data.name(), data.description(), data.capacity(), data.resources(), data.subjects());
 
@@ -54,7 +54,7 @@ public class SpaceController {
             @ApiResponse(responseCode = "200", description = "Espaço editado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Erro ao editar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
-    @PatchMapping("/update/{id}")
+    @PatchMapping("/manage/update/{id}")
     public ResponseEntity<Void> patchSpace(@PathVariable Long id, @RequestBody @Valid PatchSpaceRequestDTO data) {
         spaceService.updateSpace(id, data);
         return ResponseEntity.created(null).build();
@@ -65,7 +65,7 @@ public class SpaceController {
             @ApiResponse(responseCode = "204", description = "Espaço deletado com sucesso", content = @Content),
             @ApiResponse(responseCode = "404", description = "Espaço não encontrado", content = @Content)
     })
-    @DeleteMapping("/delete")
+    @DeleteMapping("/manage/delete")
     public ResponseEntity<Void> deleteSpace(@RequestBody DeleteSpaceDTO data) {
         spaceService.deleteSpaces(data.spaceIds());
 

@@ -42,23 +42,20 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.PATCH, "/auth/reset-password/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/auth/update").hasRole("ADMIN")
                                 // Spaces
-                                .requestMatchers(HttpMethod.POST, "/spaces/create").hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.PATCH, "/spaces/update/**").hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.DELETE, "/spaces/delete/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.POST, "/manage/spaces/create").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PATCH, "/manage/spaces/update/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/manage/spaces/delete/**").hasRole("ADMIN")
                                 // Resources
-                                .requestMatchers(HttpMethod.POST, "/resources/create").hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.PATCH, "/resources/update/**").hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.DELETE, "/resources/delete/**").hasRole("ADMIN")
-                                // Subject
-                                .requestMatchers(HttpMethod.POST, "/subjects/create").hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.PATCH, "/subjects/update/**").hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.DELETE, "/subjects/delete/**").hasRole("ADMIN")
-                                // Manage users
-                                .requestMatchers(HttpMethod.GET, "/manage-user/**").hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.POST, "/manage-user/**").hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.PATCH, "/manage-user/**").hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.PUT, "/manage-user/**").hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.DELETE, "/manage-user/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.POST, "/manage/resources/create").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PATCH, "/manage/resources/update/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/manage/resources/delete/**").hasRole("ADMIN")
+                                // Subjects
+                                .requestMatchers(HttpMethod.POST, "/manage/subjects/create").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PATCH, "/manage/subjects/update/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/manage/subjects/delete/**").hasRole("ADMIN")
+                                // Accounts
+                                .requestMatchers(HttpMethod.GET, "/account/manage/search").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.POST, "/account/manage/update").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

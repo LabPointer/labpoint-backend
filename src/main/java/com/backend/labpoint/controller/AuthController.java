@@ -238,6 +238,7 @@ public class AuthController {
         }
 
         emailService.sendResetPasswordEmail(data.email(), token);
+        
         return ResponseEntity.accepted().build();
     }
 

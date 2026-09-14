@@ -1,6 +1,5 @@
 package com.backend.labpoint.service;
 
-import com.backend.labpoint.dto.auth.ForgotPasswordRequestDTO;
 import com.backend.labpoint.dto.auth.SignUpRequestDTO;
 import com.backend.labpoint.entities.account.Account;
 import com.backend.labpoint.exception.BadRequestException;
@@ -19,7 +18,6 @@ import java.util.List;
 
 @Service
 public class AuthService {
-
     @Autowired
     private AccountRepository accountRepository;
 
@@ -54,13 +52,6 @@ public class AuthService {
 
         accountRepository.save(user);
 
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    @Transactional
-    public ResponseEntity<Object> createPasswordResetRequest(UserDetails userDetails, ForgotPasswordRequestDTO data) {
-        Account user = accountRepository.findByEmail(data.email())
-                .orElseThrow(() -> new BadRequestException("Usuario nao encontrado"));
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }
