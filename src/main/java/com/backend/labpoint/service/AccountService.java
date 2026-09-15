@@ -52,17 +52,11 @@ public class AccountService {
         if (data.username() != null && !data.username().isBlank()) {
             user.setUsername(data.username());
         }
-        if (data.email() != null && !data.email().isBlank()) {
-            user.setEmail(data.email());
-        }
         if (data.registration() != null && !data.registration().isBlank()) {
             user.setRegistration(data.registration());
         }
         if (data.role() != null) {
             user.setRole(data.role());
-        }
-        if (data.password() != null && !data.password().isBlank()) {
-            user.setPassword(data.password());
         }
         if (data.enabled() != null) {
             user.setEnabled(data.enabled());
