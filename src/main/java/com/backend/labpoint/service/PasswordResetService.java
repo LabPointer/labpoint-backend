@@ -55,26 +55,26 @@ public class PasswordResetService {
             byte[] decodedBytes = Base64.getDecoder().decode(token);
             decodedToken = new String(decodedBytes, StandardCharsets.UTF_8);
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid token");
+            throw new BadRequestException("Token invalido");
         }
 
         UUID uuid;
         try {
             uuid = UUID.fromString(decodedToken);
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid token");
+            throw new BadRequestException("Token invalido");
         }
 
         Optional<PasswordResetToken> passwordResetTokenOpt = passwordResetTokenRepository.findById(uuid);
         if (passwordResetTokenOpt.isEmpty()) {
-            throw new BadRequestException("Invalid token");
+            throw new BadRequestException("Token invalido");
         }
 
         PasswordResetToken passwordResetToken = passwordResetTokenOpt.get();
 
         LocalDateTime now = LocalDateTime.now();
         if (passwordResetToken.getExpiresAt().isBefore(now)) {
-            throw new BadRequestException("Token expired");
+            throw new BadRequestException("Token expirou");
         }
 
         Account account = passwordResetToken.getAccount();

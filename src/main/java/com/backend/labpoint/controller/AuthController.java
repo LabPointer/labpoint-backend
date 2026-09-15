@@ -1,6 +1,5 @@
 package com.backend.labpoint.controller;
 
-import com.backend.labpoint.dto.auth.EmailUpdateRequestDTO;
 import com.backend.labpoint.dto.auth.ForgotPasswordRequestDTO;
 import com.backend.labpoint.dto.auth.SignInRequestDTO;
 import com.backend.labpoint.dto.auth.SignUpRequestDTO;
@@ -204,26 +203,6 @@ public class AuthController {
         return authService.registerNewUser(userDetails, data);
     }
 
-    @Operation(summary = "Enviar email para redefinição de email", description = "Envia um email para o usuário redefinir o email da conta")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Email de redefinição enviado com sucesso", content = @Content),
-            @ApiResponse(responseCode = "400", description = "E-mail inválido", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
-    })
-    @PostMapping("/request-update-email")
-    public ResponseEntity<Void> postRequestUpdateEmail(@Valid @RequestBody ForgotPasswordRequestDTO data) {
-        return ResponseEntity.accepted().build();
-    }
-
-    @Operation(summary = "Atualizar email do usuário", description = "Substitui o email antigo pelo novo utilizando o token de validação recebido por e-mail")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Email atualizado com sucesso", content = @Content),
-            @ApiResponse(responseCode = "400", description = "Token inválido ou expirado ou email inválido", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
-    })
-    @PatchMapping("/update-email/{token}")
-    public ResponseEntity<Void> postUpdatePassword(@AuthenticationPrincipal UserDetails userDetails, @Valid @RequestBody EmailUpdateRequestDTO data) {
-        return ResponseEntity.noContent().build();
-    }
-
     @Operation(summary = "Enviar email para redefinição de senha", description = "Envia um email para o usuário redefinir sua senha")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "202", description = "Email de redefinição de senha enviado com sucesso", content = @Content),
@@ -248,7 +227,7 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Token inválido ou expirado ou senha inválida", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
     })
     @PatchMapping("/reset-password/{token}")
-    public ResponseEntity<Void> postResetPassword(@PathVariable @NotBlank String token, @Valid @RequestBody UpdatePasswordRequestDTO data) {
+    public ResponseEntity<Void> patchResetPassword(@PathVariable @NotBlank(message = "Token é obrigatório") String token, @RequestBody @Valid UpdatePasswordRequestDTO data) {
         passwordResetService.resetPassword(token, data.password());
         return ResponseEntity.noContent().build();
     }

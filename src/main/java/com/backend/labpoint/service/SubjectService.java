@@ -23,8 +23,8 @@ public class SubjectService {
 
     public ResponseEntity<List<SubjectDTO>> getSubjects(SubjectRequestDTO params) {
         String name = params.name();
-        Integer limit = params.limit() == null ? 11 : params.limit() + 1;
-        Integer offset = params.offset() == null ? 0 : params.offset();
+        int limit = params.limit() == null ? 11 : params.limit() + 1;
+        int offset = params.offset() == null ? 0 : params.offset();
 
         Pageable pageable = PageRequest.of(offset, limit, Sort.by("name").ascending());
         List<Subject> subjects = name == null ? subjectRepository.findAll() : subjectRepository.findByNameContaining(name, pageable);
