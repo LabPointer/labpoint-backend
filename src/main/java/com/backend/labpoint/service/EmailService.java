@@ -1,12 +1,12 @@
 package com.backend.labpoint.service;
 
 import com.backend.labpoint.entities.password.PasswordResetToken;
-import com.backend.labpoint.exception.InternalServerException;
 import com.backend.labpoint.repository.PasswordResetTokenRepository;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 
@@ -44,6 +44,10 @@ public class EmailService {
         }
 
         for (PasswordResetToken passResetToken : passwordResetTokens) {
+            if (passResetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+                passResetToken.setExpiresAt(LocalDateTime.now().plusMinutes(30));
+            }
+
             String token = passResetToken.getId().toString();
             String encodedToken = Base64.getEncoder().encodeToString(token.getBytes());
 
@@ -69,8 +73,9 @@ public class EmailService {
 
                 passResetToken.setStatus(com.backend.labpoint.entities.password.PasswordEmailStatusEnum.SENT);
                 passwordResetTokenRepository.save(passResetToken);
+                
             } catch (MessagingException e) {
-                throw new InternalServerException("Erro ao enviar email de redefinição de senha: " + e.getMessage());
+                IO.println("Erro ao enviar o e-mail de redefinição de senha: " + e.getMessage());
             }
         }
     }
