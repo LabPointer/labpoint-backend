@@ -9,11 +9,17 @@ CREATE TABLE account (
     created_at DATE NOT NULL DEFAULT now()
 );
 
+CREATE TYPE password_email_status AS ENUM (
+    'SENT',
+    'PENDING'
+);
+
 CREATE TABLE password_reset_token (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
     fk_account_id BIGINT NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     used_at TIMESTAMP,
+    status password_email_status DEFAULT 'PENDING',
     FOREIGN KEY (fk_account_id) REFERENCES account(id) ON DELETE CASCADE
 );
 

@@ -6,6 +6,7 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.backend.labpoint.entities.password.PasswordEmailStatusEnum;
 import com.backend.labpoint.entities.password.PasswordResetToken;
 import com.backend.labpoint.exception.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,21 +32,20 @@ public class PasswordResetService {
     private static final int EXPIRACAO_MINUTOS = 30;
 
     @Transactional
-    public String createRequest(String email) {
+    public void createRequest(String email) {
         Optional<Account> accountOpt = accountRepository.findByEmail(email);
 
         if (accountOpt.isEmpty()) {
-            return null;
+            return;
         }
 
         Account account = accountOpt.get();
+        if (!account.isEnabled()) {
+            return;
+        }
 
-        PasswordResetToken passResetToken = new PasswordResetToken(null, account, LocalDateTime.now().plusMinutes(EXPIRACAO_MINUTOS), null);
-        passResetToken = passwordResetTokenRepository.save(passResetToken);
-
-        String token = passResetToken.getId().toString();
-
-        return Base64.getEncoder().encodeToString(token.getBytes());
+        PasswordResetToken passResetToken = new PasswordResetToken(null, account, LocalDateTime.now().plusMinutes(EXPIRACAO_MINUTOS), null, PasswordEmailStatusEnum.PENDING);
+        passwordResetTokenRepository.save(passResetToken);
     }
 
     public void resetPassword(String token, String password) {
@@ -75,6 +75,8 @@ public class PasswordResetService {
         LocalDateTime now = LocalDateTime.now();
         if (passwordResetToken.getExpiresAt().isBefore(now)) {
             throw new BadRequestException("Token expirou");
+        } else if (passwordResetToken.getUsedAt() != null) {
+            throw new BadRequestException("Token ja foi usado");
         }
 
         Account account = passwordResetToken.getAccount();
@@ -82,6 +84,7 @@ public class PasswordResetService {
         account.setPassword(encryptedPass);
         accountRepository.save(account);
 
-        passwordResetTokenRepository.delete(passwordResetToken);
+        passwordResetToken.setUsedAt(now);
+        passwordResetTokenRepository.save(passwordResetToken);
     }
 }

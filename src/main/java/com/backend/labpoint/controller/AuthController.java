@@ -12,7 +12,6 @@ import com.backend.labpoint.infra.security.TokenService;
 import com.backend.labpoint.repository.AccountRepository;
 import com.backend.labpoint.service.AuthService;
 
-import com.backend.labpoint.service.EmailService;
 import com.backend.labpoint.service.PasswordResetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -59,9 +58,6 @@ public class AuthController {
 
     @Autowired
     private PasswordResetService passwordResetService;
-
-    @Autowired
-    private EmailService emailService;
 
     @Value("${api.security.token.age}")
     private int tokenMaxAge;
@@ -210,13 +206,7 @@ public class AuthController {
     })
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> postForgotPassword(@Valid @RequestBody ForgotPasswordRequestDTO data) {
-        String token = passwordResetService.createRequest(data.email());
-
-        if (token == null) {
-            return ResponseEntity.accepted().build();
-        }
-
-        emailService.sendResetPasswordEmail(data.email(), token);
+        passwordResetService.createRequest(data.email());
         
         return ResponseEntity.accepted().build();
     }
