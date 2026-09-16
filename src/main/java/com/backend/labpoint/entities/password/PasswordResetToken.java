@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.backend.labpoint.entities.account.Account;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "password_reset_token")
@@ -31,4 +33,9 @@ public class PasswordResetToken {
 
     @Column(name = "used_at")
     private LocalDateTime usedAt;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "status", nullable = false)
+    private PasswordEmailStatusEnum status = PasswordEmailStatusEnum.PENDING;
 }
