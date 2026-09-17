@@ -8,8 +8,10 @@ import java.util.UUID;
 
 import com.backend.labpoint.entities.password.PasswordEmailStatusEnum;
 import com.backend.labpoint.entities.password.PasswordResetToken;
+import com.backend.labpoint.event.password.PasswordResetTokenRequestedEvent;
 import com.backend.labpoint.exception.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,9 @@ public class PasswordResetService {
     @Autowired 
     private PasswordResetTokenRepository passwordResetTokenRepository;
 
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
     private static final int TOKEN_BYTES = 32;
     private static final int EXPIRACAO_MINUTOS = 30;
 
@@ -45,7 +50,9 @@ public class PasswordResetService {
         }
 
         PasswordResetToken passResetToken = new PasswordResetToken(null, account, LocalDateTime.now().plusMinutes(EXPIRACAO_MINUTOS), null, PasswordEmailStatusEnum.PENDING);
-        passwordResetTokenRepository.save(passResetToken);
+        passResetToken = passwordResetTokenRepository.save(passResetToken);
+
+        eventPublisher.publishEvent(new PasswordResetTokenRequestedEvent(passResetToken.getId()));
     }
 
     public void resetPassword(String token, String password) {
