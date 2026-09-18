@@ -33,6 +33,6 @@ build/
 .vscode/
 
 ### Spring Boot ###
-#src/main/resources/application.yaml
-#src/main/resources/application-dev.yaml
-#src/main/resources/application-rel.yaml
+src/main/resources/application.yaml
+src/main/resources/application-dev.yaml
+src/main/resources/application-rel.yaml
