@@ -32,7 +32,7 @@ public class ResourceController {
     @Autowired
     private ResourceService resourceService;
 
-    @Operation(summary = "Buscar por recursos", description = "Retorna uma lista de recursos.")
+    @Operation(summary = "Buscar recursos", description = "Retorna uma lista de recursos.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Recursos encontrados", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Resource.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
             @ApiResponse(responseCode = "404", description = "Nenhum recurso encontrado", content = @Content)
@@ -42,7 +42,7 @@ public class ResourceController {
         return resourceService.getResources(params);
     }
 
-    @Operation(summary = "Criar um recurso", description = "Cria um recurso no sistema")
+    @Operation(summary = "Admin: criar recurso", description = "Cadastra um recurso no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Erro ao criar recurso", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
@@ -53,7 +53,7 @@ public class ResourceController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Operation(summary = "Editar um recurso", description = "Edita um recurso no sistema")
+    @Operation(summary = "Admin: editar recurso", description = "Edita um recurso no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Recurso editado com sucesso", content = @Content(schema = @Schema(implementation = Resource.class, requiredMode = Schema.RequiredMode.REQUIRED))),
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class))),
@@ -64,7 +64,7 @@ public class ResourceController {
         return ResponseEntity.ok(resourceService.updateResource(id, data.name()));
     }
 
-    @Operation(summary = "Deletar um recurso", description = "Deleta um recurso no sistema")
+    @Operation(summary = "Admin: deletar recurso", description = "Deleta um recurso no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Recurso deletado com sucesso", content = @Content),
             @ApiResponse(responseCode = "404", description = "Recurso não encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))

@@ -30,7 +30,7 @@ public class ReserveController {
     @Autowired
     private ReserveService reserveService;
 
-    @Operation(summary = "Buscar historico de reservas do mes", description = "Retorna uma lista de reservas(confirmada, concluida e cancelada) de um mes especifico")
+    @Operation(summary = "Buscar historico", description = "Retorna uma lista de reservas(confirmada, concluida e cancelada) de um mes especifico")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de reservas encontrada", content = @Content(schema = @Schema(implementation = ReserveHistoryDTO.class, requiredMode = RequiredMode.REQUIRED))),
             @ApiResponse(responseCode = "404", description = "Nenhuma reserva encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
@@ -40,18 +40,17 @@ public class ReserveController {
         return reserveService.findHistoryByMonth(userDetails, yearMonth);
     }
 
-    @Operation(summary = "Cria uma nova reserva", description = "Cria uma nova reserva para o espaço especificado, com base nas datas fornecidas e no usuário autenticado")
+    @Operation(summary = "Pegar horarios", description = "Retorna uma lista de horarios ja reservados para um espaco especifico de acordo com data range fornecido")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Reserva criada com sucesso", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SchedulesEnum.class)))),
-            @ApiResponse(responseCode = "400", description = "Dados da reserva inválidos ou conflitantes", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
-            @ApiResponse(responseCode = "404", description = "Autenticação do usuario ou espaço não encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
+            @ApiResponse(responseCode = "200", description = "Horarios encontrados", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SchedulesEnum.class)))),
+            @ApiResponse(responseCode = "404", description = "Horarios nao encontrados", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @GetMapping("/existing-schedules/{spaceId}")
     public ResponseEntity<List<SchedulesEnum>> getExistingSchedules(@PathVariable Long spaceId, @ParameterObject ExistingScheduleRequestDTO params) {
         return reserveService.existingSchedules(spaceId, params);
     }
 
-    @Operation(summary = "Obtem a data da reserva pelo id", description = "Retorna a data da reserva")
+    @Operation(summary = "Obter data", description = "Retorna a data da reserva pelo id.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Data da reserve", content = @Content(schema = @Schema(implementation = ReserveDateDTO.class, requiredMode = RequiredMode.REQUIRED))),
             @ApiResponse(responseCode = "404", description = "Reserva nao encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
@@ -61,7 +60,7 @@ public class ReserveController {
         return reserveService.getReserveDate(userDetails, reserveId);
     }
 
-    @Operation(summary = "Edita a data da reserva", description = "Edita a data da reserva")
+    @Operation(summary = "Editar a data", description = "Edita a data da reserva")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Reserva editada com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Reserva conflita com horarios ja reservados", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
@@ -73,7 +72,7 @@ public class ReserveController {
         return reserveService.editReserveDate(userDetails, reserveId, data);
     }
 
-    @Operation(summary = "Cria uma nova reserva", description = "Cria uma nova reserva para o espaço especificado, com base nas datas fornecidas e no usuário autenticado")
+    @Operation(summary = "Criar reserva", description = "Cria uma nova reserva para o espaço especificado, com base nas datas fornecidas e no usuário autenticado")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Reserva criada com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Dados da reserva inválidos ou conflitantes", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
@@ -84,7 +83,7 @@ public class ReserveController {
         return reserveService.createReserve(userDetails, spaceId, body);
     }
 
-    @Operation(summary = "Cancela uma reserva do historico do usuario pelo id", description = "Marca a reserva como cancelada")
+    @Operation(summary = "Cancelar reserva", description = "Altera o status da reserva para cancelada, desde que a reserva pertença ao usuário autenticado e esteja em um estado que permita o cancelamento.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Reserva cancelada", content = @Content),
             @ApiResponse(responseCode = "403", description = "Provavelmente esta alterando reserva de outro usuario", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),

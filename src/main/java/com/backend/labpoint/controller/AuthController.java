@@ -62,7 +62,7 @@ public class AuthController {
     @Value("${api.security.token.age}")
     private int tokenMaxAge;
 
-    @Operation(summary = "Realizar login", description = "Realiza o login do usuário")
+    @Operation(summary = "Entrar", description = "Realiza o login do usuário")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Login realizado com sucesso", content = @Content),
             @ApiResponse(responseCode = "403", description = "Matricula ou senha incorretos, conta desabilitada ou conta trancada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
@@ -111,7 +111,7 @@ public class AuthController {
                 .build();
     }
 
-    @Operation(summary = "Atualiza os cookies do token de acesso e informações da sessão", description = "Atualiza os cookies do token de acesso e informações da sessão do usuário")
+    @Operation(summary = "Atualizar sessão", description = "Atualiza os cookies contendo o token de acesso e informações da sessão do usuário")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Login realizado com sucesso", content = @Content),
             @ApiResponse(responseCode = "403", description = "Matricula ou senha incorretos, conta desabilitada ou conta trancada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
@@ -159,7 +159,7 @@ public class AuthController {
                 .build();
     }
 
-    @Operation(summary = "Realizar logout", description = "Realiza o logout do usuário")
+    @Operation(summary = "Sair", description = "Realiza o logout do usuário")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Logout realizado com sucesso")
     })
@@ -189,7 +189,7 @@ public class AuthController {
                 .build();
     }
 
-    @Operation(summary = "Registrar um novo usuário", description = "Registra um novo usuário no sistema")
+    @Operation(summary = "Registrar", description = "Registra um novo usuário no sistema. Administrador pode usar este endpoint para criar novos usuários.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Usuário registrado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Usuário já registrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
@@ -199,7 +199,7 @@ public class AuthController {
         return authService.registerNewUser(userDetails, data);
     }
 
-    @Operation(summary = "Enviar email para redefinição de senha", description = "Envia um email para o usuário redefinir sua senha")
+    @Operation(summary = "Solicitar redefinição de senha", description = "Envia um email para o usuário com um link para redefinir sua senha")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "202", description = "Email de redefinição de senha enviado com sucesso", content = @Content),
             @ApiResponse(responseCode = "500", description = "Falha ao enviar email de redefinição de senha", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
@@ -211,7 +211,7 @@ public class AuthController {
         return ResponseEntity.accepted().build();
     }
 
-    @Operation(summary = "Atualizar senha do usuário", description = "Substitui a senha antiga pela nova utilizando o token de validação recebido por e-mail")
+    @Operation(summary = "Atualizar senha", description = "Substitui a senha antiga pela nova utilizando o token de validação recebido por e-mail")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Senha atualizada com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Token inválido ou expirado ou senha inválida", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
