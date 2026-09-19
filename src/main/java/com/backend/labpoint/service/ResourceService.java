@@ -26,7 +26,7 @@ public class ResourceService {
         int offset = params.offset() == null ? 0 : params.offset();
         Pageable pageable = PageRequest.of(offset, limit, Sort.by("name").ascending());
 
-        List<Resource> resources = params.name() == null ? resourceRepository.findAll(pageable).getContent() : resourceRepository.findByNameLike(params.name(), pageable);
+        List<Resource> resources = params.name() == null ? resourceRepository.findAll(pageable).getContent() : resourceRepository.findByNameContaining(params.name(), pageable);
         if (resources.isEmpty())
             throw new ResourceNotFoundException("Recurso(s) nao encontrado(s)");
 
@@ -36,7 +36,7 @@ public class ResourceService {
     }
 
     public List<ResourceDTO> getResourcesByIds(List<Long> id) {
-        return resourceRepository.findByIds(id).stream().map(r -> new ResourceDTO(r.getId(), r.getName())).toList();
+        return resourceRepository.findByIdIn(id).stream().map(r -> new ResourceDTO(r.getId(), r.getName())).toList();
     }
 
     public void createResource(String name) {

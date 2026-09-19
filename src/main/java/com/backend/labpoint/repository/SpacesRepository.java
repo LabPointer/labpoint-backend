@@ -11,19 +11,8 @@ import java.util.Optional;
 
 @Repository
 public interface SpacesRepository extends JpaRepository<Space, Long>, JpaSpecificationExecutor<Space> {
-    @Query("SELECT s FROM Space s WHERE s.id in :ids")
-    List<Space> findByIds(List<Long> ids);
-
+    List<Space> findByIdIn(List<Long> ids);
     Optional<Space> findById(Long id);
-
     boolean existsByName(String name);
-
-    /*
-    @Query("SELECT s FROM Spaces s " +
-            "WHERE (:name IS NULL OR :name = '' OR LOWER(s.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
-            "AND (:capacity IS NULL OR s.capacity >= :capacity)")
-    List<Space> findSpaceByParams(@Param("name") String name,
-                                   @Param("capacity") Integer capacity);
-    */
 }
 

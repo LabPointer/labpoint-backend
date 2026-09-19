@@ -2,15 +2,11 @@ package com.backend.labpoint.repository;
 
 import com.backend.labpoint.entities.subject.SpaceSubject;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
 public interface SpaceSubjectRepository extends JpaRepository<SpaceSubject, Long> {
-
-    @Query("SELECT ss FROM SpaceSubject ss WHERE ss.space.id = :spaceId")
-    List<SpaceSubject> findSpaceSubjectBySpaceId(@Param("spaceId") Long spaceId);
+    List<SpaceSubject> findBySpaceId(Long spaceId);
 }

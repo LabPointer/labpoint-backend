@@ -40,9 +40,7 @@ public class SecurityFilter extends OncePerRequestFilter {
     private AccountRepository usersRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
-
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         boolean isPublicRoute = isPublicRoute(request.getServletPath());
         String token = recoverToken(request);
 

@@ -43,7 +43,7 @@ public class SubjectController {
         return subjectService.getSubjects(params);
     }
 
-    @Operation(summary = "Criar uma matéria", description = "Cria uma matéria no sistema")
+    @Operation(summary = "Admin: criar uma matéria", description = "Cria uma matéria no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Matéria criada com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Erro ao criar matéria", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
@@ -54,7 +54,7 @@ public class SubjectController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Operation(summary = "Editar uma matéria", description = "Edita uma matéria no sistema")
+    @Operation(summary = "Admin: editar uma matéria", description = "Edita uma matéria no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Matéria editada com sucesso", content = @Content(schema = @Schema(implementation = Subject.class, requiredMode = Schema.RequiredMode.REQUIRED))),
             @ApiResponse(responseCode = "400", description = "Erro ao editar matéria", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
@@ -64,7 +64,7 @@ public class SubjectController {
         return ResponseEntity.ok(subjectService.updateSubject(id, data.name()));
     }
 
-    @Operation(summary = "Deletar uma matéria", description = "Deleta uma matéria no sistema")
+    @Operation(summary = "Admin: deletar uma matéria", description = "Deleta uma matéria no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Matéria deletada com sucesso", content = @Content),
             @ApiResponse(responseCode = "404", description = "Matéria não encontrada", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))

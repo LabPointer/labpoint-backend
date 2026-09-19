@@ -94,12 +94,12 @@ public class SpaceService {
 
     @Transactional(readOnly = true)
     public List<SpaceResource> getSpaceResourcesBySpaceId(Long spaceId) {
-        return spaceResourceRepository.findSpaceResourceBySpaceId(spaceId);
+        return spaceResourceRepository.findBySpaceId(spaceId);
     }
 
     @Transactional(readOnly = true)
     public List<SpaceSubject> getSpaceSubjectsBySpaceId(Long spaceId) {
-        return spaceSubjectRepository.findSpaceSubjectBySpaceId(spaceId);
+        return spaceSubjectRepository.findBySpaceId(spaceId);
     }
 
     @Transactional
@@ -146,10 +146,10 @@ public class SpaceService {
         space.setCapacity(dto.capacity());
 
         // Remove existing associations
-        List<SpaceResource> oldResources = spaceResourceRepository.findSpaceResourceBySpaceId(id);
+        List<SpaceResource> oldResources = spaceResourceRepository.findBySpaceId(id);
         if (!oldResources.isEmpty())
             spaceResourceRepository.deleteAll(oldResources);
-        List<SpaceSubject> oldSubjects = spaceSubjectRepository.findSpaceSubjectBySpaceId(id);
+        List<SpaceSubject> oldSubjects = spaceSubjectRepository.findBySpaceId(id);
         if (!oldSubjects.isEmpty())
             spaceSubjectRepository.deleteAll(oldSubjects);
 
@@ -180,7 +180,7 @@ public class SpaceService {
 
     @Transactional
     public void deleteSpaces(Set<Long> ids) {
-        List<Space> spaces = spaceRepository.findByIds(ids.stream().toList());
+        List<Space> spaces = spaceRepository.findByIdIn(ids.stream().toList());
         if (spaces.isEmpty())
             throw new ResourceNotFoundException("Espaço(s) nao encontrado(s)");
         spaceRepository.deleteAll(spaces);

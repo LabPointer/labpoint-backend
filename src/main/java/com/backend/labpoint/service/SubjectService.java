@@ -38,7 +38,7 @@ public class SubjectService {
     }
 
     public List<SubjectDTO> getSubjectsByIds(List<Long> id) {
-        return subjectRepository.findByIds(id).stream().map(s -> new SubjectDTO(s.getId(), s.getName())).toList();
+        return subjectRepository.findByIdIn(id).stream().map(s -> new SubjectDTO(s.getId(), s.getName())).toList();
     }
 
     public void createSubject(String name) {

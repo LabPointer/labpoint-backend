@@ -24,20 +24,17 @@ public class SpaceController {
     @Autowired
     private SpaceService spaceService;
 
-    @Operation(summary = "Buscar por laboratorios", description = "Retorna uma lista de laboratorios")
+    @Operation(summary = "Buscar espaços", description = "Retorna uma lista de espaços")
     @ApiResponses(value = {
-            // @ApiResponse(responseCode = "200", description = "Laboratorios encontrados",
-            // content = @Content(array = @ArraySchema(schema = @Schema(implementation =
-            // SpaceDTO.class, requiredMode = RequiredMode.REQUIRED)))),
-            @ApiResponse(responseCode = "200", description = "Laboratorios encontrados", content = @Content(schema = @Schema(implementation = SpacesResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
-            @ApiResponse(responseCode = "404", description = "Nenhum laboratorio encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
+            @ApiResponse(responseCode = "200", description = "Espaços encontrados", content = @Content(schema = @Schema(implementation = SpacesResponseDTO.class, requiredMode = RequiredMode.REQUIRED))),
+            @ApiResponse(responseCode = "404", description = "Nenhum espaço encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
     })
     @GetMapping
     public ResponseEntity<SpacesResponseDTO> getSpaces(@ParameterObject @ModelAttribute SpaceRequestDTO params) {
         return spaceService.getSpaces(params);
     }
 
-    @Operation(summary = "Criar um novo espaço", description = "Cria um novo espaço no sistema")
+    @Operation(summary = "Admin: criar espaço", description = "Cria um novo espaço no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Espaço criado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Erro ao criar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
@@ -49,7 +46,7 @@ public class SpaceController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Operation(summary = "Editar espaço", description = "Edita um espaço existente")
+    @Operation(summary = "Admin: editar espaço", description = "Edita um espaço existente")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Espaço editado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Erro ao editar espaço", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
@@ -60,7 +57,7 @@ public class SpaceController {
         return ResponseEntity.created(null).build();
     }
 
-    @Operation(summary = "Deletar um espaço", description = "Deleta um espaço do sistema")
+    @Operation(summary = "Admin: deletar espaço", description = "Deleta um espaço do sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Espaço deletado com sucesso", content = @Content),
             @ApiResponse(responseCode = "404", description = "Espaço não encontrado", content = @Content)

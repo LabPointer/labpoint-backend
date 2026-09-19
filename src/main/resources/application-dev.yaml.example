@@ -14,12 +14,12 @@ spring:
 springdoc:
   api-docs:
     enabled: true
-    path: /v3/api-docs
+    path: /v1/api.json
   swagger-ui:
     enabled: true
-    path: /swagger-ui.html
+    path: /v1/swagger-ui.html
   scalar:
-    path: /docs
+    path: /v1/docs
 
 scalar:
-  path: /docs
+  path: /v1/docs

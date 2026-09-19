@@ -50,10 +50,16 @@ public class ReserveService {
         LocalDate dateTo = params.dateTo();
         Specification<Reserve> reserveSpecification = ReserveSpecification.exists(spaceId, dateFrom, dateTo);
         List<Reserve> existingReserves = reserveRepository.findAll(reserveSpecification);
+        if (existingReserves.isEmpty()) {
+            throw new ResourceNotFoundException("Nenhuma reserva encontrada para o espaço especificado no intervalo de datas fornecido.");
+        }
         List<SchedulesEnum> existingSchedules = existingReserves.stream()
                 .flatMap(reserve -> reserve.getSchedules().stream())
                 .map(ReserveSchedule::getSchedule)
                 .toList();
+        if (existingSchedules.isEmpty()) {
+            throw new ResourceNotFoundException("Nenhum horário reservado encontrado para o espaço especificado no intervalo de datas fornecido.");
+        }
 
         return ResponseEntity.ok(existingSchedules);
     }
