@@ -30,9 +30,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
                                 // Documentation
-                                .requestMatchers(HttpMethod.GET, "/docs/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/v3/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/v1/**").permitAll()
                                 // Authentication
                                 .requestMatchers(HttpMethod.GET, "/auth/users").hasRole("ADMIN")
                                 .requestMatchers(HttpMethod.POST, "/auth/sign-in").permitAll()

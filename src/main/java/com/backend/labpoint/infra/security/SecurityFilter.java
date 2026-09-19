@@ -21,9 +21,7 @@ import java.util.List;
 public class SecurityFilter extends OncePerRequestFilter {
 
     private static final List<String> PUBLIC_ROUTES = Arrays.asList(
-            "/docs/**",
-            "/v3/**",
-            "/swagger-ui/**",
+            "/v1/**",
             "/auth/sign-in",
             "/auth/sign-up",
             "/auth/sign-out",

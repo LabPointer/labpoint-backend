@@ -31,7 +31,9 @@ mvn spring-boot:run
 
 Abra http://localhost:8080/ no seu navegador para ver o resultado.
 
-Abra http://localhost:8080/docs no seu navegador para ver a documentação das rotas.
+Abra http://localhost:8080/v1/docs no seu navegador para ver a documentação das rotas.
+Abra http://localhost:8080/v1/api-schema no seu navegador para ver a documentação das rotas em formato JSON.
+Abra http://localhost:8080/v1/swagger-ui.html no seu navegador para ver a documentação das rotas em formato Swagger UI.
 
 ## Packages
 
