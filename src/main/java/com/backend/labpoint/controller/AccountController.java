@@ -35,7 +35,7 @@ public class AccountController {
     @Autowired
     private AccountService userService;
 
-    @Operation(summary = "Admin: pesquisar por usuarios", description = "Filtra e retorna usuarios encontrados.")
+    @Operation(summary = "Admin: pesquisar usuarios", description = "Filtra e retorna usuarios encontrados.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Retorna lista de usuarios encontrados", content = @Content(array = @ArraySchema(schema = @Schema(implementation = ManageUserRequestDTO.class, requiredMode = Schema.RequiredMode.REQUIRED)))),
             @ApiResponse(responseCode = "404", description = "Usuário nao encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class, requiredMode = RequiredMode.REQUIRED)))
@@ -45,7 +45,7 @@ public class AccountController {
         return userService.getAccount(params);
     }
 
-    @Operation(summary = "Admin: atualizar informações do usuario", description = "Atualiza as informações do usuario no sistema")
+    @Operation(summary = "Admin: atualizar usuario", description = "Atualiza as informações do usuario no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Usuário atualizado com sucesso", content = @Content),
             @ApiResponse(responseCode = "400", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ErroResponseDTO.class)))
