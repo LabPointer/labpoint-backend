@@ -48,8 +48,7 @@ public class PasswordResetEmailListener {
     @Recover
     public void recover(MessagingException e, PasswordResetTokenRequestedEvent event) {
         tokenRepository.findById(event.passwordResetId()).ifPresent(token -> {
-            token.setStatus(PasswordEmailStatusEnum.PENDING);
-            tokenRepository.save(token);
+            tokenRepository.delete(token);
         });
     }
 }

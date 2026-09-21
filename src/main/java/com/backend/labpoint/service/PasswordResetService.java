@@ -10,6 +10,8 @@ import com.backend.labpoint.entities.password.PasswordEmailStatusEnum;
 import com.backend.labpoint.entities.password.PasswordResetToken;
 import com.backend.labpoint.event.password.PasswordResetTokenRequestedEvent;
 import com.backend.labpoint.exception.BadRequestException;
+import com.backend.labpoint.exception.ConflictException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import com.backend.labpoint.entities.account.Account;
 import com.backend.labpoint.repository.PasswordResetTokenRepository;
+import com.backend.labpoint.utils.UUIDExtractor;
 import com.backend.labpoint.repository.AccountRepository;
 
 import jakarta.transaction.Transactional;
@@ -47,6 +50,17 @@ public class PasswordResetService {
         Account account = accountOpt.get();
         if (!account.isEnabled()) {
             return;
+        }
+
+        Optional<PasswordResetToken> existingTokenOpt = passwordResetTokenRepository.findByAccount_Id(account.getId());
+        if (existingTokenOpt.isPresent()) {
+            PasswordResetToken existingToken = existingTokenOpt.get();
+            LocalDateTime tokenCreationDate = UUIDExtractor.getLocalDateTimeFromUuidV7(existingToken.getId());
+            LocalDateTime now = LocalDateTime.now();
+
+            if (tokenCreationDate.plusMinutes(2).isAfter(now)) {
+                throw new ConflictException("Aguarde pelo menos 2 minutos antes de tentar novamente");
+            }
         }
 
         PasswordResetToken passResetToken = new PasswordResetToken(null, account, LocalDateTime.now().plusMinutes(EXPIRACAO_MINUTOS), null, PasswordEmailStatusEnum.PENDING);
