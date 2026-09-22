@@ -28,12 +28,23 @@ mvn spring-boot:run
 - `mvn test` - Executa os testes do projeto
 - `mvn spring-boot:run -Dspring-boot.run.profiles=rel` - Inicia o servidor de desenvolvimento com o perfil para prod
 - `mvn clean package -Dspring-boot.run.profiles=rel` - Cria o arquivo jar do projeto com o perfil para prod
+- `mvn flyway:clean flyway:migrate` - Executa as migrations do banco de dados
 
 Abra http://localhost:8080/ no seu navegador para ver o resultado.
 
 Abra http://localhost:8080/v1/docs no seu navegador para ver a documentação das rotas.
 Abra http://localhost:8080/v1/api-schema no seu navegador para ver a documentação das rotas em formato JSON.
 Abra http://localhost:8080/v1/swagger-ui.html no seu navegador para ver a documentação das rotas em formato Swagger UI.
+
+## Migrations
+
+```bash
+mvn flyway:clean flyway:migrate \
+  -Dflyway.url=jdbc:postgresql://localhost:5432/seu_banco \
+  -Dflyway.user=seu_usuario \
+  -Dflyway.password=sua_senha \
+  -Dflyway.cleanDisabled=false
+```
 
 ## Packages
 

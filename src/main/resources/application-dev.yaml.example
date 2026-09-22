@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://{DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:labpoint}
-    username: ${DB_USERNAME:labpoint}
-    password: ${DB_PASSWORD:labpoint}
+    url: jdbc:postgresql://{DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:pei}
+    username: ${DB_USERNAME:pei}
+    password: ${DB_PASSWORD:pei}
   
   flyway:
     enabled: true
