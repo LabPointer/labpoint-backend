@@ -3,58 +3,81 @@
 Backend para do Labpoint, sistema de reservas de laboratórios.
 
 > [!WARNING]
-> Versão recomendada do [Java ou OpenJDK](https://adoptium.net/pt-BR/temurin/releases) é 25 LTS ou superior
-
-> [!WARNING]
-> Versão recomendada do [Maven](https://maven.apache.org/) é 3.8 ou superior(adicionar as variaveis de ambiente)
+> Versão recomendada do [.NET](https://dotnet.microsoft.com/pt-br/download) é 10 LTS ou superior
 
 > [!WARNING]
 > Para o banco de dados, recomendo baixar o [Docker](https://www.docker.com/) ou [Postgres](https://www.postgresql.org/)
 >
-> Caso esteja usando o postgre nativo, nao se esqueça de configurar as credencias de acesso em `./src/main/resources/application-dev.yaml`
+> Caso esteja usando o postgre nativo, nao se esqueça de configurar as credencias de acesso em `./src/main/resources/application.json`
 
 # Iniciando
 
 ```bash
-mvn clean install
-mvn spring-boot:run
+dotnet restore
+dotnet run
 ```
 
 ## Scripts
 
-- `mvn clean install` - Limpa o projeto e instala as dependências
-- `mvn spring-boot:run` - Inicia o servidor de desenvolvimento
-- `mvn clean package` - Cria o arquivo jar do projeto
-- `mvn test` - Executa os testes do projeto
-- `mvn spring-boot:run -Dspring-boot.run.profiles=rel` - Inicia o servidor de desenvolvimento com o perfil para prod
-- `mvn clean package -Dspring-boot.run.profiles=rel` - Cria o arquivo jar do projeto com o perfil para prod
-- `mvn flyway:clean flyway:migrate` - Executa as migrations do banco de dados
+- `dotnet restore` - Limpa o projeto e instala as dependências
+- `dotnet run` - Inicia o servidor de desenvolvimento
+- `dotnet build` - Cria o arquivo dll do projeto
+- `dotnet test` - Executa os testes do projeto
+- `dotnet run --environment=Production` - Inicia o servidor de desenvolvimento com o perfil para prod
+- `dotnet build --environment=Production` - Cria o arquivo dll do projeto com o perfil para prod
+- `dotnet run --environment=Development` - Inicia o servidor de desenvolvimento com o perfil para dev
+- `dotnet build --environment=Development` - Cria o arquivo dll do projeto com o perfil para dev
 
-Abra http://localhost:8080/ no seu navegador para ver o resultado.
+Abra http://localhost:8080/v1/scalar no seu navegador para ver a documentação das rotas. 
 
-Abra http://localhost:8080/v1/docs no seu navegador para ver a documentação das rotas.
-Abra http://localhost:8080/v1/api-schema no seu navegador para ver a documentação das rotas em formato JSON.
+Abra http://localhost:8080/v1/api.json no seu navegador para ver a documentação das rotas em formato JSON. 
+
 Abra http://localhost:8080/v1/swagger-ui.html no seu navegador para ver a documentação das rotas em formato Swagger UI.
 
 ## Migrations
 
-```bash
-mvn flyway:clean flyway:migrate \
-  -Dflyway.url=jdbc:postgresql://localhost:5432/seu_banco \
-  -Dflyway.user=seu_usuario \
-  -Dflyway.password=sua_senha \
-  -Dflyway.cleanDisabled=false
-```
+- `dotnet ef migrations add [nome da migration]` - Cria uma nova migration
+- `dotnet ef database update` - Atualiza o banco de dados com as migrations pendentes
+- `dotnet ef migrations remove` - Remove a última migration criada
+- `dotnet ef migrations list` - Lista todas as migrations do projeto
+- `dotnet ef migrations script` - Gera um script SQL com todas as migrations pendentes
+- `dotnet ef migrations script [nome da migration]` - Gera um script SQL com a migration especificada
+- `dotnet ef database drop --force` - Deleta o banco de dados
 
 ## Packages
 
-- [Spring Boot](https://start.spring.io/)
+- [.NET](https://dotnet.microsoft.com/pt-br/download)
 
-## application.yaml
+## appsettings.json
 
-- spring.datasource.url=jdbc:[url do banco de dados]()
-- spring.datasource.username=[usuario do banco de dados]()
-- spring.datasource.password=[senha do banco de dados]()
-- spring.jpa.properties.hibernate.dialect=[dialecto do banco de dados]()
-- spring.mail.username=[gmail para mail server]()
-- spring.mail.password=[aplication password para do gmail]()
+```json
+{
+  "ConnectionStrings": {
+    "DbConnection": "Host=localhost;Port=5432;Database=pei;Username=pei;Password=pei"
+  },
+  "Frontend": {
+    "Url": "http://localhost/3000"
+  },
+  "Smtp": {
+    "Host": "smtp.gmail.com",
+    "Port": 587,
+    "User": "seu email",
+    "Password": "senha do aplicativo do email",
+    "FromName": "Labpoint",
+    "FromAddress": "seu email"
+  },
+  "Cors": {
+    "AllowedOrigins": [
+      "http://localhost:3000"
+    ]
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+
+```
