@@ -3,14 +3,14 @@
 namespace DTOs.Space;
 
 public record SpaceEditRequestDTO(
-    [Required]
+    [Required(ErrorMessage = "O id do espaço é obrigatório")]
     long Id,
-    [MaxLength(100)]
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "O nome deve ter entre 1 e 100 caracteres")]
     string? Name,
-    [MaxLength(200)]
+    [StringLength(200, MinimumLength = 1, ErrorMessage = "A descrição deve ter entre 1 e 200 caracteres")]
     string? Description,
     [Range(1, int.MaxValue)]
     int? Capacity,
     bool? Locked,
-    HashSet<long> Subjects,
-    HashSet<long> Resources);
+    HashSet<long>? Subjects,
+    HashSet<long>? Resources);

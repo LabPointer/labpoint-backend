@@ -21,7 +21,7 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
     public async Task<List<ResourceResponseDTO>> GetResources(ResourceRequestDTO query)
     {
         var resourceQuery = dbCtx.Resources.Where(r => r.CanReserve == query.CanReserve);
-        if (string.IsNullOrEmpty(query.Name))
+        if (!string.IsNullOrEmpty(query.Name))
         {
             resourceQuery = resourceQuery.Where(r => r.Name.Contains(query.Name));
         }
@@ -54,15 +54,19 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
 
     public Task EditResource(ResourceEditRequestDTO data)
     {
-        var resource = new ResourceModel
-        {
-            Name = data.Name,
-            Description = data.Description,
-            CanReserve = data.CanReserve,
-            Enabled = data.Enabled
-        };
+        var resource = dbCtx.Resources.Find(data.Id);
+        if (resource is null)
+            throw new ResourceNotFoundException("Resource not found");
+        
+        if (string.IsNullOrWhiteSpace(data.Name) && string.IsNullOrWhiteSpace(data.Description) && data.CanReserve is null && data.Enabled is null)
+            throw new BadRequestException("No fields to update were provided");
 
-        dbCtx.Resources.Add(resource);
+        resource.Name = data.Name ?? resource.Name;
+        resource.Description = data.Description ?? resource.Description;
+        resource.CanReserve = data.CanReserve ?? resource.CanReserve;
+        resource.Enabled = data.Enabled ?? resource.Enabled;
+
+        dbCtx.Resources.Update(resource);
         return dbCtx.SaveChangesAsync();
     }
 }

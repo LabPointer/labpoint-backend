@@ -15,7 +15,20 @@ builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"
 builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("Frontend"));
 
 // Services
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState.Values
+                .SelectMany(entry => entry.Errors)
+                .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
+                    ? "Valor inválido."
+                    : error.ErrorMessage);
+
+            throw new BadRequestException(string.Join(" ", errors));
+        };
+    });
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -72,6 +85,7 @@ builder.Services.AddScoped<IEmailSender<AccountModel>, SmtpEmailService>();
 builder.Services.AddScoped<ISubjectService, SubjectService>();
 builder.Services.AddScoped<IResourceService, ResourceService>();
 builder.Services.AddScoped<ISpaceService, SpaceService>();
+builder.Services.AddScoped<IReserveService, ReserveService>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
@@ -85,6 +99,8 @@ builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+
 /** Usar apenas em caso da chave for comprometida
 var keyService = app.Services.GetRequiredService<IKeyManager>();
 keyService.CreateNewKey(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(90));
@@ -93,10 +109,14 @@ keyService.RevokeAllKeys(DateTimeOffset.UtcNow, reason: "Chave comprometida");
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.UseSwaggerUI(options => { options.SwaggerEndpoint("/v1/swagger/api.json", "OpenAPI V1"); });
-    app.UseReDoc(options => { options.SpecUrl("/v1/api.json"); });
-    app.MapScalarApiReference();
+    app.MapOpenApi("/openapi/{documentName}.json");
+    app.UseSwaggerUI(options =>
+    {
+        options.RoutePrefix = "swagger";
+        options.SwaggerEndpoint("/openapi/v1.json", "OpenAPI V1");
+    });
+    app.UseReDoc(options => { options.SpecUrl("/openapi/v1.json"); });
+    app.MapScalarApiReference("/scalar");
 }
 
 app.UseCors();

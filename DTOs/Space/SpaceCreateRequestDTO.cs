@@ -3,15 +3,15 @@
 namespace DTOs.Space;
 
 public record SpaceCreateRequestDTO(
-    [Required]
-    [MaxLength(100)]
+    [Required(ErrorMessage = "O nome do espaço é obrigatório")]
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "O nome deve ter entre 1 e 100 caracteres")]
     string Name,
-    [Required]
-    [MaxLength(200)]
+    [Required(ErrorMessage = "A descrição do espaço é obrigatória")]
+    [StringLength(200, MinimumLength = 1, ErrorMessage = "A descrição deve ter entre 1 e 200 caracteres")]
     string Description,
-    [Required]
+    [Required(ErrorMessage = "A capacidade do espaço é obrigatória")]
     int Capacity,
-    [Required]
+    [Required(ErrorMessage = "O status de bloqueio do espaço é obrigatório")]
     bool Locked,
     List<long> Subjects,
     List<long> Resources

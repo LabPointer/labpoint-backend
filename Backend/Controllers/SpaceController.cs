@@ -20,6 +20,7 @@ public class SpaceController(ISpaceService spaceService) : ControllerBase
     /// </remarks>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<SpaceResponseDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSpaces([FromQuery] SpaceRequestDTO query)
     {
@@ -36,7 +37,7 @@ public class SpaceController(ISpaceService spaceService) : ControllerBase
     /// </remarks>
     [HttpPost("manage/create")]
     [Authorize(Roles = "Admin,Owner")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PostCreate([FromBody] SpaceCreateRequestDTO data)
     {
@@ -53,7 +54,8 @@ public class SpaceController(ISpaceService spaceService) : ControllerBase
     /// </remarks>
     [HttpPatch("manage/edit")]
     [Authorize(Roles = "Admin,Owner")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> PatchEdit([FromBody] SpaceEditRequestDTO data)
     {

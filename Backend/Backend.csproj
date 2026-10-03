@@ -40,17 +40,4 @@
       <ProjectReference Include="..\DTOs\DTOs.csproj" />
       <ProjectReference Include="..\Models\Models.csproj" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Compile Remove="Migrations\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <EmbeddedResource Remove="Migrations\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="Migrations\**" />
-    </ItemGroup>
-
 </Project>

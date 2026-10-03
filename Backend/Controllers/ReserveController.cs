@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Backend.Services;
 using DTOs.Error;
 using DTOs.Space;
@@ -11,7 +10,7 @@ namespace Backend.Controllers;
 [ApiController]
 [Authorize]
 [Route("reserves")]
-public class ReserveController(ClaimsPrincipal principal, IReserveService reserveService) : ControllerBase
+public class ReserveController(IReserveService reserveService) : ControllerBase
 {
     /// <summary>
     /// Listar reservas
@@ -24,7 +23,7 @@ public class ReserveController(ClaimsPrincipal principal, IReserveService reserv
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSpaceReserves([FromQuery] SpaceReserveRequestDTO query)
     {
-        var spaceReserve = await reserveService.GetSpaceReserve(principal, query);
+        var spaceReserve = await reserveService.GetSpaceReserve(User, query);
 
         return Ok(spaceReserve);
     }

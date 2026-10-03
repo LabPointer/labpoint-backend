@@ -29,7 +29,7 @@ public class AuthController(
     /// Apenas um Admin/Owner autenticado pode definir outra role através do campo "role".
     /// </remarks>
     [HttpPost("sign-up")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<IdentityError>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PostSignUp([FromBody] SignUpRequestDTO body)
     {
@@ -68,7 +68,7 @@ public class AuthController(
     /// </summary>
     /// <remarks>Rota aberta pelo link enviado por e-mail após o cadastro.</remarks>
     [HttpGet("confirm-email", Name = "ConfirmEmail")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<IdentityError>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetConfirmEmail([FromQuery] ConfirmEmailRequestDTO query)
     {
@@ -80,7 +80,7 @@ public class AuthController(
         if (!result.Succeeded)
             return BadRequest(result.Errors);
 
-        return Ok(new { message = "E-mail confirmado com sucesso." });
+        return Ok();
     }
 
     /// <summary>
@@ -106,7 +106,7 @@ public class AuthController(
     /// </summary>
     /// <remarks>Autentica por matrícula e senha e grava o cookie de sessão.</remarks>
     [HttpPost("sign-in")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> PostSignIn([FromBody] SignInRequestDTO body)

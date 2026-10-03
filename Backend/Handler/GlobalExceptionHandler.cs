@@ -15,14 +15,14 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         {
             case AppException app:
                 status = app.StatusCode;
-                body = new ErroResponseDTO(app.Message, app.Logout);
+                body = new ErroResponseDTO(app.Message, status, app.Logout);
                 break;
 
             default:
                 // exceções inesperadas: loga e não vaza detalhes
                 logger.LogError(exception, "Erro não tratado");
                 status = StatusCodes.Status500InternalServerError;
-                body = new ErroResponseDTO("Erro interno do servidor");
+                body = new ErroResponseDTO("Erro interno do servidor", status);
                 break;
         }
 

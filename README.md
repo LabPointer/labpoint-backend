@@ -28,11 +28,11 @@ dotnet run
 - `dotnet run --environment=Development` - Inicia o servidor de desenvolvimento com o perfil para dev
 - `dotnet build --environment=Development` - Cria o arquivo dll do projeto com o perfil para dev
 
-Abra http://localhost:8080/v1/scalar no seu navegador para ver a documentação das rotas. 
+Abra http://localhost:8080/scalar no seu navegador para ver a documentação das rotas. 
 
-Abra http://localhost:8080/v1/api.json no seu navegador para ver a documentação das rotas em formato JSON. 
+Abra http://localhost:8080/openapi/v1.json no seu navegador para ver a documentação das rotas em formato JSON. 
 
-Abra http://localhost:8080/v1/swagger-ui.html no seu navegador para ver a documentação das rotas em formato Swagger UI.
+Abra http://localhost:8080/swagger no seu navegador para ver a documentação das rotas em formato Swagger UI.
 
 ## Migrations
 

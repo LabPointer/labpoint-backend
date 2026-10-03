@@ -48,8 +48,11 @@ public class SubjectService(AppDbContext dbCtx) : ISubjectService
         if (subject is null)
             throw new ResourceNotFoundException("Disciplina não encontrada");
 
-        subject.Name = data.Name;
-        subject.Enabled = data.Enabled;
+        if (string.IsNullOrWhiteSpace(data.Name) && data.Enabled is null)
+            throw new BadRequestException("Nenhum campo para atualizar foi fornecido");
+
+        subject.Name = data.Name ?? subject.Name;
+        subject.Enabled = data.Enabled ?? subject.Enabled;
         await dbCtx.SaveChangesAsync();
     }
 }

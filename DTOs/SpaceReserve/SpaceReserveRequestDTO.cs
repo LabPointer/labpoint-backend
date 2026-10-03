@@ -3,4 +3,10 @@ using Models;
 
 namespace DTOs.SpaceReserve;
 
-public record SpaceReserveRequestDTO([Required] DateOnly StartAt, [Required] DateOnly EndAt, HashSet<long> SpaceIds, EReserveStatus? Status);
+public record SpaceReserveRequestDTO(
+    [Required(ErrorMessage = "A data de início da reserva é obrigatória")] 
+    DateOnly StartAt, 
+    [Required(ErrorMessage = "A data de término da reserva é obrigatória")] 
+    DateOnly EndAt,
+    HashSet<long>? SpaceIds, 
+    EReserveStatus? Status);

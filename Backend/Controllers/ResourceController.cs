@@ -21,6 +21,7 @@ public class ResourceController(IResourceService resourceService) : ControllerBa
     /// </remarks>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<ResourceResponseDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetResources([FromQuery] ResourceRequestDTO query)
     {
@@ -37,7 +38,7 @@ public class ResourceController(IResourceService resourceService) : ControllerBa
     /// </remarks>
     [HttpPost("manage/create")]
     [Authorize(Roles = "Admin,Owner")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PostCreate([FromBody] ResourceCreateRequestDTO data)
     {
@@ -54,7 +55,8 @@ public class ResourceController(IResourceService resourceService) : ControllerBa
     /// </remarks>
     [HttpPatch("manage/edit")]
     [Authorize(Roles = "Admin,Owner")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> PatchEdit([FromBody] ResourceEditRequestDTO data)
     {

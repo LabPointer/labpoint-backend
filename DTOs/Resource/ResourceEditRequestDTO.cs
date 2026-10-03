@@ -3,10 +3,11 @@
 namespace DTOs.Resource;
 
 public record ResourceEditRequestDTO(
-    [Required]
+    [Required(ErrorMessage = "O ID do recurso é obrigatório")]
     long Id,
-    [StringLength(100, MinimumLength = 1)]
-    string Name,
-    string Description,
-    bool CanReserve = true,
-    bool Enabled = true);
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "O nome deve ter entre 1 e 100 caracteres")]
+    string? Name,
+    [StringLength(200, MinimumLength = 1, ErrorMessage = "A descrição deve ter entre 1 e 200 caracteres")]
+    string? Description,
+    bool? CanReserve,
+    bool? Enabled);

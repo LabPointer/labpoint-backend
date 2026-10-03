@@ -42,7 +42,7 @@ public class ReserveService(AppDbContext dbCtx) : IReserveService
             .Where(sr => sr.FkAccountId == userId)
             .Where(sr => sr.DateFrom >= query.StartAt && sr.DateTo <= query.EndAt);
         
-        if (query.SpaceIds.Count > 0)
+        if (query.SpaceIds != null && query.SpaceIds.Count > 0)
         {
             queryable = queryable.Where(sr => query.SpaceIds.Contains(sr.FkSpaceId));
         }
@@ -83,6 +83,11 @@ public class ReserveService(AppDbContext dbCtx) : IReserveService
                     .ToList()
             ))
             .ToListAsync();
+
+        if (reserves.Count == 0)
+        {
+            throw new ResourceNotFoundException("Nenhuma reserva encontrada para o período informado.");
+        }
 
         return reserves;
     }
