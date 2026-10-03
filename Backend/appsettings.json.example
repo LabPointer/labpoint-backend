@@ -1,0 +1,28 @@
+{
+  "ConnectionStrings": {
+    "DbConnection": "Host=localhost;Port=5432;Database=pei;Username=pei;Password=pei"
+  },
+  "Frontend": {
+    "Url": "http://localhost/3000"
+  },
+  "Smtp": {
+    "Host": "smtp.gmail.com",
+    "Port": 587,
+    "User": "<e-mail>",
+    "Password": "<email app password>",
+    "FromName": "Labpoint",
+    "FromAddress": "<e-mail>"
+  },
+  "Cors": {
+    "AllowedOrigins": [
+      "http://localhost:3000"
+    ]
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}

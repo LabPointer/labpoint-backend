@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="compose.yaml" />
+  </Folder>
+  <Project Path="Backend/Backend.csproj" />
+  <Project Path="Config/Config.csproj" />
+  <Project Path="DTOs/DTOs.csproj" />
+  <Project Path="Models/Models.csproj" />
+</Solution>
