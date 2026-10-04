@@ -14,14 +14,14 @@ public class SpaceSubjectModel
     [Column("id")]
     public long Id { get; set; }
     
-    [Column("fk_space_id")]
     [Required]
+    [Column("fk_space_id")]
     public long FkSpaceId { get; set; }
     [ForeignKey(nameof(FkSpaceId))]
     public virtual SpaceModel Space { get; set; }
     
-    [Column("fk_subject_id")]
     [Required]
+    [Column("fk_subject_id")]
     public long FkSubjectId { get; set; }
     [ForeignKey(nameof(FkSubjectId))]
     public virtual SubjectModel Subject { get; set; }

@@ -19,5 +19,6 @@ public enum EReserveStatus
     Booking,
     Confirmed,
     Canceled,
-    Rejected
+    Rejected,
+    Blocked
 }

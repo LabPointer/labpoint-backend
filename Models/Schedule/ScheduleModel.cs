@@ -11,15 +11,15 @@ public class ScheduleModel
     [Column("id")]
     public long Id { get; set; }
     
-    [Column("start_at")]
     [Required]
+    [Column("start_at")]
     public TimeOnly  StartAt { get; set; }
     
-    [Column("end_at")]
     [Required]
+    [Column("end_at")]
     public TimeOnly EndAt { get; set; }
     
-    [Column("shift")]
     [Required]
+    [Column("shift")]
     public EShift Shift { get; set; }
 }

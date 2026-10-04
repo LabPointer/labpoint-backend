@@ -79,13 +79,14 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 builder.Services.AddAuthorization();
+builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddSingleton<IBackgroundTaskService>(new BackgroundTaskService(capacity: 200));
 builder.Services.AddHostedService<QueueService>();
 builder.Services.AddScoped<IEmailSender<AccountModel>, SmtpEmailService>();
 builder.Services.AddScoped<ISubjectService, SubjectService>();
 builder.Services.AddScoped<IResourceService, ResourceService>();
 builder.Services.AddScoped<ISpaceService, SpaceService>();
-builder.Services.AddScoped<IReserveService, ReserveService>();
+builder.Services.AddScoped<ISpaceReserveService, SpaceReserveService>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
