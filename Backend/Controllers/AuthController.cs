@@ -132,7 +132,7 @@ public class AuthController(
 
         var roles = await userManager.GetRolesAsync(user);
         
-        var cookieData = new { user.UserName, user.Registration, roles };
+        var cookieData = new { username = user.UserName ?? "Não definido", registration = user.Registration, roles };
         string jsonString = JsonSerializer.Serialize(cookieData);
         string cookieValue = WebUtility.UrlEncode(jsonString);
         var cookieOptions = new CookieOptions
@@ -156,6 +156,7 @@ public class AuthController(
     public async Task<IActionResult> PostSignOut()
     {
         await signInManager.SignOutAsync();
+        HttpContext.Response.Cookies.Delete("auth-session");
         HttpContext.Response.Cookies.Delete("auth-info");
         return Ok();
     }
@@ -205,7 +206,7 @@ public class AuthController(
             var emailService = sp.GetRequiredService<IEmailSender<AccountModel>>();
             var userService = sp.GetService<UserManager<AccountModel>>();
             var token = await userService.GenerateEmailConfirmationTokenAsync(user);
-            var link = $"{frontend.Value.Url}/confirm-email/?userId={user.Id}&token={token}";
+            var link = $"{frontend.Value.Url}/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
 
             await emailService.SendConfirmationLinkAsync(user, user.Email!, link);
         });

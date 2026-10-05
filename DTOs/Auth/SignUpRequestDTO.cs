@@ -9,6 +9,7 @@ public record SignUpRequestDTO(
     string Username, 
     [Required(ErrorMessage = "A matricula é obrigatoria.")]
     [StringLength(20, MinimumLength = 1, ErrorMessage = "A matricula deve ter entre 1 e 16 caracteres.")]
+    [RegularExpression(@"^[0-9]+$", ErrorMessage = "A matrícula deve conter apenas números.")]
     string Registration, 
     [EnumDataType(typeof(EAccountRole), ErrorMessage = "Cargo invalido.")]
     EAccountRole Role, 
