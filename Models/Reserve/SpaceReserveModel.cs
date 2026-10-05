@@ -46,4 +46,6 @@ public class SpaceReserveModel
     public virtual AccountModel Account { get; set; }
     
     public virtual ICollection<SpaceReserveScheduleModel> SpaceReserveSchedules { get; set; } =  new List<SpaceReserveScheduleModel>();
+
+    public virtual ICollection<ResourceReserveModel> ResourceReserves { get; set; } = new List<ResourceReserveModel>();
 }

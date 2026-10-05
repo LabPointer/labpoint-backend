@@ -11,5 +11,6 @@ public record SpaceReserveResponseDTO(
     DateOnly DateTo,
     string Purpose,
     EReserveStatus Status,
-    SpaceResponseDTO Spaces,
-    List<ScheduleResponseDTO> Schedules);
+    SpaceResponseDTO Space,
+    List<ScheduleResponseDTO> Schedules
+);

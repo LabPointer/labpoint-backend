@@ -29,6 +29,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<ScheduleModel> Schedules { get; set; }
     
     public DbSet<SpaceReserveScheduleModel>  SpaceReserveSchedules { get; set; }
+
+    public DbSet<ResourceReserveModel> ResourceReserves { get; set; }
     
     protected override void OnModelCreating(ModelBuilder builder)
     {

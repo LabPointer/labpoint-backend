@@ -21,4 +21,6 @@ public class AccountModel : IdentityUser
     public virtual ICollection<AccountSubjectModel> AccountSubjects { get; set; } = new List<AccountSubjectModel>();
     
     public virtual ICollection<SpaceReserveModel> SpaceReserves { get; set; } = new List<SpaceReserveModel>();
+
+    public virtual ICollection<ResourceReserveModel> ResourceReserves { get; set; } = new List<ResourceReserveModel>();
 }
