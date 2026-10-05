@@ -35,13 +35,13 @@ public class SubjectController(
     /// <remarks>
     /// Cria uma nova matéria. Apenas usuários com permissões adequadas podem criar matérias.
     /// </remarks>
-    [HttpPost("manage/create")]
+    [HttpPost("admin/create")]
     [Authorize(Roles = "Admin,Owner")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> PostCreate([FromBody] SubjectCreateRequestDTO data)
+    public async Task<IActionResult> AdminPostCreate([FromBody] SubjectCreateRequestDTO data)
     {
-        await subjectService.CreateSubject(data);
+        await subjectService.AdminCreateSubject(data);
         
         return Created();
     }
@@ -52,14 +52,14 @@ public class SubjectController(
     /// <remarks>
     /// Edita os dados de uma matéria. Apenas usuários com permissões adequadas podem editar matérias.
     /// </remarks>
-    [HttpPatch("manage/edit")]
+    [HttpPatch("admin/edit")]
     [Authorize(Roles = "Admin,Owner")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]   
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> PatchEdit([FromBody] SubjectEditRequestDTO data)
+    public async Task<IActionResult> AdminPatchEdit([FromBody] SubjectEditRequestDTO data)
     {
-        await subjectService.EditSubject(data);
+        await subjectService.AdminEditSubject(data);
         
         return NoContent();
     }

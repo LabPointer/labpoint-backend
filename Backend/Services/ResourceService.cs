@@ -11,9 +11,9 @@ public interface IResourceService
 {
     public Task<List<ResourceResponseDTO>> GetResources(ResourceRequestDTO query);
     
-    public Task EditResource(ResourceEditRequestDTO data);
+    public Task AdminEditResource(ResourceEditRequestDTO data);
 
-    public Task CreateResource(ResourceCreateRequestDTO data);
+    public Task AdminCreateResource(ResourceCreateRequestDTO data);
 }
 
 public class ResourceService(AppDbContext dbCtx) : IResourceService
@@ -38,7 +38,7 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
         return resources;
     }
 
-    public Task CreateResource(ResourceCreateRequestDTO data)
+    public Task AdminCreateResource(ResourceCreateRequestDTO data)
     {
         var resource = new ResourceModel
         {
@@ -52,7 +52,7 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
         return dbCtx.SaveChangesAsync();
     }
 
-    public Task EditResource(ResourceEditRequestDTO data)
+    public Task AdminEditResource(ResourceEditRequestDTO data)
     {
         var resource = dbCtx.Resources.Find(data.Id);
         if (resource is null)

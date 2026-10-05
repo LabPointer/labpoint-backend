@@ -9,8 +9,8 @@ namespace Backend.Services;
 public interface ISubjectService
 {
     public Task<List<SubjectResponseDTO>> GetSubjects(SubjectRequestDTO query);
-    public Task CreateSubject(SubjectCreateRequestDTO data);
-    public Task EditSubject(SubjectEditRequestDTO data);
+    public Task AdminCreateSubject(SubjectCreateRequestDTO data);
+    public Task AdminEditSubject(SubjectEditRequestDTO data);
 }
 
 public class SubjectService(AppDbContext dbCtx) : ISubjectService
@@ -35,14 +35,14 @@ public class SubjectService(AppDbContext dbCtx) : ISubjectService
         return subjects;
     }
     
-    public async Task CreateSubject(SubjectCreateRequestDTO data)
+    public async Task AdminCreateSubject(SubjectCreateRequestDTO data)
     {
         var subject = new SubjectModel{ Name = data.Name, Enabled = data.Enabled };
         await dbCtx.Subjects.AddAsync(subject);
         await dbCtx.SaveChangesAsync();
     }
     
-    public async Task EditSubject(SubjectEditRequestDTO data)
+    public async Task AdminEditSubject(SubjectEditRequestDTO data)
     {
         var subject = await dbCtx.Subjects.FindAsync(data.Id);
         if (subject is null)

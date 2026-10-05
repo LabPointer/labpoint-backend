@@ -35,13 +35,13 @@ public class SpaceController(ISpaceService spaceService) : ControllerBase
     /// <remarks>
     /// Cria um novo espaço com base nos parâmetros fornecidos. Apenas usuários com permissões adequadas podem criar espaços.
     /// </remarks>
-    [HttpPost("manage/create")]
+    [HttpPost("admin/create")]
     [Authorize(Roles = "Admin,Owner")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PostCreate([FromBody] SpaceCreateRequestDTO data)
     {
-        await spaceService.CreateSpace(data);
+        await spaceService.AdminCreateSpace(data);
 
         return Created();
     }
@@ -52,14 +52,14 @@ public class SpaceController(ISpaceService spaceService) : ControllerBase
     /// <remarks>
     /// Edita os dados de um espaço existente. Apenas usuários com permissões adequadas podem editar espaços.
     /// </remarks>
-    [HttpPatch("manage/edit")]
+    [HttpPatch("admin/edit")]
     [Authorize(Roles = "Admin,Owner")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> PatchEdit([FromBody] SpaceEditRequestDTO data)
     {
-        await spaceService.EditSpace(data);
+        await spaceService.AdminEditSpace(data);
 
         return NoContent();
     }

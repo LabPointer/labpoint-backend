@@ -169,9 +169,9 @@ public class AuthController(
     {
         var user = await userManager.FindByEmailAsync(body.Email);
 
-        if (user is not null && await userManager.IsEmailConfirmedAsync(user))
+        if (user is not null && !await userManager.IsEmailConfirmedAsync(user))
         {
-            await SendEmailConfirmAsync(user);
+            await SendPasswordResetAsync(user);
         }
 
         return Accepted();

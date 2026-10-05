@@ -1,7 +1,6 @@
 ﻿using Backend.Handler;
 using Data;
 using DTOs.Space;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Models;
 
@@ -11,9 +10,9 @@ public interface ISpaceService
 {
     public Task<List<SpaceResponseDTO>> GetSpaces(SpaceRequestDTO query);
 
-    public Task CreateSpace(SpaceCreateRequestDTO data);
+    public Task AdminCreateSpace(SpaceCreateRequestDTO data);
 
-    public Task EditSpace(SpaceEditRequestDTO data);
+    public Task AdminEditSpace(SpaceEditRequestDTO data);
 }
 
 public class SpaceService(AppDbContext dbCtx) : ISpaceService
@@ -96,7 +95,7 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
         return spaces;
     }
 
-    public async Task CreateSpace(SpaceCreateRequestDTO data)
+    public async Task AdminCreateSpace(SpaceCreateRequestDTO data)
     {
         if (data.Subjects != null && data.Subjects.Count > 0)
         {
@@ -144,7 +143,7 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
         await dbCtx.SaveChangesAsync();
     }
 
-    public async Task EditSpace(SpaceEditRequestDTO data)
+    public async Task AdminEditSpace(SpaceEditRequestDTO data)
     {
         var space = await dbCtx.Spaces
             .Include(s => s.SpaceSubjects)

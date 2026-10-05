@@ -1,8 +1,6 @@
 using Backend.Services;
 using DTOs.Error;
 using DTOs.Resource;
-using DTOs.Space;
-using DTOs.Subject;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -36,13 +34,13 @@ public class ResourceController(IResourceService resourceService) : ControllerBa
     /// <remarks>
     /// Cria um novo recurso. Apenas usuários com permissões adequadas podem criar recursos.
     /// </remarks>
-    [HttpPost("manage/create")]
+    [HttpPost("admin/create")]
     [Authorize(Roles = "Admin,Owner")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PostCreate([FromBody] ResourceCreateRequestDTO data)
     {
-        await resourceService.CreateResource(data);
+        await resourceService.AdminCreateResource(data);
 
         return Created();
     }
@@ -53,14 +51,14 @@ public class ResourceController(IResourceService resourceService) : ControllerBa
     /// <remarks>
     /// Edita um recurso existente. Apenas usuários com permissões adequadas podem editar recursos.
     /// </remarks>
-    [HttpPatch("manage/edit")]
+    [HttpPatch("admin/edit")]
     [Authorize(Roles = "Admin,Owner")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> PatchEdit([FromBody] ResourceEditRequestDTO data)
     {
-        await resourceService.EditResource(data);
+        await resourceService.AdminEditResource(data);
 
         return NoContent();
     }

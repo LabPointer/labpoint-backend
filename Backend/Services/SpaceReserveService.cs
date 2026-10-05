@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Backend.Handler;
 using Data;
+using DTOs.Account;
 using DTOs.Schedule;
 using DTOs.Space;
 using DTOs.SpaceReserve;
@@ -21,6 +22,10 @@ public interface ISpaceReserveService
     public Task EditSpaceReserve(ClaimsPrincipal user, long reserveId, SpaceReserveEditRequestDTO data);
 
     public Task CancelSpaceReserve(ClaimsPrincipal user, long reserveId);
+
+    public Task<List<AdminSpaceReserveResponseDTO>> AdminGetSpaceReserve(ClaimsPrincipal user, AdminSpaceReserveRequestDTO query);
+
+    public Task AdminEditSpaceReserve(ClaimsPrincipal user, long reserveId, AdminSpaceReserveEditRequestDTO data);
 }
 
 public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
@@ -33,10 +38,6 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
         }
 
         string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new UnauthorizedException("Usuário não identificado.", true);
-        }
 
         var queryable = dbCtx.SpaceReserves
             .Include(sr => sr.Space)
@@ -102,13 +103,9 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
         }
 
         string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new UnauthorizedException("Usuário não identificado.", true);
-        }
 
         var existingSchedules = await dbCtx.SpaceReserves
-            .Where(sr => sr.FkSpaceId == spaceId && sr.DateFrom < query.EndAt && sr.DateTo > query.StartAt)
+            .Where(sr => sr.FkSpaceId == spaceId && sr.DateFrom < query.EndAt && sr.DateTo > query.StartAt && sr.Status == EReserveStatus.Booking && sr.Status == EReserveStatus.Confirmed)
             .SelectMany(sr => sr.SpaceReserveSchedules.Select(s => new ScheduleResponseDTO(
                 s.Schedule.Id,
                 s.Schedule.StartAt,
@@ -129,10 +126,6 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
     public async Task CreateSpaceReserve(ClaimsPrincipal user, long spaceId, SpaceReserveCreateRequestDTO data)
     {
         string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new UnauthorizedException("Usuário não identificado.", true);
-        }
 
         if (data.StartAt >= data.EndAt)
         {
@@ -171,10 +164,6 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
     public async Task EditSpaceReserve(ClaimsPrincipal user, long reserveId, SpaceReserveEditRequestDTO data)
     {
         string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new UnauthorizedException("Usuário não identificado.", true);
-        }
 
         var spaceReserve = await dbCtx.SpaceReserves
             .Include(sr => sr.SpaceReserveSchedules)
@@ -240,11 +229,6 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
     {
         string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new UnauthorizedException("Usuário não identificado.", true);
-        }
-
         var spaceReserve = await dbCtx.SpaceReserves
             .Where(sr => sr.Id == reserveId && sr.FkAccountId == userId)
             .FirstAsync();
@@ -255,6 +239,117 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
 
         spaceReserve.Status = EReserveStatus.Canceled;
         dbCtx.SpaceReserves.Update(spaceReserve);
+        await dbCtx.SaveChangesAsync();
+    }
+
+    public async Task<List<AdminSpaceReserveResponseDTO>> AdminGetSpaceReserve(ClaimsPrincipal user, AdminSpaceReserveRequestDTO query)
+    {
+        if (query.StartAt > query.EndAt)
+        {
+            throw new BadRequestException("Data de inicio precisa ser igual ou anterior a data de término.");
+        }
+
+        string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
+        var queryable = dbCtx.SpaceReserves
+            .Include(sr => sr.Space)
+            .Include(sr => sr.Account)
+            .Where(sr => sr.FkAccountId != userId)
+            .Where(sr => sr.DateFrom >= query.StartAt && sr.DateTo <= query.EndAt);
+
+        if (query.AccountIds != null && query.AccountIds.Count > 0)
+        {
+            queryable = queryable.Where(sr => query.AccountIds.Contains(sr.FkAccountId));
+        }
+
+        if (query.SpaceIds != null && query.SpaceIds.Count > 0)
+        {
+            queryable = queryable.Where(sr => query.SpaceIds.Contains(sr.FkSpaceId));
+        }
+
+        if (query.Status != null)
+        {
+            queryable = queryable.Where(sr => sr.Status == query.Status);
+        }
+
+        var reserves = await queryable
+            .Select(sr => new AdminSpaceReserveResponseDTO(
+                sr.Id,
+                sr.CreatedAt,
+                sr.DateFrom,
+                sr.DateTo,
+                sr.Purpose,
+                sr.Status,
+                new SpaceResponseDTO(
+                    sr.Space.Id,
+                    sr.Space.Name,
+                    sr.Space.Capacity,
+                    sr.Space.Description,
+                    sr.Space.Locked,
+                    sr.Space.SpaceSubjects
+                        .Select(s => new SpaceHashDataDTO(s.Id, s.Subject.Name))
+                        .ToHashSet(),
+                    sr.Space.SpaceResources
+                        .Select(r => new SpaceHashDataDTO(r.Id, r.Resource.Name))
+                        .ToHashSet()
+                ),
+                new AccountResponseDTO(
+                    sr.Account.Id,
+                    sr.Account.Registration,
+                    sr.Account.UserName,
+                    sr.Account.Email,
+                    dbCtx.UserRoles
+                        .Join(
+                            dbCtx.Roles,
+                            userRole => userRole.RoleId,
+                            role => role.Id,
+                            (userRole, role) => new { userRole.UserId, role.Name })
+                        .Any(role => role.UserId == sr.Account.Id && role.Name == nameof(EAccountRole.Owner))
+                        ? EAccountRole.Owner
+                        : dbCtx.UserRoles
+                            .Join(
+                                dbCtx.Roles,
+                                userRole => userRole.RoleId,
+                                role => role.Id,
+                                (userRole, role) => new { userRole.UserId, role.Name })
+                            .Any(role => role.UserId == sr.Account.Id && role.Name == nameof(EAccountRole.Admin))
+                            ? EAccountRole.Admin
+                            : EAccountRole.User
+
+                ),
+                sr.SpaceReserveSchedules
+                    .Select(sc => new ScheduleResponseDTO(
+                        sc.Schedule.Id,
+                        sc.Schedule.StartAt,
+                        sc.Schedule.EndAt,
+                        sc.Schedule.Shift
+                    ))
+                    .ToList()
+            ))
+            .ToListAsync();
+
+        if (reserves.Count == 0)
+        {
+            throw new ResourceNotFoundException("Nenhuma reserva encontrada para o período informado.");
+        }
+
+        return reserves;
+    }
+
+    public async Task AdminEditSpaceReserve(ClaimsPrincipal user, long reserveId, AdminSpaceReserveEditRequestDTO data)
+    {
+        string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
+        var spaceReserve = await dbCtx.SpaceReserves
+            .Include(sr => sr.SpaceReserveSchedules)
+            .FirstOrDefaultAsync(sr => sr.Id == reserveId && sr.FkAccountId != userId);
+
+        if (spaceReserve == null)
+        {
+            throw new ResourceNotFoundException("Reserva não encontrada.");
+        }
+
+        spaceReserve.Status = data.Status;
         await dbCtx.SaveChangesAsync();
     }
 }

@@ -17,7 +17,7 @@ public class SpaceReserveController(ISpaceReserveService reserveService) : Contr
     /// Listar reservas
     /// </summary>
     /// <remarks>
-    /// Lista todos os espaços cadastrados
+    /// Lista todas as reservas de espaços cadastradas de acordo com os filtros fornecidos
     /// </remarks>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<SpaceResponseDTO>), StatusCodes.Status200OK)]
@@ -97,5 +97,41 @@ public class SpaceReserveController(ISpaceReserveService reserveService) : Contr
         await reserveService.CancelSpaceReserve(User, id);
 
         return Ok();
+    }
+
+    /// <summary>
+    /// Admin: listar reservas
+    /// </summary>
+    /// <remarks>
+    /// Lista todos os espaços cadastrados
+    /// </remarks>
+    [HttpGet("admin")]
+    [Authorize(Roles = "Admin,Owner")]
+    [ProducesResponseType(typeof(IEnumerable<SpaceResponseDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AdminGetReserves([FromQuery] AdminSpaceReserveRequestDTO query)
+    {
+        var spaceReserve = await reserveService.AdminGetSpaceReserve(User, query);
+
+        return Ok(spaceReserve);
+    }
+
+    /// <summary>
+    /// Admin: editar reserva
+    /// </summary>
+    /// <remarks>
+    /// Edita status de uma reserva de espaço existente.
+    /// </remarks>
+    [HttpPatch("admin/edit/{reserveId}")]
+    [Authorize(Roles = "Admin,Owner")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AdminEditReserves([FromRoute] long reserveId, [FromBody] AdminSpaceReserveEditRequestDTO data)
+    {
+        await reserveService.AdminEditSpaceReserve(User, reserveId, data);
+
+        return NoContent();
     }
 }
