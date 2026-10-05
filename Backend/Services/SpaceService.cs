@@ -22,9 +22,11 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
         var queryable = dbCtx.Spaces.AsNoTracking();
 
         // Name filter
-        if (!string.IsNullOrWhiteSpace(query.Name))
+        if (!string.IsNullOrWhiteSpace(query.SearchQuery))
         {
-            queryable = queryable.Where(s => s.Name.Contains(query.Name));
+            queryable = queryable.Where(
+                s => s.SearchVector.Matches(EF.Functions.ToTsQuery("portuguese", query.SearchQuery))
+            );
         }
 
         // Capacity filter

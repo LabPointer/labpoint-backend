@@ -6,6 +6,7 @@ using Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Models;
+using Models.Account;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);

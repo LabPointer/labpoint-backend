@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using Models;
+using Models.Account;
 using Services;
 
 namespace Backend.Services;

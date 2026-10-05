@@ -80,19 +80,11 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
 
         usersQuery = usersQuery.Where(u => u.Id != userId);
 
-        if (!string.IsNullOrEmpty(query.Registration))
+        if (!string.IsNullOrEmpty(query.SearchQuery))
         {
-            usersQuery = usersQuery.Where(u => u.Registration.Contains(query.Registration));
-        }
-
-        if (!string.IsNullOrEmpty(query.Username))
-        {
-            usersQuery = usersQuery.Where(u => u.UserName.Contains(query.Username));
-        }
-
-        if (!string.IsNullOrEmpty(query.Email))
-        {
-            usersQuery = usersQuery.Where(u => u.Email.Contains(query.Email));
+            usersQuery = usersQuery.Where(s => 
+                s.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("portuguese", query.SearchQuery))
+            );
         }
 
         if (query.Role.HasValue)

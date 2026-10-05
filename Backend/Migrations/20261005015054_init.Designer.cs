@@ -7,14 +7,15 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Models;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using NpgsqlTypes;
 
 #nullable disable
 
 namespace Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261004013417_v1")]
-    partial class v1
+    [Migration("20261005015054_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -163,7 +164,7 @@ namespace Backend.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Models.AccountModel", b =>
+            modelBuilder.Entity("Models.Account.AccountModel", b =>
                 {
                     b.Property<string>("Id")
                         .ValueGeneratedOnAdd()
@@ -213,6 +214,13 @@ namespace Backend.Migrations
                         .HasColumnType("character varying(16)")
                         .HasColumnName("registration");
 
+                    b.Property<NpgsqlTsVector>("SearchVector")
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("tsvector")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese")
+                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Registration", "UserName", "Email" });
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
@@ -234,6 +242,10 @@ namespace Backend.Migrations
 
                     b.HasIndex("Registration")
                         .IsUnique();
+
+                    b.HasIndex("SearchVector");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -344,10 +356,21 @@ namespace Backend.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
+                    b.Property<NpgsqlTsVector>("SearchVector")
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("tsvector")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese")
+                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Name", "Description" });
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.HasIndex("SearchVector");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
 
                     b.ToTable("resource");
                 });
@@ -387,16 +410,41 @@ namespace Backend.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<int>("Capacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("capacity");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("Locked")
+                        .HasColumnType("boolean")
+                        .HasColumnName("locked");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
+                    b.Property<NpgsqlTsVector>("SearchVector")
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("tsvector")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese")
+                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Name", "Description" });
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.HasIndex("SearchVector");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
 
                     b.ToTable("space");
                 });
@@ -520,7 +568,7 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Models.AccountModel", null)
+                    b.HasOne("Models.Account.AccountModel", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -529,7 +577,7 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Models.AccountModel", null)
+                    b.HasOne("Models.Account.AccountModel", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -544,7 +592,7 @@ namespace Backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Models.AccountModel", null)
+                    b.HasOne("Models.Account.AccountModel", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -553,7 +601,7 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Models.AccountModel", null)
+                    b.HasOne("Models.Account.AccountModel", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -562,7 +610,7 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Models.AccountSubjectModel", b =>
                 {
-                    b.HasOne("Models.AccountModel", "Account")
+                    b.HasOne("Models.Account.AccountModel", "Account")
                         .WithMany("AccountSubjects")
                         .HasForeignKey("FkAccountId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -581,7 +629,7 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Models.Reserve.SpaceReserveModel", b =>
                 {
-                    b.HasOne("Models.AccountModel", "Account")
+                    b.HasOne("Models.Account.AccountModel", "Account")
                         .WithMany("SpaceReserves")
                         .HasForeignKey("FkAccountId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -655,7 +703,7 @@ namespace Backend.Migrations
                     b.Navigation("Subject");
                 });
 
-            modelBuilder.Entity("Models.AccountModel", b =>
+            modelBuilder.Entity("Models.Account.AccountModel", b =>
                 {
                     b.Navigation("AccountSubjects");
 

@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using NpgsqlTypes;
 
 namespace Models.Resource;
 
@@ -29,6 +30,8 @@ public class ResourceModel
     [Required]
     [Column("enabled")]
     public bool Enabled { get; set; } = false;
+    
+    public NpgsqlTsVector SearchVector { get; set; } = null!;
     
     public virtual ICollection<SpaceResourceModel> SpaceResources { get; set; } = new List<SpaceResourceModel>();
 }

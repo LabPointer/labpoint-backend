@@ -21,9 +21,11 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
     public async Task<List<ResourceResponseDTO>> GetResources(ResourceRequestDTO query)
     {
         var resourceQuery = dbCtx.Resources.Where(r => r.CanReserve == query.CanReserve);
-        if (!string.IsNullOrEmpty(query.Name))
+        if (!string.IsNullOrEmpty(query.SearchQuery))
         {
-            resourceQuery = resourceQuery.Where(r => r.Name.Contains(query.Name));
+            resourceQuery = resourceQuery.Where(
+                r => r.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("portuguese", query.SearchQuery))
+            );
         }
         
         var resources = await resourceQuery
