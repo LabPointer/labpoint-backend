@@ -2,6 +2,8 @@ using System.Net;
 using System.Text.Json;
 using Backend.Services;
 using DTOs.Auth;
+using DTOs.Error;
+using MailKit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +19,7 @@ namespace Backend.Controllers;
 public class AuthController(
     UserManager<AccountModel> userManager,
     SignInManager<AccountModel> signInManager,
-    IBackgroundTaskService service,
+    IBackgroundTaskService queueService,
     IConfiguration configuration,
     IOptions<FrontendSettings> frontend,
     ILogger<AuthController> logger) : ControllerBase
@@ -37,10 +39,6 @@ public class AuthController(
         if (await userManager.Users.AnyAsync(u => u.Registration == body.Registration))
             return BadRequest(new[] { Error("DuplicateRegistration", "Matrícula já cadastrada.") });
 
-        // Cadastro público SEMPRE vira "User": aceitar a role do body de qualquer um permitiria
-        // que alguém se cadastrasse como Owner.
-        var role = CallerCanAssignRoles() ? body.Role : EAccountRole.User;
-
         var user = new AccountModel
         {
             UserName = body.Username,
@@ -52,12 +50,6 @@ public class AuthController(
         if (!result.Succeeded)
             return BadRequest(result.Errors);
 
-        var roleResult = await userManager.AddToRoleAsync(user, role.ToString());
-        if (!roleResult.Succeeded)
-        {
-            await userManager.DeleteAsync(user);
-            return BadRequest(roleResult.Errors);
-        }
 
         await SendEmailConfirmAsync(user);
 
@@ -94,7 +86,7 @@ public class AuthController(
     {
         var user = await userManager.FindByEmailAsync(body.Email);
 
-        if (user is not null && !await userManager.IsEmailConfirmedAsync(user))
+        if (user is not null && !user.EmailConfirmed)
         {
             await SendEmailConfirmAsync(user);
         }
@@ -167,11 +159,12 @@ public class AuthController(
     /// <remarks>Envia um e-mail com o link para o front-end. Responde sempre 202, exista a conta ou não.</remarks>
     [HttpPost("forgot-password")]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PostForgotPassword([FromBody] EmailRequestDTO body)
     {
         var user = await userManager.FindByEmailAsync(body.Email);
 
-        if (user is not null && !await userManager.IsEmailConfirmedAsync(user))
+        if (user is not null && user.EmailConfirmed)
         {
             await SendPasswordResetAsync(user);
         }
@@ -201,7 +194,7 @@ public class AuthController(
 
     private async Task SendEmailConfirmAsync(AccountModel user)
     {
-        await service.EnqueueAsync(async (sp, ct) =>
+        await queueService.EnqueueAsync(async (sp, ct) =>
         {
             var emailService = sp.GetRequiredService<IEmailSender<AccountModel>>();
             var userService = sp.GetService<UserManager<AccountModel>>();
@@ -214,21 +207,18 @@ public class AuthController(
     
     private async Task SendPasswordResetAsync(AccountModel user)
     {
-        await service.EnqueueAsync(async (sp, ct) =>
+        await queueService.EnqueueAsync(async (sp, ct) =>
         {
             var emailService = sp.GetRequiredService<IEmailSender<AccountModel>>();
             var userService = sp.GetService<UserManager<AccountModel>>();
-            var token = await userService.GenerateEmailConfirmationTokenAsync(user);
+            var token = await userService.GeneratePasswordResetTokenAsync(user);
             var frontendUrl = frontend.Value.Url;
             var link = $"{frontendUrl.TrimEnd('/')}/reset-password" +
                        $"?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(token)}";
 
-            await emailService.SendConfirmationLinkAsync(user, user.Email!, link);
+            await emailService.SendPasswordResetLinkAsync(user, user.Email!, link);
         });
     }
-
-    private bool CallerCanAssignRoles() =>
-        User.IsInRole(nameof(EAccountRole.Admin)) || User.IsInRole(nameof(EAccountRole.Owner));
 
     private static IdentityError Error(string code, string description) =>
         new() { Code = code, Description = description };

@@ -11,8 +11,8 @@ public record SignUpRequestDTO(
     [StringLength(20, MinimumLength = 1, ErrorMessage = "A matricula deve ter entre 1 e 16 caracteres.")]
     [RegularExpression(@"^[0-9]+$", ErrorMessage = "A matrícula deve conter apenas números.")]
     string Registration, 
-    [EnumDataType(typeof(EAccountRole), ErrorMessage = "Cargo invalido.")]
-    EAccountRole Role, 
+    //[EnumDataType(typeof(EAccountRole), ErrorMessage = "Cargo invalido.")]
+    //EAccountRole Role, 
     [Required(ErrorMessage = "O e-mail é obrigatório.")]
     [EmailAddress(ErrorMessage = "O formato do e-mail é inválido.")]
     string Email,
