@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Models.Reserve;
-using NpgsqlTypes;
 
 namespace Models.Account;
 
@@ -15,8 +14,6 @@ public class AccountModel : IdentityUser
     [Column("registration")]
     [StringLength(16)]
     public string Registration { get; set; } = string.Empty;
-    
-    public NpgsqlTsVector SearchVector { get; set; } = null!;
     
     public virtual ICollection<AccountSubjectModel> AccountSubjects { get; set; } = new List<AccountSubjectModel>();
     

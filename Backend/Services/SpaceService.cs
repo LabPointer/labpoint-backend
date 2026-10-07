@@ -25,7 +25,8 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
         if (!string.IsNullOrWhiteSpace(query.SearchQuery))
         {
             queryable = queryable.Where(
-                s => s.SearchVector.Matches(EF.Functions.ToTsQuery("portuguese", query.SearchQuery))
+                s => EF.Functions.ToTsVector("portuguese", s.Name + " " + s.Description)
+                    .Matches(EF.Functions.WebSearchToTsQuery("portuguese", query.SearchQuery))
             );
         }
 

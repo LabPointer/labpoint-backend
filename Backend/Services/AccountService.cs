@@ -83,7 +83,8 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
         if (!string.IsNullOrEmpty(query.SearchQuery))
         {
             usersQuery = usersQuery.Where(s => 
-                s.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("portuguese", query.SearchQuery))
+                EF.Functions.ToTsVector("portuguese", s.Registration+ " " + s.UserName + " " + s.Email)
+                    .Matches(EF.Functions.WebSearchToTsQuery("portuguese", query.SearchQuery))
             );
         }
 

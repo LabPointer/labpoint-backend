@@ -20,7 +20,8 @@ public class SubjectService(AppDbContext dbCtx) : ISubjectService
         var subjectQuery = dbCtx.Subjects.Where(p => p.Enabled == query.IsActive);
         if (!string.IsNullOrEmpty(query.Name))
         {
-            subjectQuery = subjectQuery.Where(p => p.Name.Contains(query.Name));
+            subjectQuery = subjectQuery.Where(p => EF.Functions.ToTsVector("portuguese", p.Name)
+                .Matches(EF.Functions.WebSearchToTsQuery("portuguese", query.Name)));
         }
 
         var subjects = await subjectQuery

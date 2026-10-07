@@ -31,35 +31,26 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<SpaceReserveScheduleModel>  SpaceReserveSchedules { get; set; }
 
     public DbSet<ResourceReserveModel> ResourceReserves { get; set; }
-    
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        
+
         builder.Entity<AccountModel>().Property(a => a.Id).HasDefaultValueSql("uuidv7()");
         
         builder.Entity<AccountModel>()
-            .HasGeneratedTsVectorColumn(
-                a => a.SearchVector,
-                "portuguese",
-                a => new { a.Registration, a.UserName, a.Email }) 
-            .HasIndex(a => a.SearchVector)
-            .HasMethod("GIN"); 
-        
+                    .HasIndex(a => new { a.Registration, a.UserName, a.Email })
+                    .HasMethod("GIN")
+                    .IsTsVectorExpressionIndex("portuguese");
+
         builder.Entity<ResourceModel>()
-            .HasGeneratedTsVectorColumn(
-                r => r.SearchVector,
-                "portuguese",
-                r => new { r.Name, r.Description }) 
-            .HasIndex(r => r.SearchVector)
-            .HasMethod("GIN");
+            .HasIndex(r => new { r.Name, r.Description })
+            .HasMethod("GIN")
+            .IsTsVectorExpressionIndex("portuguese");
         
         builder.Entity<SpaceModel>()
-            .HasGeneratedTsVectorColumn(
-                s => s.SearchVector,
-                "portuguese",
-                s => new { s.Name, s.Description }) 
-            .HasIndex(s => s.SearchVector)
-            .HasMethod("GIN"); 
+            .HasIndex(a => new { a.Name, a.Description })
+            .HasMethod("GIN")
+            .IsTsVectorExpressionIndex("portuguese");
     }
 }

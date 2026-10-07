@@ -50,6 +50,7 @@ public class AuthController(
         if (!result.Succeeded)
             return BadRequest(result.Errors);
 
+        await userManager.AddToRoleAsync(user, "User");
 
         await SendEmailConfirmAsync(user);
 

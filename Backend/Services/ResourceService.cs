@@ -9,7 +9,7 @@ namespace Backend.Services;
 
 public interface IResourceService
 {
-    public Task<List<ResourceResponseDTO>> GetResources(ResourceRequestDTO query);
+    public Task<IEnumerable<ResourceResponseDTO>> GetResources(ResourceRequestDTO query);
     
     public Task AdminEditResource(ResourceEditRequestDTO data);
 
@@ -18,22 +18,24 @@ public interface IResourceService
 
 public class ResourceService(AppDbContext dbCtx) : IResourceService
 {
-    public async Task<List<ResourceResponseDTO>> GetResources(ResourceRequestDTO query)
+    public async Task<IEnumerable<ResourceResponseDTO>> GetResources(ResourceRequestDTO query)
     {
-        var resourceQuery = dbCtx.Resources.Where(r => r.CanReserve == query.CanReserve);
+        var resourceQuery = dbCtx.Resources.Where(r => 
+            r.CanReserve == query.CanReserve && r.Enabled == query.Enabled);
         if (!string.IsNullOrEmpty(query.SearchQuery))
         {
             resourceQuery = resourceQuery.Where(
-                r => r.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("portuguese", query.SearchQuery))
+                r => EF.Functions.ToTsVector("portuguese", r.Name + " " + r.Description)
+                    .Matches(EF.Functions.WebSearchToTsQuery("portuguese", query.SearchQuery))
             );
         }
-        
+
         var resources = await resourceQuery
             .Take(query.Limit + 1)
-            .Skip(query.Offset)
+            .Skip(query.Offset * query.Limit)
             .Select(r => new ResourceResponseDTO(r.Id, r.Name, r.Description, r.CanReserve, r.Enabled))
             .ToListAsync();
-        
+            
         if (resources.Count == 0)
             throw new ResourceNotFoundException("No resources found");
 

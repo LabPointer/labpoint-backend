@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Models.Reserve;
-using NpgsqlTypes;
 
 namespace Models;
 
@@ -32,8 +31,6 @@ public class SpaceModel
     [Required]
     [Column("locked")]
     public bool Locked { get; set; }
-
-    public NpgsqlTsVector SearchVector { get; set; } = null!;
     
     public virtual ICollection<SpaceReserveModel> SpaceReserves { get; set; } =  new List<SpaceReserveModel>();
     

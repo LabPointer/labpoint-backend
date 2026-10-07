@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore.Migrations;
 using Models;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using NpgsqlTypes;
 
 #nullable disable
 
@@ -38,9 +37,6 @@ namespace Backend.Migrations
                 {
                     Id = table.Column<string>(type: "text", nullable: false, defaultValueSql: "uuidv7()"),
                     registration = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
-                    SearchVector = table.Column<NpgsqlTsVector>(type: "tsvector", nullable: false)
-                        .Annotation("Npgsql:TsVectorConfig", "portuguese")
-                        .Annotation("Npgsql:TsVectorProperties", new[] { "registration", "UserName", "Email" }),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -70,10 +66,7 @@ namespace Backend.Migrations
                     name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     description = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     can_reserve = table.Column<bool>(type: "boolean", nullable: false),
-                    enabled = table.Column<bool>(type: "boolean", nullable: false),
-                    SearchVector = table.Column<NpgsqlTsVector>(type: "tsvector", nullable: false)
-                        .Annotation("Npgsql:TsVectorConfig", "portuguese")
-                        .Annotation("Npgsql:TsVectorProperties", new[] { "name", "description" })
+                    enabled = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -88,7 +81,8 @@ namespace Backend.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     start_at = table.Column<TimeOnly>(type: "time without time zone", nullable: false),
                     end_at = table.Column<TimeOnly>(type: "time without time zone", nullable: false),
-                    shift = table.Column<EShift>(type: "shift_enum", nullable: false)
+                    shift = table.Column<EShift>(type: "shift_enum", nullable: false),
+                    enabled = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -104,10 +98,7 @@ namespace Backend.Migrations
                     name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     description = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     capacity = table.Column<int>(type: "integer", nullable: false),
-                    locked = table.Column<bool>(type: "boolean", nullable: false),
-                    SearchVector = table.Column<NpgsqlTsVector>(type: "tsvector", nullable: false)
-                        .Annotation("Npgsql:TsVectorConfig", "portuguese")
-                        .Annotation("Npgsql:TsVectorProperties", new[] { "name", "description" })
+                    locked = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -344,6 +335,41 @@ namespace Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "resource_reserve",
+                columns: table => new
+                {
+                    id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    purpose = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    fk_resource_id = table.Column<long>(type: "bigint", nullable: false),
+                    fk_space_reserve_id = table.Column<long>(type: "bigint", nullable: false),
+                    fk_account_id = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_resource_reserve", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_resource_reserve_AspNetUsers_fk_account_id",
+                        column: x => x.fk_account_id,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_resource_reserve_resource_fk_resource_id",
+                        column: x => x.fk_resource_id,
+                        principalTable: "resource",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_resource_reserve_space_reserve_fk_space_reserve_id",
+                        column: x => x.fk_space_reserve_id,
+                        principalTable: "space_reserve",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "space_reserve_schedule",
                 columns: table => new
                 {
@@ -418,10 +444,11 @@ namespace Backend.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_AspNetUsers_SearchVector",
+                name: "IX_AspNetUsers_registration_UserName_Email",
                 table: "AspNetUsers",
-                column: "SearchVector")
-                .Annotation("Npgsql:IndexMethod", "GIN");
+                columns: new[] { "registration", "UserName", "Email" })
+                .Annotation("Npgsql:IndexMethod", "GIN")
+                .Annotation("Npgsql:TsVectorConfig", "portuguese");
 
             migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
@@ -436,10 +463,26 @@ namespace Backend.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_resource_SearchVector",
+                name: "IX_resource_name_description",
                 table: "resource",
-                column: "SearchVector")
-                .Annotation("Npgsql:IndexMethod", "GIN");
+                columns: new[] { "name", "description" })
+                .Annotation("Npgsql:IndexMethod", "GIN")
+                .Annotation("Npgsql:TsVectorConfig", "portuguese");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_resource_reserve_fk_account_id",
+                table: "resource_reserve",
+                column: "fk_account_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_resource_reserve_fk_resource_id",
+                table: "resource_reserve",
+                column: "fk_resource_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_resource_reserve_fk_space_reserve_id",
+                table: "resource_reserve",
+                column: "fk_space_reserve_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_space_name",
@@ -448,10 +491,11 @@ namespace Backend.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_space_SearchVector",
+                name: "IX_space_name_description",
                 table: "space",
-                column: "SearchVector")
-                .Annotation("Npgsql:IndexMethod", "GIN");
+                columns: new[] { "name", "description" })
+                .Annotation("Npgsql:IndexMethod", "GIN")
+                .Annotation("Npgsql:TsVectorConfig", "portuguese");
 
             migrationBuilder.CreateIndex(
                 name: "IX_space_reserve_fk_account_id",
@@ -523,6 +567,9 @@ namespace Backend.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "resource_reserve");
 
             migrationBuilder.DropTable(
                 name: "space_reserve_schedule");

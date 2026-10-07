@@ -34,7 +34,9 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
 
         if (!string.IsNullOrEmpty(query.SearchQuery))
         {
-            queryable = queryable.Where(r => r.Resource.SearchVector.Matches(EF.Functions.PlainToTsQuery("portuguese", query.SearchQuery)));
+            queryable = queryable.Where(r => EF.Functions
+                .ToTsVector("portuguese", r.Resource.Name + " " + r.Resource.Description)
+                .Matches(EF.Functions.PhraseToTsQuery("portuguese", query.SearchQuery)));
         }
 
         if (query.SpaceIds != null)

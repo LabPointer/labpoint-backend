@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Models;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using NpgsqlTypes;
 
 #nullable disable
 
@@ -211,13 +210,6 @@ namespace Backend.Migrations
                         .HasColumnType("character varying(16)")
                         .HasColumnName("registration");
 
-                    b.Property<NpgsqlTsVector>("SearchVector")
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("tsvector")
-                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese")
-                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Registration", "UserName", "Email" });
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
@@ -240,9 +232,10 @@ namespace Backend.Migrations
                     b.HasIndex("Registration")
                         .IsUnique();
 
-                    b.HasIndex("SearchVector");
+                    b.HasIndex("Registration", "UserName", "Email")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese");
 
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Registration", "UserName", "Email"), "GIN");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -396,21 +389,15 @@ namespace Backend.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
-                    b.Property<NpgsqlTsVector>("SearchVector")
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("tsvector")
-                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese")
-                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Name", "Description" });
-
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.HasIndex("SearchVector");
+                    b.HasIndex("Name", "Description")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese");
 
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name", "Description"), "GIN");
 
                     b.ToTable("resource");
                 });
@@ -423,6 +410,10 @@ namespace Backend.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
 
                     b.Property<TimeOnly>("EndAt")
                         .HasColumnType("time without time zone")
@@ -470,21 +461,15 @@ namespace Backend.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
-                    b.Property<NpgsqlTsVector>("SearchVector")
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("tsvector")
-                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese")
-                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Name", "Description" });
-
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.HasIndex("SearchVector");
+                    b.HasIndex("Name", "Description")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese");
 
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name", "Description"), "GIN");
 
                     b.ToTable("space");
                 });

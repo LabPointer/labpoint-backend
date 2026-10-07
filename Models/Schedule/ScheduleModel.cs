@@ -22,4 +22,8 @@ public class ScheduleModel
     [Required]
     [Column("shift")]
     public EShift Shift { get; set; }
+    
+    [Required]
+    [Column("enabled")]
+    public bool Enabled { get; set; }
 }

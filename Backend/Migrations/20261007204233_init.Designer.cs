@@ -7,14 +7,13 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Models;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using NpgsqlTypes;
 
 #nullable disable
 
 namespace Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261005015054_init")]
+    [Migration("20261007204233_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -214,13 +213,6 @@ namespace Backend.Migrations
                         .HasColumnType("character varying(16)")
                         .HasColumnName("registration");
 
-                    b.Property<NpgsqlTsVector>("SearchVector")
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("tsvector")
-                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese")
-                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Registration", "UserName", "Email" });
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
@@ -243,9 +235,10 @@ namespace Backend.Migrations
                     b.HasIndex("Registration")
                         .IsUnique();
 
-                    b.HasIndex("SearchVector");
+                    b.HasIndex("Registration", "UserName", "Email")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese");
 
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Registration", "UserName", "Email"), "GIN");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -276,6 +269,49 @@ namespace Backend.Migrations
                         .IsUnique();
 
                     b.ToTable("account_subject");
+                });
+
+            modelBuilder.Entity("Models.Reserve.ResourceReserveModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FkAccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("fk_account_id");
+
+                    b.Property<long>("FkResourceId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_resource_id");
+
+                    b.Property<long>("FkSpaceReserveId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_space_reserve_id");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("purpose");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FkAccountId");
+
+                    b.HasIndex("FkResourceId");
+
+                    b.HasIndex("FkSpaceReserveId");
+
+                    b.ToTable("resource_reserve");
                 });
 
             modelBuilder.Entity("Models.Reserve.SpaceReserveModel", b =>
@@ -356,21 +392,15 @@ namespace Backend.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
-                    b.Property<NpgsqlTsVector>("SearchVector")
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("tsvector")
-                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese")
-                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Name", "Description" });
-
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.HasIndex("SearchVector");
+                    b.HasIndex("Name", "Description")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese");
 
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name", "Description"), "GIN");
 
                     b.ToTable("resource");
                 });
@@ -383,6 +413,10 @@ namespace Backend.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
 
                     b.Property<TimeOnly>("EndAt")
                         .HasColumnType("time without time zone")
@@ -430,21 +464,15 @@ namespace Backend.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
-                    b.Property<NpgsqlTsVector>("SearchVector")
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("tsvector")
-                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese")
-                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Name", "Description" });
-
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.HasIndex("SearchVector");
+                    b.HasIndex("Name", "Description")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese");
 
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name", "Description"), "GIN");
 
                     b.ToTable("space");
                 });
@@ -627,6 +655,33 @@ namespace Backend.Migrations
                     b.Navigation("Subject");
                 });
 
+            modelBuilder.Entity("Models.Reserve.ResourceReserveModel", b =>
+                {
+                    b.HasOne("Models.Account.AccountModel", "Account")
+                        .WithMany("ResourceReserves")
+                        .HasForeignKey("FkAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Models.Resource.ResourceModel", "Resource")
+                        .WithMany()
+                        .HasForeignKey("FkResourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Models.Reserve.SpaceReserveModel", "SpaceReserve")
+                        .WithMany("ResourceReserves")
+                        .HasForeignKey("FkSpaceReserveId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Resource");
+
+                    b.Navigation("SpaceReserve");
+                });
+
             modelBuilder.Entity("Models.Reserve.SpaceReserveModel", b =>
                 {
                     b.HasOne("Models.Account.AccountModel", "Account")
@@ -707,11 +762,15 @@ namespace Backend.Migrations
                 {
                     b.Navigation("AccountSubjects");
 
+                    b.Navigation("ResourceReserves");
+
                     b.Navigation("SpaceReserves");
                 });
 
             modelBuilder.Entity("Models.Reserve.SpaceReserveModel", b =>
                 {
+                    b.Navigation("ResourceReserves");
+
                     b.Navigation("SpaceReserveSchedules");
                 });
 
