@@ -17,11 +17,14 @@ public class SubjectService(AppDbContext dbCtx) : ISubjectService
 {
     public async Task<List<SubjectResponseDTO>> GetSubjects(SubjectRequestDTO query)
     {
-        var subjectQuery = dbCtx.Subjects.Where(p => p.Enabled == query.IsActive);
+        var subjectQuery = dbCtx.Subjects.AsQueryable();
+        if (query.Enabled.HasValue)
+        {
+            subjectQuery = subjectQuery.Where(s => s.Enabled == query.Enabled);
+        }
         if (!string.IsNullOrEmpty(query.Name))
         {
-            subjectQuery = subjectQuery.Where(p => EF.Functions.ToTsVector("portuguese", p.Name)
-                .Matches(EF.Functions.WebSearchToTsQuery("portuguese", query.Name)));
+            subjectQuery = subjectQuery.Where(s => s.Name.Contains(query.Name));
         }
 
         var subjects = await subjectQuery

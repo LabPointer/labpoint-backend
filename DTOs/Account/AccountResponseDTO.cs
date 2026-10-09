@@ -7,4 +7,5 @@ public record AccountResponseDTO(
     string Registration,
     string Username,
     string Email,
-    EAccountRole Role);
+    EAccountRole Role,
+    bool Enabled);

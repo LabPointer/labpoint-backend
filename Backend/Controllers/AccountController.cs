@@ -68,14 +68,14 @@ public class AccountController(IAccountService accountService) : ControllerBase
     /// <remarks>
     /// Lista todos os usuários cadastrados no sistema.
     /// </remarks>
-    [HttpPatch("admin/edit/{accountId}")]
+    [HttpPatch("admin/edit")]
     [Authorize(Roles = "Admin,Owner")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> AdminPatchUsers([FromRoute] string accountId, [FromBody] AdminAccountEditRequestDTO data)
+    public async Task<IActionResult> AdminPatchUsers([FromBody] AdminAccountEditRequestDTO data)
     {
-        await accountService.AdminEditAccount(User, accountId, data);
+        await accountService.AdminEditAccount(User, data);
         
         return NoContent();
     }

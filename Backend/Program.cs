@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Backend.Data;
 using Backend.Handler;
 using Backend.Services;
@@ -89,13 +90,28 @@ builder.Services.AddScoped<IResourceService, ResourceService>();
 builder.Services.AddScoped<ISpaceService, SpaceService>();
 builder.Services.AddScoped<ISpaceReserveService, SpaceReserveService>();
 builder.Services.AddScoped<IResourceReserveService, ResourceReserveService>();
+builder.Services.AddScoped<IScheduleService, ScheduleService>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
-    .WithOrigins(allowedOrigins)
-    .AllowAnyHeader()
-    .AllowAnyMethod()
-    .AllowCredentials()));
+builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
+{
+    if (allowedOrigins.Contains("*"))
+    {
+        policy
+            .SetIsOriginAllowed(_ => true)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    }
+    else
+    {
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    }
+}));
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();

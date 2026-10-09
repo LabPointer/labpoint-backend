@@ -35,7 +35,7 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
         if (!string.IsNullOrEmpty(query.SearchQuery))
         {
             queryable = queryable.Where(r => EF.Functions
-                .ToTsVector("portuguese", r.Resource.Name + " " + r.Resource.Description)
+                .ToTsVector("portuguese", r.Resource.Name)
                 .Matches(EF.Functions.PhraseToTsQuery("portuguese", query.SearchQuery)));
         }
 
@@ -57,7 +57,6 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
         var resourceReserves = resourceReservesRes.Select(r => new ResourceReserveResponseDTO(
             r.Id,
             r.Resource.Name,
-            r.Resource.Description,
             new SpaceReserveResponseDTO(
                 r.SpaceReserve.Id,
                 r.SpaceReserve.CreatedAt,
@@ -84,7 +83,8 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
                     srs.Id,
                     srs.Schedule.StartAt,
                     srs.Schedule.EndAt,
-                    srs.Schedule.Shift
+                    srs.Schedule.Shift,
+                    srs.Schedule.Enabled
                 )).ToList()
             )
         ));

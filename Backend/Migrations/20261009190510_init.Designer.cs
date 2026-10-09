@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261007204233_init")]
+    [Migration("20261009190510_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -376,12 +376,6 @@ namespace Backend.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("can_reserve");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("description");
-
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean")
                         .HasColumnName("enabled");
@@ -396,11 +390,6 @@ namespace Backend.Migrations
 
                     b.HasIndex("Name")
                         .IsUnique();
-
-                    b.HasIndex("Name", "Description")
-                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name", "Description"), "GIN");
 
                     b.ToTable("resource");
                 });
@@ -432,7 +421,7 @@ namespace Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("shift");
+                    b.ToTable("schedule");
                 });
 
             modelBuilder.Entity("Models.SpaceModel", b =>

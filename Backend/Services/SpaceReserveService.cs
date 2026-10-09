@@ -81,7 +81,8 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
                         sc.Schedule.Id,
                         sc.Schedule.StartAt,
                         sc.Schedule.EndAt,
-                        sc.Schedule.Shift
+                        sc.Schedule.Shift,
+                        sc.Schedule.Enabled
                     ))
                     .ToList()
             ))
@@ -110,7 +111,8 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
                 s.Schedule.Id,
                 s.Schedule.StartAt,
                 s.Schedule.EndAt,
-                s.Schedule.Shift
+                s.Schedule.Shift,
+                s.Schedule.Enabled
             )))
             .Distinct()
             .ToListAsync();
@@ -314,15 +316,16 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
                                 (userRole, role) => new { userRole.UserId, role.Name })
                             .Any(role => role.UserId == sr.Account.Id && role.Name == nameof(EAccountRole.Admin))
                             ? EAccountRole.Admin
-                            : EAccountRole.User
-
+                            : EAccountRole.User,
+                    sr.Account.LockoutEnd == null
                 ),
                 sr.SpaceReserveSchedules
                     .Select(sc => new ScheduleResponseDTO(
                         sc.Schedule.Id,
                         sc.Schedule.StartAt,
                         sc.Schedule.EndAt,
-                        sc.Schedule.Shift
+                        sc.Schedule.Shift,
+                        sc.Schedule.Enabled
                     ))
                     .ToList()
             ))

@@ -64,7 +64,6 @@ namespace Backend.Migrations
                     id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    description = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     can_reserve = table.Column<bool>(type: "boolean", nullable: false),
                     enabled = table.Column<bool>(type: "boolean", nullable: false)
                 },
@@ -74,7 +73,7 @@ namespace Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "shift",
+                name: "schedule",
                 columns: table => new
                 {
                     id = table.Column<long>(type: "bigint", nullable: false)
@@ -86,7 +85,7 @@ namespace Backend.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_shift", x => x.id);
+                    table.PrimaryKey("PK_schedule", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -382,9 +381,9 @@ namespace Backend.Migrations
                 {
                     table.PrimaryKey("PK_space_reserve_schedule", x => x.id);
                     table.ForeignKey(
-                        name: "FK_space_reserve_schedule_shift_fk_schedule_id",
+                        name: "FK_space_reserve_schedule_schedule_fk_schedule_id",
                         column: x => x.fk_schedule_id,
-                        principalTable: "shift",
+                        principalTable: "schedule",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -461,13 +460,6 @@ namespace Backend.Migrations
                 table: "resource",
                 column: "name",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_resource_name_description",
-                table: "resource",
-                columns: new[] { "name", "description" })
-                .Annotation("Npgsql:IndexMethod", "GIN")
-                .Annotation("Npgsql:TsVectorConfig", "portuguese");
 
             migrationBuilder.CreateIndex(
                 name: "IX_resource_reserve_fk_account_id",
@@ -584,7 +576,7 @@ namespace Backend.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "shift");
+                name: "schedule");
 
             migrationBuilder.DropTable(
                 name: "space_reserve");

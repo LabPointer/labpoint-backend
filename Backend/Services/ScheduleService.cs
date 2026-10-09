@@ -10,20 +10,30 @@ namespace Backend.Services;
 
 public interface IScheduleService
 {
-    public Task<List<ScheduleResponseDTO>> GetSchedules(bool? enabled);
+    public Task<List<ScheduleResponseDTO>> GetSchedules(ScheduleRequestDTO query);
     public Task AdminCreateSchedule(ScheduleCreateRequestDTO data);
     public Task AdminEditSchedule(ScheduleEditRequestDTO data);
 }
 
 public class ScheduleService(AppDbContext dbCtx) : IScheduleService
 {
-    public async Task<List<ScheduleResponseDTO>> GetSchedules(bool? enabled)
+    public async Task<List<ScheduleResponseDTO>> GetSchedules(ScheduleRequestDTO query)
     {
-        bool e = enabled ?? true;
-        var schedules = await dbCtx
-            .Schedules
-            .Where(s => s.Enabled == e)
-            .Select(s => new ScheduleResponseDTO(s.Id, s.StartAt, s.EndAt, s.Shift))
+        var queryable = dbCtx.Schedules.AsQueryable();
+        
+        if (query.Enabled.HasValue)
+        {
+            queryable = queryable.Where(s => s.Enabled == query.Enabled);
+        }
+        
+        if (query.shift.HasValue)
+        {
+            queryable = queryable.Where(s => s.Shift == query.shift);
+        }
+
+        var schedules = await queryable
+            .OrderBy(s => s.StartAt)
+            .Select(s => new ScheduleResponseDTO(s.Id, s.StartAt, s.EndAt, s.Shift, s.Enabled))
             .ToListAsync();
         
         if (schedules.Count == 0)

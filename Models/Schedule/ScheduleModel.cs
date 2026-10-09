@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Models.Schedule;
 
-[Table("shift")]
+[Table("schedule")]
 public class ScheduleModel
 {
     [Key]

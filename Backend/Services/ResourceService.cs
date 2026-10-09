@@ -20,24 +20,27 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
 {
     public async Task<IEnumerable<ResourceResponseDTO>> GetResources(ResourceRequestDTO query)
     {
-        var resourceQuery = dbCtx.Resources.Where(r => 
-            r.CanReserve == query.CanReserve && r.Enabled == query.Enabled);
-        if (!string.IsNullOrEmpty(query.SearchQuery))
+        var resourceQuery = dbCtx.Resources.AsQueryable();
+        
+        if (query.CanReserve.HasValue)
+            resourceQuery = resourceQuery.Where(r => r.CanReserve == query.CanReserve);
+
+        if (query.Enabled.HasValue)
+            resourceQuery = resourceQuery.Where(r => r.Enabled == query.Enabled);
+
+        if (!string.IsNullOrEmpty(query.Name))
         {
-            resourceQuery = resourceQuery.Where(
-                r => EF.Functions.ToTsVector("portuguese", r.Name + " " + r.Description)
-                    .Matches(EF.Functions.WebSearchToTsQuery("portuguese", query.SearchQuery))
-            );
+            resourceQuery = resourceQuery.Where(r => r.Name.Contains(query.Name));
         }
 
         var resources = await resourceQuery
             .Take(query.Limit + 1)
             .Skip(query.Offset * query.Limit)
-            .Select(r => new ResourceResponseDTO(r.Id, r.Name, r.Description, r.CanReserve, r.Enabled))
+            .Select(r => new ResourceResponseDTO(r.Id, r.Name, r.CanReserve, r.Enabled))
             .ToListAsync();
             
         if (resources.Count == 0)
-            throw new ResourceNotFoundException("No resources found");
+            throw new ResourceNotFoundException("Nenhum recurso encontrado");
 
         return resources;
     }
@@ -47,7 +50,6 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
         var resource = new ResourceModel
         {
             Name = data.Name,
-            Description = data.Description,
             CanReserve = data.CanReserve,
             Enabled = data.Enabled
         };
@@ -62,11 +64,10 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
         if (resource is null)
             throw new ResourceNotFoundException("Resource not found");
         
-        if (string.IsNullOrWhiteSpace(data.Name) && string.IsNullOrWhiteSpace(data.Description) && data.CanReserve is null && data.Enabled is null)
+        if (string.IsNullOrWhiteSpace(data.Name) && data.CanReserve is null && data.Enabled is null)
             throw new BadRequestException("No fields to update were provided");
 
         resource.Name = data.Name ?? resource.Name;
-        resource.Description = data.Description ?? resource.Description;
         resource.CanReserve = data.CanReserve ?? resource.CanReserve;
         resource.Enabled = data.Enabled ?? resource.Enabled;
 

@@ -42,11 +42,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                     .HasIndex(a => new { a.Registration, a.UserName, a.Email })
                     .HasMethod("GIN")
                     .IsTsVectorExpressionIndex("portuguese");
-
-        builder.Entity<ResourceModel>()
-            .HasIndex(r => new { r.Name, r.Description })
-            .HasMethod("GIN")
-            .IsTsVectorExpressionIndex("portuguese");
         
         builder.Entity<SpaceModel>()
             .HasIndex(a => new { a.Name, a.Description })

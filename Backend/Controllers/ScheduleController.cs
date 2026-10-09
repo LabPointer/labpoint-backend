@@ -21,9 +21,9 @@ public class ScheduleController(IScheduleService scheduleService) : ControllerBa
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<ScheduleResponseDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetSchedules([FromQuery] bool? enabled)
+    public async Task<IActionResult> GetSchedules([FromQuery] ScheduleRequestDTO query)
     {
-        var schedules = await scheduleService.GetSchedules(enabled);
+        var schedules = await scheduleService.GetSchedules(query);
         
         return Ok(schedules);
     }

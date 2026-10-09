@@ -131,8 +131,8 @@ public class AuthController(
         var cookieOptions = new CookieOptions
         {
             HttpOnly = false,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
+            Secure = false,
+            SameSite = SameSiteMode.Lax,
             Expires = DateTimeOffset.UtcNow.AddDays(1)
         };
         HttpContext.Response.Cookies.Append("auth-info", cookieValue, cookieOptions);

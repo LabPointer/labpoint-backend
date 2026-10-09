@@ -16,7 +16,7 @@ public interface IAccountService
 
     public Task<IEnumerable<AccountResponseDTO>> AdminGetUsers(ClaimsPrincipal user, AdminAccountRequestDTO query);
 
-    public Task AdminEditAccount(ClaimsPrincipal user, string accountId, AdminAccountEditRequestDTO data);
+    public Task AdminEditAccount(ClaimsPrincipal user, AdminAccountEditRequestDTO data);
 }
 
 public class AccountService(AppDbContext dbCtx) : IAccountService
@@ -52,7 +52,8 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
                         (userRole, role) => new { userRole.UserId, role.Name })
                     .Any(role => role.UserId == account.Id && role.Name == nameof(EAccountRole.Admin))
                     ? EAccountRole.Admin
-                    : EAccountRole.User
+                    : EAccountRole.User,
+            account.LockoutEnd == null
         );
 
         return accountUserDto;
@@ -133,23 +134,24 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
                         (userRole, role) => new { userRole.UserId, role.Name })
                     .Any(role => role.UserId == accountUser.Id && role.Name == nameof(EAccountRole.Admin))
                     ? EAccountRole.Admin
-                    : EAccountRole.User
+                    : EAccountRole.User,
+            accountUser.LockoutEnd == null
             )
         );
 
         return accounts;
     }
 
-    public async Task AdminEditAccount(ClaimsPrincipal user, string accountId, AdminAccountEditRequestDTO data)
+    public async Task AdminEditAccount(ClaimsPrincipal user, AdminAccountEditRequestDTO data)
     {
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
-        if (userId == accountId)
+        if (userId == data.Id)
         {
             throw new BadRequestException("Não é possível editar a própria conta.");
         }
 
-        var account = await dbCtx.Users.FirstOrDefaultAsync(u => u.Id == accountId);
+        var account = await dbCtx.Users.FirstOrDefaultAsync(u => u.Id == data.Id);
         if (account == null)
         {
             throw new ResourceNotFoundException("Usuário não encontrado.");
@@ -158,7 +160,7 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
         if (!string.IsNullOrEmpty(data.Username))
         {
             account.UserName = data.Username;
-            account.NormalizedUserName = data.Username;
+            account.NormalizedUserName = data.Username.ToUpper();
         }
 
         if (!string.IsNullOrEmpty(data.Registration))
@@ -172,10 +174,10 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
             var role = await dbCtx.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
             if (role == null)
             {
-                throw new BadRequestException("Função inválida.");
+                throw new BadRequestException("Cargo nao existe.");
             }
 
-            var userRole = await dbCtx.UserRoles.FirstOrDefaultAsync(ur => ur.UserId == accountId);
+            var userRole = await dbCtx.UserRoles.FirstOrDefaultAsync(ur => ur.UserId == data.Id);
             if (userRole != null)
             {
                 if (userRole.RoleId != role.Id)
@@ -184,7 +186,7 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
 
                     await dbCtx.UserRoles.AddAsync(new IdentityUserRole<string>
                     {
-                        UserId = accountId,
+                        UserId = data.Id,
                         RoleId = role.Id
                     });
                 }
@@ -193,7 +195,7 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
             {
                 await dbCtx.UserRoles.AddAsync(new IdentityUserRole<string>
                 {
-                    UserId = accountId,
+                    UserId = data.Id,
                     RoleId = role.Id
                 });
             }

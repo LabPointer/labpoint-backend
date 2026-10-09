@@ -7,7 +7,5 @@ public record ResourceEditRequestDTO(
     long Id,
     [StringLength(100, MinimumLength = 1, ErrorMessage = "O nome deve ter entre 1 e 100 caracteres")]
     string? Name,
-    [StringLength(200, MinimumLength = 1, ErrorMessage = "A descrição deve ter entre 1 e 200 caracteres")]
-    string? Description,
     bool? CanReserve,
     bool? Enabled);

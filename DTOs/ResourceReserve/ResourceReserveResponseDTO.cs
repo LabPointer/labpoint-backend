@@ -5,6 +5,5 @@ namespace DTOs.ResourceReserve;
 public record ResourceReserveResponseDTO(
     long Id,
     string Name,
-    string Description,
     SpaceReserveResponseDTO SpaceReserve
 );
