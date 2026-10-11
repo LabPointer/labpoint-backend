@@ -28,8 +28,8 @@ public class SubjectService(AppDbContext dbCtx) : ISubjectService
         }
 
         var subjects = await subjectQuery
-            .Take(query.Limit + 1)
             .Skip(query.Offset)
+            .Take(query.Limit + 1)
             .Select(s => new SubjectResponseDTO(s.Id, s.Name, s.Enabled))
             .ToListAsync();
         

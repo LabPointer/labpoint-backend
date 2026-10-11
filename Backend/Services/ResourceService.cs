@@ -34,8 +34,8 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
         }
 
         var resources = await resourceQuery
+            .Skip(query.Offset)
             .Take(query.Limit + 1)
-            .Skip(query.Offset * query.Limit)
             .Select(r => new ResourceResponseDTO(r.Id, r.Name, r.CanReserve, r.Enabled))
             .ToListAsync();
             

@@ -20,7 +20,7 @@ public class SpaceReserveController(ISpaceReserveService reserveService) : Contr
     /// Lista todas as reservas de espaços cadastradas de acordo com os filtros fornecidos
     /// </remarks>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<SpaceResponseDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<SpaceReserveResponseDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetReserves([FromQuery] SpaceReserveRequestDTO query)
@@ -107,7 +107,7 @@ public class SpaceReserveController(ISpaceReserveService reserveService) : Contr
     /// </remarks>
     [HttpGet("admin")]
     [Authorize(Roles = "Admin,Owner")]
-    [ProducesResponseType(typeof(IEnumerable<SpaceResponseDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<AdminSpaceReserveResponseDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AdminGetReserves([FromQuery] AdminSpaceReserveRequestDTO query)

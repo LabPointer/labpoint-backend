@@ -107,7 +107,8 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
         string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
         var existingSchedules = await dbCtx.SpaceReserves
-            .Where(sr => sr.FkSpaceId == spaceId && sr.DateFrom < query.EndAt && sr.DateTo > query.StartAt && sr.Status == EReserveStatus.Booking && sr.Status == EReserveStatus.Confirmed)
+            .Where(sr => sr.FkSpaceId == spaceId && sr.DateFrom <= query.EndAt && sr.DateTo >= query.StartAt
+                && (sr.Status == EReserveStatus.Booking || sr.Status == EReserveStatus.Confirmed))
             .SelectMany(sr => sr.SpaceReserveSchedules.Select(s => new ScheduleResponseDTO(
                 s.Schedule.Id,
                 s.Schedule.StartAt,
@@ -130,15 +131,16 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
     {
         string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
-        if (data.StartAt >= data.EndAt)
+        if (data.StartAt > data.EndAt)
         {
-            throw new BadRequestException("Data de início precisa ser anterior à data de término.");
+            throw new BadRequestException("Data de início precisa ser igual ou anterior à data de término.");
         }
 
         if (data.ScheduleIds != null && data.ScheduleIds.Any())
         {
             bool hasConflict = await dbCtx.SpaceReserves
-                .Where(sr => sr.FkSpaceId == spaceId && sr.DateFrom < data.EndAt && sr.DateTo > data.StartAt)
+                .Where(sr => sr.FkSpaceId == spaceId && sr.DateFrom <= data.EndAt && sr.DateTo >= data.StartAt
+                    && (sr.Status == EReserveStatus.Booking || sr.Status == EReserveStatus.Confirmed))
                 .AnyAsync(sr => sr.SpaceReserveSchedules.Any(s => data.ScheduleIds.Contains(s.FkScheduleId)));
 
             if (hasConflict)
@@ -197,7 +199,9 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
         if (targetScheduleIds.Any())
         {
             bool hasConflict = await dbCtx.SpaceReserves
-                .Where(sr => sr.Id != reserveId && sr.DateFrom < targetEnd && sr.DateTo > targetStart)
+                .Where(sr => sr.Id != reserveId && sr.FkSpaceId == spaceReserve.FkSpaceId
+                    && (sr.Status == EReserveStatus.Booking || sr.Status == EReserveStatus.Confirmed)
+                    && sr.DateFrom <= targetEnd && sr.DateTo >= targetStart)
                 .AnyAsync(sr => sr.SpaceReserveSchedules.Any(s => targetScheduleIds.Contains(s.FkScheduleId)));
 
             if (hasConflict)
@@ -234,7 +238,7 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
 
         var spaceReserve = await dbCtx.SpaceReserves
             .Where(sr => sr.Id == reserveId && sr.FkAccountId == userId)
-            .FirstAsync();
+            .FirstOrDefaultAsync();
         if (spaceReserve == null)
         {
             throw new ResourceNotFoundException("Reserva não encontrada.");

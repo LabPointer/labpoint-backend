@@ -119,8 +119,8 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
         }
 
         var accountsRes = await usersQuery
-            .Take(query.Limit + 1)
             .Skip(query.Page * query.Limit)
+            .Take(query.Limit + 1)
             .ToListAsync();
 
         if (accountsRes.Count == 0)

@@ -65,23 +65,24 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
             {
                 throw new BadRequestException("A data de início não pode ser maior que a data de término.");
             }
-            queryable = queryable.Where(s => !s.SpaceReserves.Any(r =>
-                // Checa interseção de períodos de data
-                r.DateFrom <= query.EndAt && r.DateTo >= query.StartAt
-            ));
+            var startAt = query.StartAt.Value;
+            var endAt = query.EndAt.Value;
+            var scheduleIds = query.Schedules ?? new HashSet<long>();
+            var hasSchedules = scheduleIds.Count > 0;
 
-            if (query.Schedules != null && query.Schedules.Count > 0)
-            {
-                queryable = queryable.Where(s => !s.SpaceReserves.Any(r =>
-                    // Checa se algum dos horários pesquisados já está ocupado nessa reserva
-                    r.SpaceReserveSchedules.Any(rss => query.Schedules.Contains(rss.FkScheduleId))
-                ));
-            }
+            // Espaço indisponível = existe reserva ATIVA que cruza o período e, quando há filtro de horários,
+            // usa algum desses horários. (Antes, qualquer reserva no período escondia o espaço, e o filtro de
+            // horários olhava reservas de qualquer data, inclusive canceladas.)
+            queryable = queryable.Where(s => !s.SpaceReserves.Any(r =>
+                (r.Status == EReserveStatus.Booking || r.Status == EReserveStatus.Confirmed)
+                && r.DateFrom <= endAt && r.DateTo >= startAt
+                && (!hasSchedules || r.SpaceReserveSchedules.Any(rss => scheduleIds.Contains(rss.FkScheduleId)))
+            ));
         }
 
         var spaces = await queryable
-            .Take(query.Limit + 1)
             .Skip(query.Offset)
+            .Take(query.Limit + 1)
             .Select(s => new SpaceResponseDTO(
                 s.Id,
                 s.Name,
