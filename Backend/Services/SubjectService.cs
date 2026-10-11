@@ -24,7 +24,7 @@ public class SubjectService(AppDbContext dbCtx) : ISubjectService
         }
         if (!string.IsNullOrEmpty(query.Name))
         {
-            subjectQuery = subjectQuery.Where(s => s.Name.Contains(query.Name));
+            subjectQuery = subjectQuery.Where(s => s.Name.ToLower().Contains(query.Name.ToLower()));
         }
 
         var subjects = await subjectQuery

@@ -30,7 +30,7 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
 
         if (!string.IsNullOrEmpty(query.Name))
         {
-            resourceQuery = resourceQuery.Where(r => r.Name.Contains(query.Name));
+            resourceQuery = resourceQuery.Where(r => r.Name.ToLower().Contains(query.Name.ToLower()));
         }
 
         var resources = await resourceQuery

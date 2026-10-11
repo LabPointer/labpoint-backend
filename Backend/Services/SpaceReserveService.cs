@@ -5,6 +5,7 @@ using DTOs.Account;
 using DTOs.Schedule;
 using DTOs.Space;
 using DTOs.SpaceReserve;
+using DTOs.Subject;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using Models.Reserve;
@@ -317,6 +318,15 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
                             .Any(role => role.UserId == sr.Account.Id && role.Name == nameof(EAccountRole.Admin))
                             ? EAccountRole.Admin
                             : EAccountRole.User,
+                    dbCtx.AccountSubjects
+                        .Include(accountSubject => accountSubject.Subject)
+                        .Where(accountSubject => accountSubject.FkAccountId == sr.Account.Id)
+                        .Select(accountSubject => new SubjectResponseDTO(
+                            accountSubject.Subject.Id,
+                            accountSubject.Subject.Name,
+                            accountSubject.Subject.Enabled
+                        ))
+                        .FirstOrDefault(),
                     sr.Account.LockoutEnd == null
                 ),
                 sr.SpaceReserveSchedules

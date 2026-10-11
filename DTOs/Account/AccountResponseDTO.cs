@@ -1,3 +1,4 @@
+using DTOs.Subject;
 using Models;
 
 namespace DTOs.Account;
@@ -8,4 +9,5 @@ public record AccountResponseDTO(
     string Username,
     string Email,
     EAccountRole Role,
+    SubjectResponseDTO? Subject,
     bool Enabled);

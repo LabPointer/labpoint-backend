@@ -15,6 +15,6 @@ public record SpaceRequestDTO(
     DateOnly? EndAt,
     [MinLength(1, ErrorMessage = "É necessário informar pelo menos um horário para o filtro")]
     HashSet<long>? Schedules,
-    bool Locked = false,
+    bool? Locked,
     int Limit = 10,
     int Offset = 0);

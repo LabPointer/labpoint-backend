@@ -37,7 +37,10 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
         }
 
         // Locked filter
-        queryable = queryable.Where(s => s.Locked == query.Locked);
+        if (query.Locked.HasValue)
+        {
+            queryable = queryable.Where(s => s.Locked == query.Locked);
+        }
 
         // Subjects filter
         if (query.Subjects != null && query.Subjects.Count > 0)
