@@ -14,4 +14,6 @@ public record AdminSpaceReserveRequestDTO(
     HashSet<long>? ScheduleIds,
     EReserveStatus? Status,
     [MinLength(1, ErrorMessage = "É necessário informar pelo menos uma conta para a reserva")]
-    HashSet<string>? AccountIds);
+    HashSet<string>? AccountIds,
+    [MaxLength(100, ErrorMessage = "A pesquisa pelo nome do espaço deve ter no máximo 100 caracteres")]
+    string? SearchQuery = null);

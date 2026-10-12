@@ -24,10 +24,9 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
         // Name filter
         if (!string.IsNullOrWhiteSpace(query.SearchQuery))
         {
-            queryable = queryable.Where(
-                s => EF.Functions.ToTsVector("portuguese", s.Name + " " + s.Description)
-                    .Matches(EF.Functions.WebSearchToTsQuery("portuguese", query.SearchQuery))
-            );
+            // Busca por trecho no nome ou na descrição (o full-text só casava palavras inteiras).
+            var pattern = QueryHelpers.ContainsPattern(query.SearchQuery);
+            queryable = queryable.Where(s => EF.Functions.ILike(s.Name, pattern) || EF.Functions.ILike(s.Description, pattern));
         }
 
         // Capacity filter
@@ -45,17 +44,13 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
         // Subjects filter
         if (query.Subjects != null && query.Subjects.Count > 0)
         {
-            queryable = queryable.Where(s => s.SpaceSubjects
-                .Select(ss => ss.FkSubjectId)
-                .Any(id => query.Subjects.Contains(id)));
+            queryable = queryable.Where(s => s.SpaceSubjects.Any(ss => query.Subjects.Contains(ss.FkSubjectId)));
         }
 
         // Resources filter
         if (query.Resources != null && query.Resources.Count > 0)
         {
-            queryable = queryable.Where(s => s.SpaceResources
-                .Select(sr => sr.FkResourceId)
-                .Any(id => query.Resources.Contains(id)));
+            queryable = queryable.Where(s => s.SpaceResources.Any(sr => query.Resources.Contains(sr.FkResourceId)));
         }
 
         // Date and schedule filter
@@ -80,7 +75,10 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
             ));
         }
 
+        // Ordenação estável (necessária para paginar e para a consulta dividida abaixo, que repete o Skip/Take).
         var spaces = await queryable
+            .OrderBy(s => s.Name)
+            .ThenBy(s => s.Id)
             .Skip(query.Offset)
             .Take(query.Limit + 1)
             .Select(s => new SpaceResponseDTO(
@@ -92,6 +90,7 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
                 s.SpaceSubjects.Select(ss => new SpaceHashDataDTO(ss.FkSubjectId, ss.Subject.Name)).ToHashSet(),
                 s.SpaceResources.Select(sr => new SpaceHashDataDTO(sr.FkResourceId, sr.Resource.Name)).ToHashSet()
             ))
+            .AsSplitQuery()
             .ToListAsync();
 
         if (spaces.Count == 0)
@@ -104,6 +103,8 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
 
     public async Task AdminCreateSpace(SpaceCreateRequestDTO data)
     {
+        await EnsureNameAvailable(data.Name, null);
+
         if (data.Subjects != null && data.Subjects.Count > 0)
         {
             var distinctSubjectIds = data.Subjects.Distinct().ToList();
@@ -155,11 +156,17 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
         var space = await dbCtx.Spaces
             .Include(s => s.SpaceSubjects)
             .Include(s => s.SpaceResources)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(s => s.Id == data.Id);
 
         if (space == null)
         {
             throw new ResourceNotFoundException("Espaço não encontrado.");
+        }
+
+        if (data.Name != null && data.Name != space.Name)
+        {
+            await EnsureNameAvailable(data.Name, space.Id);
         }
 
         space.Name = data.Name ?? space.Name;
@@ -170,35 +177,28 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
         var newSubjectIds = data.Subjects?.Distinct().ToList();
         var newResourceIds = data.Resources?.Distinct().ToList();
 
-        var validationTasks = new List<Task>();
-
-        List<long> subjectsToValidate = null;
+        // As validações rodam em sequência: um DbContext não aceita duas consultas simultâneas
+        // (o Task.WhenAll anterior lançava InvalidOperationException ao alterar matérias e recursos juntos).
         if (newSubjectIds != null)
         {
             var currentSubjectIds = space.SpaceSubjects.Select(ss => ss.FkSubjectId).ToHashSet();
-            subjectsToValidate = newSubjectIds.Where(id => !currentSubjectIds.Contains(id)).ToList();
+            var subjectsToValidate = newSubjectIds.Where(id => !currentSubjectIds.Contains(id)).ToList();
 
             if (subjectsToValidate.Count > 0)
             {
-                validationTasks.Add(ValidateSubjectsExist(subjectsToValidate));
+                await ValidateSubjectsExist(subjectsToValidate);
             }
         }
 
-        List<long> resourcesToValidate = null;
         if (newResourceIds != null)
         {
             var currentResourceIds = space.SpaceResources.Select(sr => sr.FkResourceId).ToHashSet();
-            resourcesToValidate = newResourceIds.Where(id => !currentResourceIds.Contains(id)).ToList();
+            var resourcesToValidate = newResourceIds.Where(id => !currentResourceIds.Contains(id)).ToList();
 
             if (resourcesToValidate.Count > 0)
             {
-                validationTasks.Add(ValidateResourcesExist(resourcesToValidate));
+                await ValidateResourcesExist(resourcesToValidate);
             }
-        }
-
-        if (validationTasks.Count > 0)
-        {
-            await Task.WhenAll(validationTasks);
         }
 
         if (newSubjectIds != null)
@@ -249,6 +249,16 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
 
         await dbCtx.SaveChangesAsync();
     }
+    /// <summary>O nome do espaço é único: devolve 409 em vez de erro 500 do banco.</summary>
+    private async Task EnsureNameAvailable(string name, long? ignoreId)
+    {
+        var inUse = await dbCtx.Spaces.AsNoTracking().AnyAsync(s => s.Name == name && s.Id != ignoreId);
+        if (inUse)
+        {
+            throw new ConflictException("Já existe um espaço com este nome.");
+        }
+    }
+
     private async Task ValidateSubjectsExist(List<long> subjectIds)
     {
         var count = await dbCtx.Subjects.CountAsync(s => subjectIds.Contains(s.Id));

@@ -2,10 +2,10 @@ using System.Security.Claims;
 using Backend.Handler;
 using Data;
 using DTOs.Account;
-using DTOs.Subject;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Models;
+using Models.Account;
 
 namespace Backend.Services;
 
@@ -26,50 +26,21 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
     {
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
-        var account = await dbCtx.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var account = await dbCtx.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => new AccountRow(u.Id, u.Registration, u.UserName, u.Email, u.LockoutEnd))
+            .FirstOrDefaultAsync();
+
         if (account == null)
         {
             throw new UnauthorizedException("Usuário não identificado.", true);
         }
 
-        var accountSubject = await dbCtx.AccountSubjects
-            .Include(accountSubject => accountSubject.Subject)
-            .FirstOrDefaultAsync(accountSubject => accountSubject.FkAccountId == account.Id);
-        
-        var subjectDto = accountSubject?.Subject == null
-            ? null
-            : new SubjectResponseDTO(
-                accountSubject.Subject.Id,
-                accountSubject.Subject.Name,
-                accountSubject.Subject.Enabled
-            );
-        var accountUserDto = new AccountResponseDTO(
-            account.Id,
-            account.Registration,
-            account.UserName,
-            account.Email,
-            dbCtx.UserRoles
-                .Join(
-                    dbCtx.Roles,
-                    userRole => userRole.RoleId,
-                    role => role.Id,
-                    (userRole, role) => new { userRole.UserId, role.Name })
-                .Any(role => role.UserId == account.Id && role.Name == nameof(EAccountRole.Owner))
-                ? EAccountRole.Owner
-                : dbCtx.UserRoles
-                    .Join(
-                        dbCtx.Roles,
-                        userRole => userRole.RoleId,
-                        role => role.Id,
-                        (userRole, role) => new { userRole.UserId, role.Name })
-                    .Any(role => role.UserId == account.Id && role.Name == nameof(EAccountRole.Admin))
-                    ? EAccountRole.Admin
-                    : EAccountRole.User,
-            subjectDto,
-            account.LockoutEnd == null
-        );
+        var ids = new[] { account.Id };
+        var roles = await AccountDirectory.LoadRoles(dbCtx, ids);
+        var subjects = await AccountDirectory.LoadSubjects(dbCtx, ids);
 
-        return accountUserDto;
+        return AccountDirectory.ToDto(account, roles, subjects);
     }
 
     public async Task EditAccount(ClaimsPrincipal user, AccountEditRequestDTO data)
@@ -82,101 +53,82 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
             throw new UnauthorizedException("Usuário não identificado.", true);
         }
 
-        account.UserName = data.Username;
+        await ApplyUserName(account, data.Username);
         await dbCtx.SaveChangesAsync();
     }
 
     public async Task<IEnumerable<AccountResponseDTO>> AdminGetUsers(ClaimsPrincipal user, AdminAccountRequestDTO query)
     {
-        var userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+        var actorId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
-        var usersQuery = dbCtx.Users.AsQueryable();
+        var usersQuery = dbCtx.Users.AsNoTracking()
+            .Where(u => u.Id != actorId && u.EmailConfirmed);
 
-        usersQuery = usersQuery.Where(u => u.Id != userId);
-        
-        usersQuery = usersQuery.Where(u => u.EmailConfirmed == true);
-
-        if (!string.IsNullOrEmpty(query.SearchQuery))
+        // Busca por trecho (nome, matrícula ou e-mail), sem diferenciar maiúsculas de minúsculas.
+        if (!string.IsNullOrWhiteSpace(query.SearchQuery))
         {
-            usersQuery = usersQuery.Where(s => 
-                EF.Functions.ToTsVector("portuguese", s.Registration+ " " + s.UserName + " " + s.Email)
-                    .Matches(EF.Functions.WebSearchToTsQuery("portuguese", query.SearchQuery))
-            );
+            var pattern = QueryHelpers.ContainsPattern(query.SearchQuery);
+            usersQuery = usersQuery.Where(u =>
+                EF.Functions.ILike(u.Registration, pattern)
+                || (u.UserName != null && EF.Functions.ILike(u.UserName, pattern))
+                || (u.Email != null && EF.Functions.ILike(u.Email, pattern)));
         }
 
         if (query.Role.HasValue)
         {
             var roleName = query.Role.Value.ToString();
-            usersQuery = usersQuery.Where(u =>
-                dbCtx.UserRoles
-                    .Join(
-                        dbCtx.Roles,
-                        userRole => userRole.RoleId,
-                        role => role.Id,
-                        (userRole, role) => new { userRole.UserId, role.Name })
-                    .Any(role => role.UserId == u.Id && role.Name == roleName)
-            );
+            var roleId = await dbCtx.Roles
+                .Where(r => r.Name == roleName)
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
+
+            usersQuery = roleId == null
+                ? usersQuery.Where(_ => false)
+                : usersQuery.Where(u => dbCtx.UserRoles.Any(ur => ur.UserId == u.Id && ur.RoleId == roleId));
         }
 
-        var accountsRes = await usersQuery
+        if (query.Enabled.HasValue)
+        {
+            usersQuery = query.Enabled.Value
+                ? usersQuery.Where(u => u.LockoutEnd == null)
+                : usersQuery.Where(u => u.LockoutEnd != null);
+        }
+
+        if (query.SubjectId.HasValue)
+        {
+            var subjectId = query.SubjectId.Value;
+            usersQuery = usersQuery.Where(u =>
+                dbCtx.AccountSubjects.Any(accountSubject =>
+                    accountSubject.FkAccountId == u.Id && accountSubject.FkSubjectId == subjectId));
+        }
+
+        // Ordenação estável: sem ela as páginas podem repetir ou pular usuários.
+        var rows = await usersQuery
+            .OrderBy(u => u.UserName)
+            .ThenBy(u => u.Id)
             .Skip(query.Page * query.Limit)
             .Take(query.Limit + 1)
+            .Select(u => new AccountRow(u.Id, u.Registration, u.UserName, u.Email, u.LockoutEnd))
             .ToListAsync();
 
-        if (accountsRes.Count == 0)
+        if (rows.Count == 0)
         {
             throw new ResourceNotFoundException("Nenhum usuário encontrado com os filtros informados.");
         }
 
-        var accounts = accountsRes.Select(accountUser =>
-        {
-            var accountSubject = dbCtx.AccountSubjects
-                .Include(accountSubject => accountSubject.Subject)
-                .FirstOrDefault(accountSubject => accountSubject.FkAccountId == accountUser.Id);
+        // Cargo e matéria de todos os usuários da página em lote (antes: 3 consultas por usuário).
+        var ids = rows.Select(row => row.Id).ToList();
+        var roles = await AccountDirectory.LoadRoles(dbCtx, ids);
+        var subjects = await AccountDirectory.LoadSubjects(dbCtx, ids);
 
-            var subjectDto = accountSubject?.Subject == null
-                ? null
-                : new SubjectResponseDTO(
-                    accountSubject.Subject.Id,
-                    accountSubject.Subject.Name,
-                    accountSubject.Subject.Enabled
-                );
-
-            return new AccountResponseDTO(
-                accountUser.Id,
-                accountUser.Registration,
-                accountUser.UserName,
-                accountUser.Email,
-                dbCtx.UserRoles
-                    .Join(
-                        dbCtx.Roles,
-                        userRole => userRole.RoleId,
-                        role => role.Id,
-                        (userRole, role) => new { userRole.UserId, role.Name })
-                    .Any(role => role.UserId == accountUser.Id && role.Name == nameof(EAccountRole.Owner))
-                    ? EAccountRole.Owner
-                    : dbCtx.UserRoles
-                        .Join(
-                            dbCtx.Roles,
-                            userRole => userRole.RoleId,
-                            role => role.Id,
-                            (userRole, role) => new { userRole.UserId, role.Name })
-                        .Any(role => role.UserId == accountUser.Id && role.Name == nameof(EAccountRole.Admin))
-                        ? EAccountRole.Admin
-                        : EAccountRole.User,
-                subjectDto,
-                accountUser.LockoutEnd == null
-            );
-        });
-
-        return accounts;
+        return rows.Select(row => AccountDirectory.ToDto(row, roles, subjects)).ToList();
     }
 
     public async Task AdminEditAccount(ClaimsPrincipal user, AdminAccountEditRequestDTO data)
     {
-        var userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+        var actorId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
-        if (userId == data.Id)
+        if (actorId == data.Id)
         {
             throw new BadRequestException("Não é possível editar a própria conta.");
         }
@@ -187,69 +139,94 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
             throw new ResourceNotFoundException("Usuário não encontrado.");
         }
 
-        if (!string.IsNullOrEmpty(data.Username))
+        // O cargo vem do banco (e não do cookie): o cookie só é atualizado na próxima revalidação da sessão.
+        var roles = await AccountDirectory.LoadRoles(dbCtx, [actorId, data.Id]);
+        var actorRole = roles.GetValueOrDefault(actorId, EAccountRole.User);
+        var targetRole = roles.GetValueOrDefault(data.Id, EAccountRole.User);
+
+        if (actorRole < EAccountRole.Admin)
         {
-            account.UserName = data.Username;
-            account.NormalizedUserName = data.Username.ToUpper();
+            throw new ForbiddenException("Você não tem permissão para editar usuários.");
         }
 
-        if (!string.IsNullOrEmpty(data.Registration))
+        // Regra 1: somente o Owner altera cargos.
+        var roleChanged = data.Role.HasValue && data.Role.Value != targetRole;
+        if (roleChanged && actorRole != EAccountRole.Owner)
         {
+            throw new ForbiddenException("Somente o proprietário (Owner) pode alterar o cargo de um usuário.");
+        }
+
+        // Regra 2: ativar/desativar a conta exige cargo estritamente superior ao do usuário alvo
+        // (Admin só altera User; Owner altera User e Admin, nunca outro Owner).
+        var lockChanged = data.LockAccount.HasValue && data.LockAccount.Value != (account.LockoutEnd != null);
+        if (lockChanged && actorRole <= targetRole)
+        {
+            throw new ForbiddenException(
+                "Você não pode ativar ou desativar a conta de um usuário com cargo igual ou superior ao seu.");
+        }
+
+        if (!string.IsNullOrEmpty(data.Username))
+        {
+            await ApplyUserName(account, data.Username);
+        }
+
+        if (!string.IsNullOrEmpty(data.Registration) && data.Registration != account.Registration)
+        {
+            if (data.Registration.Length > 16)
+            {
+                throw new BadRequestException("A matrícula deve ter no máximo 16 caracteres.");
+            }
+
+            var registrationInUse = await dbCtx.Users.AnyAsync(u => u.Id != data.Id && u.Registration == data.Registration);
+            if (registrationInUse)
+            {
+                throw new ConflictException("Já existe um usuário com esta matrícula.");
+            }
+
             account.Registration = data.Registration;
         }
 
-        if (data.Role.HasValue)
+        if (roleChanged)
         {
-            var roleName = data.Role.Value.ToString();
-            var role = await dbCtx.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
-            if (role == null)
+            var roleName = data.Role!.Value.ToString();
+            var roleId = await dbCtx.Roles
+                .Where(r => r.Name == roleName)
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
+
+            if (roleId == null)
             {
                 throw new BadRequestException("Cargo nao existe.");
             }
 
-            var userRole = await dbCtx.UserRoles.FirstOrDefaultAsync(ur => ur.UserId == data.Id);
-            if (userRole != null)
-            {
-                if (userRole.RoleId != role.Id)
-                {
-                    dbCtx.UserRoles.Remove(userRole);
+            // Um cargo por usuário: remove os demais e garante o novo.
+            var currentRoles = await dbCtx.UserRoles.Where(ur => ur.UserId == data.Id).ToListAsync();
+            dbCtx.UserRoles.RemoveRange(currentRoles.Where(ur => ur.RoleId != roleId));
 
-                    await dbCtx.UserRoles.AddAsync(new IdentityUserRole<string>
-                    {
-                        UserId = data.Id,
-                        RoleId = role.Id
-                    });
-                }
-            }
-            else
+            if (currentRoles.All(ur => ur.RoleId != roleId))
             {
-                await dbCtx.UserRoles.AddAsync(new IdentityUserRole<string>
-                {
-                    UserId = data.Id,
-                    RoleId = role.Id
-                });
+                dbCtx.UserRoles.Add(new IdentityUserRole<string> { UserId = data.Id, RoleId = roleId });
             }
         }
 
-        if (data.LockAccount.HasValue)
+        if (lockChanged)
         {
-            account.LockoutEnabled = data.LockAccount.Value;
+            var locked = data.LockAccount!.Value;
 
-            if (data.LockAccount.Value)
+            // O bloqueio é controlado só por LockoutEnd; LockoutEnabled precisa continuar true
+            // (antes era gravado como false ao reativar, desligando o bloqueio por tentativas falhas de login).
+            account.LockoutEnabled = true;
+            account.LockoutEnd = locked ? DateTimeOffset.MaxValue : null;
+
+            if (!locked)
             {
-                account.LockoutEnd = DateTimeOffset.MaxValue;
-            }
-            else
-            {
-                account.LockoutEnd = null;
+                account.AccessFailedCount = 0;
             }
         }
-        
+
         if (data.subjectId.HasValue)
         {
-            var subjectExists = await dbCtx.Subjects
-                .AnyAsync(subject => subject.Id == data.subjectId.Value);
-
+            var subjectExists = await dbCtx.Subjects.AnyAsync(subject => subject.Id == data.subjectId.Value);
             if (!subjectExists)
             {
                 throw new ResourceNotFoundException("Disciplina não encontrada.");
@@ -257,13 +234,14 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
 
             var accountSubjects = await dbCtx.AccountSubjects
                 .Where(accountSubject => accountSubject.FkAccountId == data.Id)
+                .OrderBy(accountSubject => accountSubject.Id)
                 .ToListAsync();
 
             var accountSubject = accountSubjects.FirstOrDefault();
 
             if (accountSubject == null)
             {
-                await dbCtx.AccountSubjects.AddAsync(new AccountSubjectModel
+                dbCtx.AccountSubjects.Add(new AccountSubjectModel
                 {
                     FkAccountId = data.Id,
                     FkSubjectId = data.subjectId.Value
@@ -273,17 +251,38 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
             {
                 accountSubject.FkSubjectId = data.subjectId.Value;
 
-                var duplicatedAccountSubjects = accountSubjects
-                    .Where(duplicatedAccountSubject => duplicatedAccountSubject.Id != accountSubject.Id)
-                    .ToList();
-
-                if (duplicatedAccountSubjects.Count > 0)
+                if (accountSubjects.Count > 1)
                 {
-                    dbCtx.AccountSubjects.RemoveRange(duplicatedAccountSubjects);
+                    dbCtx.AccountSubjects.RemoveRange(accountSubjects.Skip(1));
                 }
             }
         }
 
+        // Troca de cargo ou bloqueio invalida as sessões abertas do usuário na próxima revalidação do cookie.
+        if (roleChanged || lockChanged)
+        {
+            account.SecurityStamp = Guid.NewGuid().ToString();
+        }
+
         await dbCtx.SaveChangesAsync();
+    }
+
+    /// <summary>Define o nome de usuário mantendo o valor normalizado em sincronia e checando duplicidade.</summary>
+    private async Task ApplyUserName(AccountModel account, string username)
+    {
+        if (username == account.UserName)
+        {
+            return;
+        }
+
+        var normalized = username.ToUpperInvariant();
+        var inUse = await dbCtx.Users.AnyAsync(u => u.Id != account.Id && u.NormalizedUserName == normalized);
+        if (inUse)
+        {
+            throw new ConflictException("Já existe um usuário com este nome.");
+        }
+
+        account.UserName = username;
+        account.NormalizedUserName = normalized;
     }
 }

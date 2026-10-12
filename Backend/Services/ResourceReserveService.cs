@@ -28,67 +28,69 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
     {
         string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
-        var queryable = dbCtx.ResourceReserves.AsQueryable();
-
-        queryable = queryable.Where(r => r.FkAccountId == userId);
+        var queryable = dbCtx.ResourceReserves.AsNoTracking()
+            .Where(r => r.FkAccountId == userId);
 
         if (!string.IsNullOrEmpty(query.SearchQuery))
         {
-            queryable = queryable.Where(r => EF.Functions
-                .ToTsVector("portuguese", r.Resource.Name)
-                .Matches(EF.Functions.PhraseToTsQuery("portuguese", query.SearchQuery)));
+            var pattern = QueryHelpers.ContainsPattern(query.SearchQuery);
+            queryable = queryable.Where(r => EF.Functions.ILike(r.Resource.Name, pattern));
         }
 
-        if (query.SpaceIds != null)
+        if (query.SpaceIds != null && query.SpaceIds.Count > 0)
         {
             queryable = queryable.Where(r => query.SpaceIds.Contains(r.SpaceReserve.FkSpaceId));
         }
 
-        var resourceReservesRes = await queryable
-            .Take(query.Limit)
+        // Tudo é projetado dentro da consulta. Antes a entidade era carregada com ToListAsync() e as navegações
+        // eram lidas depois: com UseLazyLoadingProxies() cada acesso disparava uma consulta própria (N+1).
+        // Também estava Take(...).Skip(...) (ordem invertida) e o id do horário era o da tabela de junção.
+        var resourceReserves = await queryable
+            .OrderBy(r => r.Id)
             .Skip(query.Offset)
+            .Take(query.Limit)
+            .Select(r => new ResourceReserveResponseDTO(
+                r.Id,
+                r.Resource.Name,
+                new SpaceReserveResponseDTO(
+                    r.SpaceReserve.Id,
+                    r.SpaceReserve.CreatedAt,
+                    r.SpaceReserve.DateFrom,
+                    r.SpaceReserve.DateTo,
+                    r.SpaceReserve.Purpose,
+                    r.SpaceReserve.Status,
+                    new SpaceResponseDTO(
+                        r.SpaceReserve.Space.Id,
+                        r.SpaceReserve.Space.Name,
+                        r.SpaceReserve.Space.Capacity,
+                        r.SpaceReserve.Space.Description,
+                        r.SpaceReserve.Space.Locked,
+                        r.SpaceReserve.Space.SpaceSubjects
+                            .Select(ss => new SpaceHashDataDTO(ss.FkSubjectId, ss.Subject.Name))
+                            .ToHashSet(),
+                        r.SpaceReserve.Space.SpaceResources
+                            .Select(sr => new SpaceHashDataDTO(sr.FkResourceId, sr.Resource.Name))
+                            .ToHashSet()
+                    ),
+                    r.SpaceReserve.SpaceReserveSchedules
+                        .Select(srs => new ScheduleResponseDTO(
+                            srs.Schedule.Id,
+                            srs.Schedule.StartAt,
+                            srs.Schedule.EndAt,
+                            srs.Schedule.Shift,
+                            srs.Schedule.Enabled
+                        ))
+                        .ToList()
+                )
+            ))
+            .AsSplitQuery()
             .ToListAsync();
 
-        if (resourceReservesRes.Count == 0)
+        if (resourceReserves.Count == 0)
         {
             throw new ResourceNotFoundException("Nenhuma reserva de recurso encontrada com os filtros fornecidos.");
         }
 
-        var resourceReserves = resourceReservesRes.Select(r => new ResourceReserveResponseDTO(
-            r.Id,
-            r.Resource.Name,
-            new SpaceReserveResponseDTO(
-                r.SpaceReserve.Id,
-                r.SpaceReserve.CreatedAt,
-                r.SpaceReserve.DateFrom,
-                r.SpaceReserve.DateTo,
-                r.SpaceReserve.Purpose,
-                r.SpaceReserve.Status,
-                new SpaceResponseDTO(
-                    r.SpaceReserve.Space.Id,
-                    r.SpaceReserve.Space.Name,
-                    r.SpaceReserve.Space.Capacity,
-                    r.SpaceReserve.Space.Description,
-                    r.SpaceReserve.Space.Locked,
-                    r.SpaceReserve.Space.SpaceSubjects.Select(s => new SpaceHashDataDTO(
-                        s.Subject.Id,
-                        s.Subject.Name
-                    )).ToHashSet(),
-                    r.SpaceReserve.Space.SpaceResources.Select(r => new SpaceHashDataDTO(
-                        r.Resource.Id,
-                        r.Resource.Name
-                    )).ToHashSet()
-                ),
-                r.SpaceReserve.SpaceReserveSchedules.Select(srs => new ScheduleResponseDTO(
-                    srs.Id,
-                    srs.Schedule.StartAt,
-                    srs.Schedule.EndAt,
-                    srs.Schedule.Shift,
-                    srs.Schedule.Enabled
-                )).ToList()
-            )
-        ));
-        
         return resourceReserves;
     }
 
@@ -143,14 +145,6 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
         if (hasConflict)
         {
             throw new BadRequestException("O recurso já está reservado para um horário conflitante.");
-        }
-
-        var resourceExists = await dbCtx.Resources
-            .AnyAsync(resource => resource.Id == data.ResourceId && resource.Enabled && resource.CanReserve);
-        
-        if (!resourceExists)
-        {
-            throw new BadRequestException("O recurso informado não existe ou não está disponível para reserva.");
         }
 
         dbCtx.ResourceReserves.Add(new ResourceReserveModel

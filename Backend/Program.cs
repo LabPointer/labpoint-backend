@@ -80,6 +80,11 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
+// Padrão do Identity: 30 min. Com 1 min, bloquear uma conta ou trocar o cargo (que renovam o SecurityStamp)
+// derruba/atualiza a sessão já aberta quase imediatamente.
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+    options.ValidationInterval = TimeSpan.FromMinutes(1));
+
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddSingleton<IBackgroundTaskService>(new BackgroundTaskService(capacity: 200));

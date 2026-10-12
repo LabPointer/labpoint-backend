@@ -19,7 +19,7 @@ public class ScheduleService(AppDbContext dbCtx) : IScheduleService
 {
     public async Task<List<ScheduleResponseDTO>> GetSchedules(ScheduleRequestDTO query)
     {
-        var queryable = dbCtx.Schedules.AsQueryable();
+        var queryable = dbCtx.Schedules.AsNoTracking();
         
         if (query.Enabled.HasValue)
         {
@@ -33,6 +33,7 @@ public class ScheduleService(AppDbContext dbCtx) : IScheduleService
 
         var schedules = await queryable
             .OrderBy(s => s.StartAt)
+            .ThenBy(s => s.Id)
             .Select(s => new ScheduleResponseDTO(s.Id, s.StartAt, s.EndAt, s.Shift, s.Enabled))
             .ToListAsync();
         

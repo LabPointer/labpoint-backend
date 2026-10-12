@@ -121,7 +121,7 @@ public class SpaceReserveController(ISpaceReserveService reserveService) : Contr
     /// Admin: editar reserva
     /// </summary>
     /// <remarks>
-    /// Edita status de uma reserva de espaço existente.
+    /// Edita status, período e/ou horários de uma reserva de espaço de outro usuário (campos nulos não são alterados).
     /// </remarks>
     [HttpPatch("admin/edit/{reserveId}")]
     [Authorize(Roles = "Admin,Owner")]

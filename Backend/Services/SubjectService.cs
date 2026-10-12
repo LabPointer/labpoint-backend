@@ -17,7 +17,7 @@ public class SubjectService(AppDbContext dbCtx) : ISubjectService
 {
     public async Task<List<SubjectResponseDTO>> GetSubjects(SubjectRequestDTO query)
     {
-        var subjectQuery = dbCtx.Subjects.AsQueryable();
+        var subjectQuery = dbCtx.Subjects.AsNoTracking();
         if (query.Enabled.HasValue)
         {
             subjectQuery = subjectQuery.Where(s => s.Enabled == query.Enabled);
@@ -28,6 +28,8 @@ public class SubjectService(AppDbContext dbCtx) : ISubjectService
         }
 
         var subjects = await subjectQuery
+            .OrderBy(s => s.Name)
+            .ThenBy(s => s.Id)
             .Skip(query.Offset)
             .Take(query.Limit + 1)
             .Select(s => new SubjectResponseDTO(s.Id, s.Name, s.Enabled))

@@ -63,16 +63,20 @@ public class AccountController(IAccountService accountService) : ControllerBase
     }
 
     /// <summary>
-    /// Admin: listar usuarios
+    /// Admin: editar usuário
     /// </summary>
     /// <remarks>
-    /// Lista todos os usuários cadastrados no sistema.
+    /// Somente o Owner altera cargos. Ativar/desativar a conta exige cargo superior ao do usuário alvo
+    /// (ordem crescente: User, Admin, Owner).
     /// </remarks>
     [HttpPatch("admin/edit")]
     [Authorize(Roles = "Admin,Owner")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AdminPatchUsers([FromBody] AdminAccountEditRequestDTO data)
     {
         await accountService.AdminEditAccount(User, data);
