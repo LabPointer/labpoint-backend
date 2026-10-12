@@ -1,0 +1,279 @@
+﻿using Backend.Handler;
+using Data;
+using DTOs.Space;
+using Microsoft.EntityFrameworkCore;
+using Models;
+
+namespace Backend.Services;
+
+public interface ISpaceService
+{
+    public Task<List<SpaceResponseDTO>> GetSpaces(SpaceRequestDTO query);
+
+    public Task AdminCreateSpace(SpaceCreateRequestDTO data);
+
+    public Task AdminEditSpace(SpaceEditRequestDTO data);
+}
+
+public class SpaceService(AppDbContext dbCtx) : ISpaceService
+{
+    public async Task<List<SpaceResponseDTO>> GetSpaces(SpaceRequestDTO query)
+    {
+        var queryable = dbCtx.Spaces.AsNoTracking();
+
+        // Name filter
+        if (!string.IsNullOrWhiteSpace(query.SearchQuery))
+        {
+            // Busca por trecho no nome ou na descrição (o full-text só casava palavras inteiras).
+            var pattern = QueryHelpers.ContainsPattern(query.SearchQuery);
+            queryable = queryable.Where(s => EF.Functions.ILike(s.Name, pattern) || EF.Functions.ILike(s.Description, pattern));
+        }
+
+        // Capacity filter
+        if (query.Capacity > 0)
+        {
+            queryable = queryable.Where(s => s.Capacity >= query.Capacity);
+        }
+
+        // Locked filter
+        if (query.Locked.HasValue)
+        {
+            queryable = queryable.Where(s => s.Locked == query.Locked);
+        }
+
+        // Subjects filter
+        if (query.Subjects != null && query.Subjects.Count > 0)
+        {
+            queryable = queryable.Where(s => s.SpaceSubjects.Any(ss => query.Subjects.Contains(ss.FkSubjectId)));
+        }
+
+        // Resources filter
+        if (query.Resources != null && query.Resources.Count > 0)
+        {
+            queryable = queryable.Where(s => s.SpaceResources.Any(sr => query.Resources.Contains(sr.FkResourceId)));
+        }
+
+        // Date and schedule filter
+        if (query.StartAt != null && query.EndAt != null)
+        {
+            if (query.StartAt > query.EndAt)
+            {
+                throw new BadRequestException("A data de início não pode ser maior que a data de término.");
+            }
+            var startAt = query.StartAt.Value;
+            var endAt = query.EndAt.Value;
+            var scheduleIds = query.Schedules ?? new HashSet<long>();
+            var hasSchedules = scheduleIds.Count > 0;
+
+            // Espaço indisponível = existe reserva ATIVA que cruza o período e, quando há filtro de horários,
+            // usa algum desses horários. (Antes, qualquer reserva no período escondia o espaço, e o filtro de
+            // horários olhava reservas de qualquer data, inclusive canceladas.)
+            queryable = queryable.Where(s => !s.SpaceReserves.Any(r =>
+                (r.Status == EReserveStatus.Booking || r.Status == EReserveStatus.Confirmed)
+                && r.DateFrom <= endAt && r.DateTo >= startAt
+                && (!hasSchedules || r.SpaceReserveSchedules.Any(rss => scheduleIds.Contains(rss.FkScheduleId)))
+            ));
+        }
+
+        // Ordenação estável (necessária para paginar e para a consulta dividida abaixo, que repete o Skip/Take).
+        var spaces = await queryable
+            .OrderBy(s => s.Name)
+            .ThenBy(s => s.Id)
+            .Skip(query.Offset)
+            .Take(query.Limit + 1)
+            .Select(s => new SpaceResponseDTO(
+                s.Id,
+                s.Name,
+                s.Capacity,
+                s.Description,
+                s.Locked,
+                s.SpaceSubjects.Select(ss => new SpaceHashDataDTO(ss.FkSubjectId, ss.Subject.Name)).ToHashSet(),
+                s.SpaceResources.Select(sr => new SpaceHashDataDTO(sr.FkResourceId, sr.Resource.Name)).ToHashSet()
+            ))
+            .AsSplitQuery()
+            .ToListAsync();
+
+        if (spaces.Count == 0)
+        {
+            throw new ResourceNotFoundException("Nenhum espaço encontrado com os filtros informados.");
+        }
+
+        return spaces;
+    }
+
+    public async Task AdminCreateSpace(SpaceCreateRequestDTO data)
+    {
+        await EnsureNameAvailable(data.Name, null);
+
+        if (data.Subjects != null && data.Subjects.Count > 0)
+        {
+            var distinctSubjectIds = data.Subjects.Distinct().ToList();
+
+            var existingSubjectCount = await dbCtx.Subjects
+                .CountAsync(s => distinctSubjectIds.Contains(s.Id));
+
+            if (existingSubjectCount != distinctSubjectIds.Count)
+            {
+                throw new BadRequestException("Uma ou mais matérias informadas não existem no sistema.");
+            }
+        }
+
+        if (data.Resources != null && data.Resources.Count > 0)
+        {
+            var distinctResourceIds = data.Resources.Distinct().ToList();
+
+            var existingResourceCount = await dbCtx.Resources
+                .CountAsync(r => distinctResourceIds.Contains(r.Id));
+
+            if (existingResourceCount != distinctResourceIds.Count)
+            {
+                throw new BadRequestException("Uma ou mais recursos informados não existem no sistema.");
+            }
+        }
+
+        var space = new SpaceModel
+        {
+            Name = data.Name,
+            Description = data.Description,
+            Capacity = data.Capacity,
+            Locked = data.Locked,
+
+            SpaceSubjects = data.Subjects?
+                .Select(id => new SpaceSubjectModel { FkSubjectId = id })
+                .ToList() ?? new List<SpaceSubjectModel>(),
+
+            SpaceResources = data.Resources?
+                .Select(id => new SpaceResourceModel { FkResourceId = id })
+                .ToList() ?? new List<SpaceResourceModel>()
+        };
+
+        dbCtx.Spaces.Add(space);
+        await dbCtx.SaveChangesAsync();
+    }
+
+    public async Task AdminEditSpace(SpaceEditRequestDTO data)
+    {
+        var space = await dbCtx.Spaces
+            .Include(s => s.SpaceSubjects)
+            .Include(s => s.SpaceResources)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(s => s.Id == data.Id);
+
+        if (space == null)
+        {
+            throw new ResourceNotFoundException("Espaço não encontrado.");
+        }
+
+        if (data.Name != null && data.Name != space.Name)
+        {
+            await EnsureNameAvailable(data.Name, space.Id);
+        }
+
+        space.Name = data.Name ?? space.Name;
+        space.Description = data.Description ?? space.Description;
+        space.Capacity = data.Capacity ?? space.Capacity;
+        space.Locked = data.Locked ?? space.Locked;
+
+        var newSubjectIds = data.Subjects?.Distinct().ToList();
+        var newResourceIds = data.Resources?.Distinct().ToList();
+
+        // As validações rodam em sequência: um DbContext não aceita duas consultas simultâneas
+        // (o Task.WhenAll anterior lançava InvalidOperationException ao alterar matérias e recursos juntos).
+        if (newSubjectIds != null)
+        {
+            var currentSubjectIds = space.SpaceSubjects.Select(ss => ss.FkSubjectId).ToHashSet();
+            var subjectsToValidate = newSubjectIds.Where(id => !currentSubjectIds.Contains(id)).ToList();
+
+            if (subjectsToValidate.Count > 0)
+            {
+                await ValidateSubjectsExist(subjectsToValidate);
+            }
+        }
+
+        if (newResourceIds != null)
+        {
+            var currentResourceIds = space.SpaceResources.Select(sr => sr.FkResourceId).ToHashSet();
+            var resourcesToValidate = newResourceIds.Where(id => !currentResourceIds.Contains(id)).ToList();
+
+            if (resourcesToValidate.Count > 0)
+            {
+                await ValidateResourcesExist(resourcesToValidate);
+            }
+        }
+
+        if (newSubjectIds != null)
+        {
+            var requestedSubjectsSet = newSubjectIds.ToHashSet();
+
+            var subjectsToRemove = space.SpaceSubjects
+                .Where(ss => !requestedSubjectsSet.Contains(ss.FkSubjectId))
+                .ToList();
+
+            foreach (var item in subjectsToRemove)
+            {
+                space.SpaceSubjects.Remove(item);
+            }
+
+            var currentSubjectsSet = space.SpaceSubjects.Select(ss => ss.FkSubjectId).ToHashSet();
+            foreach (var subjectId in requestedSubjectsSet)
+            {
+                if (!currentSubjectsSet.Contains(subjectId))
+                {
+                    space.SpaceSubjects.Add(new SpaceSubjectModel { FkSubjectId = subjectId });
+                }
+            }
+        }
+
+        if (newResourceIds != null)
+        {
+            var requestedResourcesSet = newResourceIds.ToHashSet();
+
+            var resourcesToRemove = space.SpaceResources
+                .Where(sr => !requestedResourcesSet.Contains(sr.FkResourceId))
+                .ToList();
+
+            foreach (var item in resourcesToRemove)
+            {
+                space.SpaceResources.Remove(item);
+            }
+
+            var currentResourcesSet = space.SpaceResources.Select(sr => sr.FkResourceId).ToHashSet();
+            foreach (var resourceId in requestedResourcesSet)
+            {
+                if (!currentResourcesSet.Contains(resourceId))
+                {
+                    space.SpaceResources.Add(new SpaceResourceModel { FkResourceId = resourceId });
+                }
+            }
+        }
+
+        await dbCtx.SaveChangesAsync();
+    }
+    /// <summary>O nome do espaço é único: devolve 409 em vez de erro 500 do banco.</summary>
+    private async Task EnsureNameAvailable(string name, long? ignoreId)
+    {
+        var inUse = await dbCtx.Spaces.AsNoTracking().AnyAsync(s => s.Name == name && s.Id != ignoreId);
+        if (inUse)
+        {
+            throw new ConflictException("Já existe um espaço com este nome.");
+        }
+    }
+
+    private async Task ValidateSubjectsExist(List<long> subjectIds)
+    {
+        var count = await dbCtx.Subjects.CountAsync(s => subjectIds.Contains(s.Id));
+        if (count != subjectIds.Count)
+        {
+            throw new BadRequestException("Uma ou mais matérias informadas não existem no sistema.");
+        }
+    }
+
+    private async Task ValidateResourcesExist(List<long> resourceIds)
+    {
+        var count = await dbCtx.Resources.CountAsync(r => resourceIds.Contains(r.Id));
+        if (count != resourceIds.Count)
+        {
+            throw new BadRequestException("Uma ou mais recursos informados não existem no sistema.");
+        }
+    }
+}

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+<div style="max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 32px;">
+  <h2 style="color: #1a1a1a; text-align: center;">Confirmação de email</h2>
+  <p style="text-align: center;">Olá {user}, você criou uma conta nova no LabPoint.</p>
+  <p style="text-align: center;">Clique no botão abaixo para confirmar seu email.</p>
+
+  <div style="text-align: center; margin: 32px 0;">
+    <a href="{confirm-link}"
+       style="background-color: #2563eb; color: #ffffff; padding: 12px 24px;
+                      text-decoration: none; border-radius: 6px; display: inline-block;">
+      Confirmar e-mail
+    </a>
+  </div>
+
+  <p style="font-size: 13px; color: #666;">
+    Se você não criou uma conta, pode ignorar esse email com segurnaça.
+  </p>
+</div>
+</body>
+</html>
