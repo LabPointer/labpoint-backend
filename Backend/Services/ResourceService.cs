@@ -22,9 +22,6 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
     {
         var resourceQuery = dbCtx.Resources.AsNoTracking();
         
-        if (query.CanReserve.HasValue)
-            resourceQuery = resourceQuery.Where(r => r.CanReserve == query.CanReserve);
-
         if (query.Enabled.HasValue)
             resourceQuery = resourceQuery.Where(r => r.Enabled == query.Enabled);
 
@@ -38,7 +35,7 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
             .ThenBy(r => r.Id)
             .Skip(query.Offset)
             .Take(query.Limit + 1)
-            .Select(r => new ResourceResponseDTO(r.Id, r.Name, r.CanReserve, r.Enabled))
+            .Select(r => new ResourceResponseDTO(r.Id, r.Name, r.Enabled))
             .ToListAsync();
             
         if (resources.Count == 0)
@@ -52,7 +49,6 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
         var resource = new ResourceModel
         {
             Name = data.Name,
-            CanReserve = data.CanReserve,
             Enabled = data.Enabled
         };
 
@@ -66,11 +62,10 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
         if (resource is null)
             throw new ResourceNotFoundException("Resource not found");
         
-        if (string.IsNullOrWhiteSpace(data.Name) && data.CanReserve is null && data.Enabled is null)
+        if (string.IsNullOrWhiteSpace(data.Name) && data.Enabled is null)
             throw new BadRequestException("No fields to update were provided");
 
         resource.Name = string.IsNullOrWhiteSpace(data.Name) ? resource.Name : data.Name;
-        resource.CanReserve = data.CanReserve ?? resource.CanReserve;
         resource.Enabled = data.Enabled ?? resource.Enabled;
 
         await dbCtx.SaveChangesAsync();
