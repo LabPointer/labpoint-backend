@@ -11,5 +11,5 @@ public record AdminAccountEditRequestDTO(
     [StringLength(100, MinimumLength = 1, ErrorMessage = "O nome de usuário deve ter no mínimo 1 e no máximo 100 caracteres")]
     string? Username,
     EAccountRole? Role,
-    long? subjectId,
+    long? SubjectId,
     bool? LockAccount);
