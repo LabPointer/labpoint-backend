@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Models.Account;
+using Models.Report;
 using Models.Reserve;
 using Models.Resource;
 using Models.Schedule;
@@ -31,6 +32,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<SpaceReserveScheduleModel>  SpaceReserveSchedules { get; set; }
 
     public DbSet<ResourceReserveModel> ResourceReserves { get; set; }
+
+    public DbSet<ReportModel> Reports { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
