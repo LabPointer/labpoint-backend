@@ -106,7 +106,7 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
         var rows = await usersQuery
             .OrderBy(u => u.UserName)
             .ThenBy(u => u.Id)
-            .Skip(query.Page * query.Limit)
+            .Skip(query.Offset)
             .Take(query.Limit + 1)
             .Select(u => new AccountRow(u.Id, u.Registration, u.UserName, u.Email, u.LockoutEnd))
             .ToListAsync();
