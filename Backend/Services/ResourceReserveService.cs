@@ -120,8 +120,7 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
             .AnyAsync(spaceResource =>
                 spaceResource.FkSpaceId == spaceReserve.FkSpaceId &&
                 spaceResource.FkResourceId == data.ResourceId &&
-                spaceResource.Resource.Enabled &&
-                spaceResource.Resource.CanReserve);
+                spaceResource.Resource.Enabled);
 
         if (!resourceBelongsToSpace)
         {
@@ -194,8 +193,7 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
             .AnyAsync(spaceResource =>
                 spaceResource.FkSpaceId == targetSpaceReserve.FkSpaceId &&
                 spaceResource.FkResourceId == resourceReserve.FkResourceId &&
-                spaceResource.Resource.Enabled &&
-                spaceResource.Resource.CanReserve);
+                spaceResource.Resource.Enabled);
 
         if (!resourceBelongsToSpace)
         {

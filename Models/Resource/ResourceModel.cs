@@ -19,10 +19,6 @@ public class ResourceModel
     public string Name { get; set; }
 
     [Required]
-    [Column("can_reserve")]
-    public bool CanReserve { get; set; } = false;
-    
-    [Required]
     [Column("enabled")]
     public bool Enabled { get; set; } = false;
     

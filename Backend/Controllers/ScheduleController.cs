@@ -20,6 +20,7 @@ public class ScheduleController(IScheduleService scheduleService) : ControllerBa
     /// </remarks>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<ScheduleResponseDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSchedules([FromQuery] ScheduleRequestDTO query)
     {

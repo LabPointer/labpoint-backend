@@ -16,5 +16,7 @@ public record SpaceRequestDTO(
     [MinLength(1, ErrorMessage = "É necessário informar pelo menos um horário para o filtro")]
     HashSet<long>? Schedules,
     bool? Locked,
+    [Range(10, int.MaxValue, ErrorMessage = "O limite deve ser maior ou igual a 10")]
     int Limit = 10,
+    [Range(0, int.MaxValue, ErrorMessage = "O deslocamento deve ser maior ou igual a 0")]
     int Offset = 0);

@@ -268,6 +268,44 @@ namespace Backend.Migrations
                     b.ToTable("account_subject");
                 });
 
+            modelBuilder.Entity("Models.Report.ReportModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Data")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("data");
+
+                    b.Property<DateTimeOffset>("GeneratedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("generated_at");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer")
+                        .HasColumnName("month");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer")
+                        .HasColumnName("year");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Year", "Month")
+                        .IsUnique();
+
+                    b.ToTable("report");
+                });
+
             modelBuilder.Entity("Models.Reserve.ResourceReserveModel", b =>
                 {
                     b.Property<long>("Id")
@@ -368,10 +406,6 @@ namespace Backend.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<bool>("CanReserve")
-                        .HasColumnType("boolean")
-                        .HasColumnName("can_reserve");
 
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean")

@@ -96,6 +96,7 @@ builder.Services.AddScoped<ISpaceService, SpaceService>();
 builder.Services.AddScoped<ISpaceReserveService, SpaceReserveService>();
 builder.Services.AddScoped<IResourceReserveService, ResourceReserveService>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>

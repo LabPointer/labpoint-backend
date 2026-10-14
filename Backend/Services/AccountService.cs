@@ -106,7 +106,7 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
         var rows = await usersQuery
             .OrderBy(u => u.UserName)
             .ThenBy(u => u.Id)
-            .Skip(query.Page * query.Limit)
+            .Skip(query.Offset)
             .Take(query.Limit + 1)
             .Select(u => new AccountRow(u.Id, u.Registration, u.UserName, u.Email, u.LockoutEnd))
             .ToListAsync();
@@ -224,9 +224,9 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
             }
         }
 
-        if (data.subjectId.HasValue)
+        if (data.SubjectId.HasValue)
         {
-            var subjectExists = await dbCtx.Subjects.AnyAsync(subject => subject.Id == data.subjectId.Value);
+            var subjectExists = await dbCtx.Subjects.AnyAsync(subject => subject.Id == data.SubjectId.Value);
             if (!subjectExists)
             {
                 throw new ResourceNotFoundException("Disciplina não encontrada.");
@@ -244,12 +244,12 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
                 dbCtx.AccountSubjects.Add(new AccountSubjectModel
                 {
                     FkAccountId = data.Id,
-                    FkSubjectId = data.subjectId.Value
+                    FkSubjectId = data.SubjectId.Value
                 });
             }
             else
             {
-                accountSubject.FkSubjectId = data.subjectId.Value;
+                accountSubject.FkSubjectId = data.SubjectId.Value;
 
                 if (accountSubjects.Count > 1)
                 {
