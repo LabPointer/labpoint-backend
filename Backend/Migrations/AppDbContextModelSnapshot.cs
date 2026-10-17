@@ -18,13 +18,13 @@ namespace Backend.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true)
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "reserve_status_enum", new[] { "blocked", "booking", "canceled", "confirmed", "rejected" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "reserve_status_enum", new[] { "booking", "canceled", "confirmed", "locked", "rejected" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "shift_enum", new[] { "afternoon", "morning", "night" });
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 

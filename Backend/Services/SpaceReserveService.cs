@@ -171,6 +171,12 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
             throw new BadRequestException("A reserva conflita com uma reserva existente no mesmo período e horário.");
         }
 
+        var hasElevatedRole = user.IsInRole("Owner") || user.IsInRole("Admin");
+        if (data.Lock && !hasElevatedRole)
+        {
+            throw new BadRequestException("Você não tem permissão para bloquear a reserva de um espaço.");
+        }
+        var status = data.Lock && hasElevatedRole ? EReserveStatus.Locked : EReserveStatus.Booking;
         var spaceReserve = new SpaceReserveModel
         {
             FkSpaceId = spaceId,
@@ -178,6 +184,7 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
             DateFrom = data.StartAt,
             DateTo = data.EndAt,
             Purpose = data.purpose,
+            Status = status,
             SpaceReserveSchedules = data.ScheduleIds.Select(scheduleId => new SpaceReserveScheduleModel
             {
                 FkScheduleId = scheduleId
@@ -199,6 +206,11 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
         if (spaceReserve == null)
         {
             throw new ResourceNotFoundException("Reserva não encontrada.");
+        }
+
+        if ((spaceReserve.Status == EReserveStatus.Canceled || spaceReserve.Status == EReserveStatus.Rejected) && !(user.IsInRole("Owner") || user.IsInRole("Admin")))
+        {
+            throw new BadRequestException("Não é possível editar uma reserva cancelada ou rejeitada.");
         }
 
         bool dataChanged = data.StartAt != null || data.EndAt != null;

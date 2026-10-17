@@ -163,6 +163,11 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine("PostgreSQL connected!!");
         // Enum roles
         await IdentitySeeder.SeedRolesAsync(scope.ServiceProvider);
+
+        if (app.Environment.IsDevelopment())
+        {
+            await DevelopmentDataSeeder.SeedAsync(context);
+        }
     }
     else
     {

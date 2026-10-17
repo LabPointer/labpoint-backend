@@ -22,7 +22,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
                 // exceções inesperadas: loga e não vaza detalhes
                 logger.LogError(exception, "Erro não tratado");
                 status = StatusCodes.Status500InternalServerError;
-                body = new ErroResponseDTO("Erro interno do servidor", status);
+                body = new ErroResponseDTO($"Erro interno do servidor: {exception.Message}", status);
                 break;
         }
 

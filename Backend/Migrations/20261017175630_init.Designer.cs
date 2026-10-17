@@ -13,21 +13,21 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261012120000_AddReport")]
-    partial class AddReport
+    [Migration("20261017175630_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true)
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "reserve_status_enum", new[] { "blocked", "booking", "canceled", "confirmed", "rejected" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "reserve_status_enum", new[] { "booking", "canceled", "confirmed", "locked", "rejected" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "shift_enum", new[] { "afternoon", "morning", "night" });
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
@@ -409,10 +409,6 @@ namespace Backend.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<bool>("CanReserve")
-                        .HasColumnType("boolean")
-                        .HasColumnName("can_reserve");
 
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean")

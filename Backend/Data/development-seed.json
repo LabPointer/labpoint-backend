@@ -1,0 +1,96 @@
+{
+  "spaces": [
+    {
+      "name": "Laboratório 02",
+      "description": "Laboratório equipado para aulas práticas de programação.",
+      "capacity": 30,
+      "locked": false
+    },
+    {
+      "name": "Laboratório 08",
+      "description": "Laboratório equipado para aulas práticas de programação.",
+      "capacity": 40,
+      "locked": false
+    },
+    {
+      "name": "Quimica analitica",
+      "description": "Laboratório equipado para aulas práticas de quimica.",
+      "capacity": 30,
+      "locked": false
+    },
+    {
+      "name": "Laboratório 03",
+      "description": "Laboratório equipado para aulas práticas de automação.",
+      "capacity": 20,
+      "locked": false
+    }
+  ],
+  "resources": [
+    {
+      "name": "Telao",
+      "enabled": true
+    },
+    {
+      "name": "Projetor",
+      "enabled": true
+    },
+    {
+      "name": "Tubos de ensaio",
+      "enabled": true
+    },
+    {
+      "name": "Notebooks",
+      "enabled": true
+    }
+  ],
+  "schedules": [
+    {
+      "startAt": "07:00:00",
+      "endAt": "08:00:00",
+      "shift": "Morning",
+      "enabled": true
+    },
+    {
+      "startAt": "08:00:00",
+      "endAt": "09:00:00",
+      "shift": "Morning",
+      "enabled": true
+    },
+    {
+      "startAt": "09:00:00",
+      "endAt": "10:00:00",
+      "shift": "Morning",
+      "enabled": true
+    },
+    {
+      "startAt": "10:00:00",
+      "endAt": "11:00:00",
+      "shift": "Morning",
+      "enabled": true
+    },
+    {
+      "startAt": "11:00:00",
+      "endAt": "12:00:00",
+      "shift": "Morning",
+      "enabled": true
+    }
+  ],
+  "subjects": [
+    {
+      "name": "ADS",
+      "enabled": true
+    },
+    {
+      "name": "Quimica industrial",
+      "enabled": true
+    },
+    {
+      "name": "Automação",
+      "enabled": true
+    },
+    {
+      "name": "Mecanica",
+      "enabled": true
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Backend.Handler;
 using Backend.Services;
 using DTOs.Auth;
 using DTOs.Error;
@@ -33,11 +34,11 @@ public class AuthController(
     /// </remarks>
     [HttpPost("sign-up")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IEnumerable<IdentityError>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PostSignUp([FromBody] SignUpRequestDTO body)
     {
         if (await userManager.Users.AnyAsync(u => u.Registration == body.Registration))
-            return BadRequest(new[] { Error("DuplicateRegistration", "Matrícula já cadastrada.") });
+            throw new BadRequestException("Matrícula já cadastrada.");
 
         var user = new AccountModel
         {
@@ -48,7 +49,7 @@ public class AuthController(
 
         var result = await userManager.CreateAsync(user, body.Password);
         if (!result.Succeeded)
-            return BadRequest(result.Errors);
+            throw new BadRequestException($"Erro ao criar usuário. {string.Join(", ", result.Errors.Select(e => e.Description))}");
 
         await userManager.AddToRoleAsync(user, "User");
 
@@ -63,16 +64,16 @@ public class AuthController(
     /// <remarks>Rota aberta pelo link enviado por e-mail após o cadastro.</remarks>
     [HttpGet("confirm-email", Name = "ConfirmEmail")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IEnumerable<IdentityError>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetConfirmEmail([FromQuery] ConfirmEmailRequestDTO query)
     {
         var user = await userManager.FindByIdAsync(query.UserId);
         if (user is null)
-            return BadRequest(new[] { InvalidToken() });
+            throw new BadRequestException("Token inválido ou expirado.");
 
         var result = await userManager.ConfirmEmailAsync(user, query.Token);
         if (!result.Succeeded)
-            return BadRequest(result.Errors);
+            throw new BadRequestException($"Token inválido ou expirado. {string.Join(", ", result.Errors.Select(e => e.Description))}");
 
         return Ok();
     }
@@ -101,27 +102,25 @@ public class AuthController(
     /// <remarks>Autentica por matrícula e senha e grava o cookie de sessão.</remarks>
     [HttpPost("sign-in")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> PostSignIn([FromBody] SignInRequestDTO body)
     {
         var user = await userManager.Users.FirstOrDefaultAsync(u => u.Registration == body.Registration);
         if (user is null)
-            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Matrícula ou senha incorretos.");
+            throw new UnauthorizedException("Matrícula ou senha incorretos.");
 
         var result = await signInManager.PasswordSignInAsync(
             user, body.Password, body.RememberMe, lockoutOnFailure: true);
 
         if (result.IsLockedOut)
-            return Problem(statusCode: StatusCodes.Status403Forbidden,
-                title: "Conta temporariamente bloqueada por excesso de tentativas. Tente novamente mais tarde.");
+            throw new ForbiddenException("Conta temporariamente bloqueada por excesso de tentativas. Tente novamente mais tarde.");
 
         if (result.IsNotAllowed)
-            return Problem(statusCode: StatusCodes.Status403Forbidden,
-                title: "Confirme seu e-mail antes de entrar.");
+            throw new ForbiddenException("Confirme seu e-mail antes de entrar.");
 
         if (!result.Succeeded)
-            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Matrícula ou senha incorretos.");
+            throw new UnauthorizedException("Matrícula ou senha incorretos.");
 
         var roles = await userManager.GetRolesAsync(user);
         
@@ -179,16 +178,16 @@ public class AuthController(
     /// <remarks>Troca a senha usando o token recebido por e-mail.</remarks>
     [HttpPost("reset-password")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(IEnumerable<IdentityError>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PostResetPassword([FromBody] ResetPasswordRequestDTO body)
     {
         var user = await userManager.FindByEmailAsync(body.Email);
         if (user is null)
-            return BadRequest(new[] { InvalidToken() });
+            throw new BadRequestException("Token inválido ou expirado.");
 
         var result = await userManager.ResetPasswordAsync(user, body.Token, body.NewPassword);
         if (!result.Succeeded)
-            return BadRequest(result.Errors);
+            throw new BadRequestException($"Token inválido ou expirado. {string.Join(", ", result.Errors.Select(e => e.Description))}");
 
         return NoContent();
     }

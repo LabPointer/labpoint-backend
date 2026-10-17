@@ -14,7 +14,7 @@ namespace Backend.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterDatabase()
-                .Annotation("Npgsql:Enum:reserve_status_enum", "blocked,booking,canceled,confirmed,rejected")
+                .Annotation("Npgsql:Enum:reserve_status_enum", "booking,canceled,confirmed,locked,rejected")
                 .Annotation("Npgsql:Enum:shift_enum", "afternoon,morning,night");
 
             migrationBuilder.CreateTable(
@@ -58,13 +58,29 @@ namespace Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "report",
+                columns: table => new
+                {
+                    id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    year = table.Column<int>(type: "integer", nullable: false),
+                    month = table.Column<int>(type: "integer", nullable: false),
+                    version = table.Column<int>(type: "integer", nullable: false),
+                    generated_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    data = table.Column<string>(type: "jsonb", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_report", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "resource",
                 columns: table => new
                 {
                     id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    can_reserve = table.Column<bool>(type: "boolean", nullable: false),
                     enabled = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -456,6 +472,12 @@ namespace Backend.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_report_year_month",
+                table: "report",
+                columns: new[] { "year", "month" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_resource_name",
                 table: "resource",
                 column: "name",
@@ -559,6 +581,9 @@ namespace Backend.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "report");
 
             migrationBuilder.DropTable(
                 name: "resource_reserve");
