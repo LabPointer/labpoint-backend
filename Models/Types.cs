@@ -20,5 +20,5 @@ public enum EReserveStatus
     Confirmed,
     Canceled,
     Rejected,
-    Blocked
+    Locked
 }

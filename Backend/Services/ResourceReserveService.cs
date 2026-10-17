@@ -250,7 +250,7 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
             throw new BadRequestException("Não é possível cancelar uma reserva de recurso cuja reserva de espaço já terminou.");
         }
 
-        if (resourceReserve.SpaceReserve.Status is EReserveStatus.Canceled or EReserveStatus.Rejected or EReserveStatus.Blocked)
+        if (resourceReserve.SpaceReserve.Status is EReserveStatus.Canceled or EReserveStatus.Rejected or EReserveStatus.Locked)
         {
             throw new BadRequestException("A reserva de espaço não permite o cancelamento desta reserva de recurso no status atual.");
         }
