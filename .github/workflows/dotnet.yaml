@@ -21,4 +21,4 @@ jobs:
       run: dotnet restore
 
     - name: Compilar o projeto
-      run: dotnet build --configuration Release --no-restore --project Backend
+      run: dotnet build --configuration Release --no-restore
