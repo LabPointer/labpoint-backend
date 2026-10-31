@@ -12,40 +12,40 @@ namespace Backend.Services;
 public interface IReportService
 {
     /// <summary>
-    /// Relatório de ocupação e ociosidade de um mês já encerrado. Usa o relatório gravado quando existir;
-    /// caso contrário calcula, grava e devolve.
+    /// Relatório de ocupação e ociosidade de um mês ou de uma sequência de meses já encerrados.
+    /// Usa o relatório gravado quando existir; caso contrário calcula, grava e devolve.
     /// </summary>
-    public Task<ReportResponseDTO> GetMonthlyReport(ReportRequestDTO query);
+    public Task<ReportResponseDTO> GetReport(ReportRequestDTO query);
 }
 
 public class ReportService(AppDbContext dbCtx) : IReportService
 {
     /// <summary>Suba este número quando mudar o cálculo ou o formato do DTO: os relatórios antigos são refeitos.</summary>
-    private const int CacheVersion = 1;
+    private const int CacheVersion = 2;
+
+    /// <summary>Limite de meses por consulta, para uma única requisição não varrer anos de reservas.</summary>
+    private const int MaxRangeMonths = 60;
 
     /// <summary>O Brasil não tem mais horário de verão, então um deslocamento fixo evita depender do tzdata do servidor.</summary>
     private static readonly TimeSpan BrazilOffset = TimeSpan.FromHours(-3);
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public async Task<ReportResponseDTO> GetMonthlyReport(ReportRequestDTO query)
+    public async Task<ReportResponseDTO> GetReport(ReportRequestDTO query)
     {
-        if (query.Year < 2000 || query.Year > 9999 || query.Month < 1 || query.Month > 12)
-        {
-            throw new BadRequestException("Mês ou ano inválido.");
-        }
+        var (rangeStart, lastMonth) = ResolveRange(query);
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow + BrazilOffset);
-        var monthStart = new DateOnly(query.Year, query.Month, 1);
 
         // Sem o mês fechado os dados ainda mudam (confirmações, cancelamentos, novas reservas).
-        if (monthStart >= new DateOnly(today.Year, today.Month, 1))
+        if (lastMonth >= new DateOnly(today.Year, today.Month, 1))
         {
             throw new BadRequestException("O relatório só está disponível para meses já encerrados.");
         }
 
-        var stored = await dbCtx.Reports
-            .FirstOrDefaultAsync(r => r.Year == query.Year && r.Month == query.Month);
+        var stored = await dbCtx.Reports.FirstOrDefaultAsync(r =>
+            r.FromYear == rangeStart.Year && r.FromMonth == rangeStart.Month
+            && r.ToYear == lastMonth.Year && r.ToMonth == lastMonth.Month);
 
         if (stored != null && !query.Refresh && stored.Version == CacheVersion)
         {
@@ -56,15 +56,17 @@ public class ReportService(AppDbContext dbCtx) : IReportService
             }
         }
 
-        var report = await BuildReport(monthStart, today);
+        var report = await BuildReport(rangeStart, lastMonth, today);
         var json = JsonSerializer.Serialize(report, JsonOptions);
 
         if (stored == null)
         {
             dbCtx.Reports.Add(new ReportModel
             {
-                Year = query.Year,
-                Month = query.Month,
+                FromYear = rangeStart.Year,
+                FromMonth = rangeStart.Month,
+                ToYear = lastMonth.Year,
+                ToMonth = lastMonth.Month,
                 Version = CacheVersion,
                 GeneratedAt = report.GeneratedAt,
                 Data = json
@@ -84,11 +86,52 @@ public class ReportService(AppDbContext dbCtx) : IReportService
         catch (DbUpdateException ex) when (stored == null
             && ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         {
-            // Duas requisições calcularam o mesmo mês ao mesmo tempo e a outra gravou primeiro.
+            // Duas requisições calcularam o mesmo período ao mesmo tempo e a outra gravou primeiro.
             // O relatório calculado aqui continua válido; só não precisa ser gravado de novo.
         }
 
         return report;
+    }
+
+    /// <summary>
+    /// Valida o período pedido e devolve o primeiro dia do mês inicial e o primeiro dia do mês final.
+    /// Sem fim informado, o período é só o mês inicial.
+    /// </summary>
+    private static (DateOnly FirstMonth, DateOnly LastMonth) ResolveRange(ReportRequestDTO query)
+    {
+        if (query.FromYear < 2000 || query.FromYear > 9999 || query.FromMonth < 1 || query.FromMonth > 12)
+        {
+            throw new BadRequestException("Mês ou ano inicial inválido.");
+        }
+
+        if (query.ToYear.HasValue != query.ToMonth.HasValue)
+        {
+            throw new BadRequestException("Informe o ano e o mês finais juntos, ou nenhum dos dois.");
+        }
+
+        var toYear = query.ToYear ?? query.FromYear;
+        var toMonth = query.ToMonth ?? query.FromMonth;
+
+        if (toYear < 2000 || toYear > 9999 || toMonth < 1 || toMonth > 12)
+        {
+            throw new BadRequestException("Mês ou ano final inválido.");
+        }
+
+        var first = new DateOnly(query.FromYear, query.FromMonth, 1);
+        var last = new DateOnly(toYear, toMonth, 1);
+
+        if (last < first)
+        {
+            throw new BadRequestException("O mês final não pode ser anterior ao mês inicial.");
+        }
+
+        var months = (last.Year - first.Year) * 12 + last.Month - first.Month + 1;
+        if (months > MaxRangeMonths)
+        {
+            throw new BadRequestException($"O período do relatório pode ter no máximo {MaxRangeMonths} meses.");
+        }
+
+        return (first, last);
     }
 
     private static ReportResponseDTO? TryDeserialize(string json)
@@ -104,14 +147,15 @@ public class ReportService(AppDbContext dbCtx) : IReportService
         }
     }
 
-    private async Task<ReportResponseDTO> BuildReport(DateOnly monthStart, DateOnly today)
+    private async Task<ReportResponseDTO> BuildReport(DateOnly rangeStart, DateOnly lastMonth, DateOnly today)
     {
-        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
-        var daysInMonth = monthEnd.Day;
+        // Do primeiro dia do mês inicial ao último dia do mês final.
+        var rangeEnd = lastMonth.AddMonths(1).AddDays(-1);
+        var daysInRange = rangeEnd.DayNumber - rangeStart.DayNumber + 1;
 
-        // Reservas que tocam o mês. Canceladas, recusadas e bloqueadas nunca entram.
+        // Reservas que tocam o período. Canceladas, recusadas e bloqueadas nunca entram.
         var rows = await dbCtx.SpaceReserves.AsNoTracking()
-            .Where(sr => sr.DateFrom <= monthEnd && sr.DateTo >= monthStart)
+            .Where(sr => sr.DateFrom <= rangeEnd && sr.DateTo >= rangeStart)
             .Where(sr => sr.Status == EReserveStatus.Booking || sr.Status == EReserveStatus.Confirmed)
             .Select(sr => new ReportReserveRow(
                 sr.Id,
@@ -144,21 +188,21 @@ public class ReportService(AppDbContext dbCtx) : IReportService
                 continue;
             }
 
-            // Só os dias que caem dentro do mês contam para a ocupação daquele mês.
-            var from = row.DateFrom > monthStart ? row.DateFrom : monthStart;
-            var to = row.DateTo < monthEnd ? row.DateTo : monthEnd;
+            // Só os dias que caem dentro do período contam para a ocupação dele.
+            var from = row.DateFrom > rangeStart ? row.DateFrom : rangeStart;
+            var to = row.DateTo < rangeEnd ? row.DateTo : rangeEnd;
             var days = Math.Max(0, to.DayNumber - from.DayNumber + 1);
 
             counted.Add(new ReportCountedReserve(row, status.Value, days * row.ScheduleIds.Count));
         }
 
-        // Capacidade de cada espaço no mês = horários por dia x dias do mês. Horários desativados depois
+        // Capacidade de cada espaço no período = horários por dia x dias do período. Horários desativados depois
         // que a reserva foi feita continuam valendo para quem os usou, então entram na conta.
         var slotsPerDay = enabledScheduleIds
             .Concat(counted.SelectMany(c => c.Row.ScheduleIds))
             .Distinct()
             .Count();
-        double capacity = (double)slotsPerDay * daysInMonth;
+        double capacity = (double)slotsPerDay * daysInRange;
 
         // Espaço bloqueado só aparece se teve reserva contabilizada; os demais entram mesmo sem reservas
         // (0% de ocupação), senão o "menos disputado" nunca seria um espaço parado.
@@ -184,30 +228,27 @@ public class ReportService(AppDbContext dbCtx) : IReportService
             })
             .ToList();
 
-        // Desempates: sempre por critérios determinísticos, para o mesmo mês dar sempre o mesmo resultado.
-        var highestDemand = spaceStats
-            .Where(s => s.OccupancyRate > 0)
-            .OrderByDescending(s => s.OccupancyRate)
-            .ThenByDescending(s => s.TotalReserves)
-            .ThenBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault();
+        // Empates: cada ranking devolve todos que empatam no critério (comparado já arredondado, como aparece na tela),
+        // sempre ordenados pelo nome para o mesmo período dar sempre o mesmo resultado.
+        var highestDemand = TopTied(
+            spaceStats.Where(s => s.OccupancyRate > 0),
+            s => s.OccupancyRate,
+            s => s.Name);
 
-        // O desempate final inverso garante que "menos" e "mais" disputado nunca sejam o mesmo espaço
-        // quando há pelo menos dois espaços empatados em tudo.
+        // Quando todos os espaços empatam na mesma taxa não existe um "menos disputado" diferente do "mais disputado".
         var lowestDemand = spaceStats.Count < 2
-            ? null
-            : spaceStats
-                .OrderBy(s => s.OccupancyRate)
-                .ThenBy(s => s.TotalReserves)
-                .ThenByDescending(s => s.Name, StringComparer.OrdinalIgnoreCase)
-                .FirstOrDefault();
+            ? new List<ReportSpaceStatDTO>()
+            : TopTied(spaceStats, s => s.OccupancyRate, s => s.Name, descending: false);
+        if (highestDemand.Count > 0 && lowestDemand.Count > 0
+            && lowestDemand[0].OccupancyRate >= highestDemand[0].OccupancyRate)
+        {
+            lowestDemand = [];
+        }
 
-        var mostIdleSpace = spaceStats
-            .Where(s => s.AbsentReserves > 0)
-            .OrderByDescending(s => s.AbsentReserves)
-            .ThenByDescending(s => s.IdleRate)
-            .ThenBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault();
+        var mostIdleSpaces = TopTied(
+            spaceStats.Where(s => s.AbsentReserves > 0),
+            s => (s.AbsentReserves, s.IdleRate),
+            s => s.Name);
 
         var userStats = counted
             .GroupBy(c => c.Row.AccountId)
@@ -228,18 +269,12 @@ public class ReportService(AppDbContext dbCtx) : IReportService
             })
             .ToList();
 
-        var mostReservesUser = userStats
-            .OrderByDescending(u => u.TotalReserves)
-            .ThenBy(u => u.IdleRate)
-            .ThenBy(u => u.Name, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault();
+        var mostReservesUsers = TopTied(userStats, u => u.TotalReserves, u => u.Name);
 
-        var mostIdleUser = userStats
-            .Where(u => u.AbsentReserves > 0)
-            .OrderByDescending(u => u.AbsentReserves)
-            .ThenByDescending(u => u.IdleRate)
-            .ThenBy(u => u.Name, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault();
+        var mostIdleUsers = TopTied(
+            userStats.Where(u => u.AbsentReserves > 0),
+            u => (u.AbsentReserves, u.IdleRate),
+            u => u.Name);
 
         var totalAbsent = counted.Count(c => c.Status == EReportReserveStatus.Absent);
         var averageOccupancy = spaceStats.Count == 0
@@ -260,8 +295,10 @@ public class ReportService(AppDbContext dbCtx) : IReportService
             .ToList();
 
         return new ReportResponseDTO(
-            monthStart.Year,
-            monthStart.Month,
+            rangeStart.Year,
+            rangeStart.Month,
+            lastMonth.Year,
+            lastMonth.Month,
             DateTimeOffset.UtcNow,
             new ReportSummaryDTO(
                 averageOccupancy,
@@ -270,8 +307,8 @@ public class ReportService(AppDbContext dbCtx) : IReportService
                 counted.Count - totalAbsent,
                 totalAbsent,
                 highestDemand),
-            new ReportRankingDTO(highestDemand, lowestDemand, mostIdleSpace),
-            new ReportUsersDTO(mostReservesUser, mostIdleUser),
+            new ReportRankingDTO(highestDemand, lowestDemand, mostIdleSpaces),
+            new ReportUsersDTO(mostReservesUsers, mostIdleUsers),
             reserves);
     }
 
@@ -289,6 +326,30 @@ public class ReportService(AppDbContext dbCtx) : IReportService
         }
 
         return row.DateFrom < today ? EReportReserveStatus.Absent : null;
+    }
+
+    /// <summary>
+    /// Todos os itens que empatam no melhor valor de <paramref name="key"/> (o maior, ou o menor com
+    /// <paramref name="descending"/> falso), em ordem alfabética. Lista vazia quando não há itens.
+    /// </summary>
+    private static List<T> TopTied<T, TKey>(
+        IEnumerable<T> items,
+        Func<T, TKey> key,
+        Func<T, string> name,
+        bool descending = true) where TKey : IComparable<TKey>
+    {
+        var list = items.ToList();
+        if (list.Count == 0)
+        {
+            return [];
+        }
+
+        var best = descending ? list.Max(key)! : list.Min(key)!;
+
+        return list
+            .Where(item => key(item).CompareTo(best) == 0)
+            .OrderBy(name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     /// <summary>Porcentagem de 0 a 100 com uma casa decimal (0 quando o total é zero).</summary>

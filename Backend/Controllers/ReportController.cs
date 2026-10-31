@@ -12,20 +12,23 @@ namespace Backend.Controllers;
 public class ReportController(IReportService reportService) : ControllerBase
 {
     /// <summary>
-    /// Relatório mensal
+    /// Relatório de um período de meses
     /// </summary>
     /// <remarks>
-    /// Retorna o relatório de ocupação e ociosidade de um mês já encerrado (do mês anterior para trás).
+    /// Retorna o relatório de ocupação e ociosidade de um mês ou de uma sequência de meses já encerrados
+    /// (do mês anterior ao atual para trás). Informe <c>FromYear</c>/<c>FromMonth</c> e, para mais de um mês,
+    /// também <c>ToYear</c>/<c>ToMonth</c>; sem o fim, o período é só o mês inicial.
     /// Reservas canceladas, recusadas e bloqueadas não entram. Reservas pendentes cuja data de início já passou
     /// contam como ausentes; pendentes que ainda não chegaram ao dia da reserva ficam de fora.
-    /// O resultado é gravado na primeira consulta de cada mês; use <c>Refresh=true</c> para recalcular.
+    /// Quando há empate nos rankings (espaços ou usuários), todos os empatados são retornados.
+    /// O resultado é gravado na primeira consulta de cada período; use <c>Refresh=true</c> para recalcular.
     /// </remarks>
     [HttpGet]
     [ProducesResponseType(typeof(ReportResponseDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetReport([FromQuery] ReportRequestDTO query)
     {
-        var report = await reportService.GetMonthlyReport(query);
+        var report = await reportService.GetReport(query);
 
         return Ok(report);
     }

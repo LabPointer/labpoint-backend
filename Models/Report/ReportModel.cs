@@ -5,11 +5,12 @@ using Microsoft.EntityFrameworkCore;
 namespace Models.Report;
 
 /// <summary>
-/// Relatório mensal já calculado. Só é gravado quando alguém solicita aquele mês pela primeira vez
-/// (ou força a atualização), assim as próximas consultas não precisam varrer reservas, espaços e contas de novo.
+/// Relatório já calculado para um período de meses (de um mês único até uma sequência deles).
+/// Só é gravado quando alguém solicita aquele período pela primeira vez (ou força a atualização),
+/// assim as próximas consultas não precisam varrer reservas, espaços e contas de novo.
 /// </summary>
 [Table("report")]
-[Index(nameof(Year), nameof(Month), IsUnique = true)]
+[Index(nameof(FromYear), nameof(FromMonth), nameof(ToYear), nameof(ToMonth), IsUnique = true)]
 public class ReportModel
 {
     [Key]
@@ -17,14 +18,25 @@ public class ReportModel
     [Column("id")]
     public long Id { get; set; }
 
+    /// <summary>Ano do primeiro mês do período.</summary>
     [Required]
-    [Column("year")]
-    public int Year { get; set; }
+    [Column("from_year")]
+    public int FromYear { get; set; }
 
-    /// <summary>Mês de 1 a 12.</summary>
+    /// <summary>Primeiro mês do período, de 1 a 12.</summary>
     [Required]
-    [Column("month")]
-    public int Month { get; set; }
+    [Column("from_month")]
+    public int FromMonth { get; set; }
+
+    /// <summary>Ano do último mês do período (igual ao inicial quando o período é de um mês só).</summary>
+    [Required]
+    [Column("to_year")]
+    public int ToYear { get; set; }
+
+    /// <summary>Último mês do período, de 1 a 12 (igual ao inicial quando o período é de um mês só).</summary>
+    [Required]
+    [Column("to_month")]
+    public int ToMonth { get; set; }
 
     /// <summary>
     /// Versão do formato de <see cref="Data"/>. Quando o cálculo ou o DTO mudam, o serviço sobe a versão
