@@ -8,9 +8,9 @@ public enum EReportReserveStatus
 }
 
 /// <summary>
-/// Indicadores de um espaço no mês. Taxas em porcentagem (0 a 100), com uma casa decimal.
+/// Indicadores de um espaço no período. Taxas em porcentagem (0 a 100), com uma casa decimal.
 /// </summary>
-/// <param name="OccupancyRate">Períodos reservados (confirmados + ausentes) sobre a capacidade do espaço no mês.</param>
+/// <param name="OccupancyRate">Períodos reservados (confirmados + ausentes) sobre a capacidade do espaço no período.</param>
 /// <param name="IdleRate">Reservas ausentes sobre o total de reservas contabilizadas do espaço.</param>
 public record ReportSpaceStatDTO(
     long SpaceId,
@@ -33,28 +33,44 @@ public record ReportUserStatDTO(
 
 /// <param name="AverageOccupancyRate">Média da taxa de ocupação de todos os espaços considerados.</param>
 /// <param name="IdleRate">Ausências sobre o total de reservas contabilizadas.</param>
-/// <param name="MostDisputedSpace">Espaço com maior taxa de ocupação (nulo se nenhum teve reservas).</param>
+/// <param name="MostDisputedSpaces">
+/// Espaços com a maior taxa de ocupação. Tem mais de um item quando há empate na taxa; vazio se nenhum teve reservas.
+/// </param>
 public record ReportSummaryDTO(
     double AverageOccupancyRate,
     double IdleRate,
     int TotalReserves,
     int ConfirmedReserves,
     int AbsentReserves,
-    ReportSpaceStatDTO? MostDisputedSpace);
+    List<ReportSpaceStatDTO> MostDisputedSpaces);
 
-/// <param name="HighestDemand">Espaço com maior taxa de ocupação.</param>
-/// <param name="LowestDemand">Espaço com menor taxa de ocupação (nulo quando há menos de dois espaços).</param>
-/// <param name="MostIdle">Espaço com mais reservas ausentes (nulo se não houve ausências).</param>
+/// <remarks>
+/// Cada ranking é uma lista porque pode haver empate: todos os espaços (ou usuários) com o mesmo valor
+/// no critério do ranking aparecem, ordenados pelo nome. Lista vazia = ninguém se enquadra.
+/// </remarks>
+/// <param name="HighestDemand">Espaços com a maior taxa de ocupação (taxa maior que zero).</param>
+/// <param name="LowestDemand">
+/// Espaços com a menor taxa de ocupação. Vazio quando há menos de dois espaços ou quando todos empatam
+/// na mesma taxa (não existe um "menos disputado" diferente do "mais disputado").
+/// </param>
+/// <param name="MostIdle">
+/// Espaços com mais reservas ausentes; o empate só vale quando a quantidade de ausências e a taxa de ociosidade
+/// são iguais. Vazio se não houve ausências.
+/// </param>
 public record ReportRankingDTO(
-    ReportSpaceStatDTO? HighestDemand,
-    ReportSpaceStatDTO? LowestDemand,
-    ReportSpaceStatDTO? MostIdle);
+    List<ReportSpaceStatDTO> HighestDemand,
+    List<ReportSpaceStatDTO> LowestDemand,
+    List<ReportSpaceStatDTO> MostIdle);
 
-/// <param name="MostReserves">Usuário com mais reservas no mês.</param>
-/// <param name="MostIdle">Usuário com mais reservas ausentes (nulo se não houve ausências).</param>
+/// <remarks>Mesma regra de empate de <see cref="ReportRankingDTO"/>.</remarks>
+/// <param name="MostReserves">Usuários com mais reservas no período (todos os que empatam na quantidade).</param>
+/// <param name="MostIdle">
+/// Usuários com mais reservas ausentes; o empate só vale quando a quantidade de ausências e a taxa de ociosidade
+/// são iguais. Vazio se não houve ausências.
+/// </param>
 public record ReportUsersDTO(
-    ReportUserStatDTO? MostReserves,
-    ReportUserStatDTO? MostIdle);
+    List<ReportUserStatDTO> MostReserves,
+    List<ReportUserStatDTO> MostIdle);
 
 public record ReportReserveDTO(
     long Id,
@@ -64,9 +80,12 @@ public record ReportReserveDTO(
     DateOnly DateTo,
     EReportReserveStatus Status);
 
+/// <summary>Período coberto: do mês inicial ao final, ambos inclusos (iguais quando é um mês só).</summary>
 public record ReportResponseDTO(
-    int Year,
-    int Month,
+    int FromYear,
+    int FromMonth,
+    int ToYear,
+    int ToMonth,
     DateTimeOffset GeneratedAt,
     ReportSummaryDTO Summary,
     ReportRankingDTO Ranking,

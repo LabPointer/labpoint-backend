@@ -282,25 +282,33 @@ namespace Backend.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("data");
 
+                    b.Property<int>("FromMonth")
+                        .HasColumnType("integer")
+                        .HasColumnName("from_month");
+
+                    b.Property<int>("FromYear")
+                        .HasColumnType("integer")
+                        .HasColumnName("from_year");
+
                     b.Property<DateTimeOffset>("GeneratedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("generated_at");
 
-                    b.Property<int>("Month")
+                    b.Property<int>("ToMonth")
                         .HasColumnType("integer")
-                        .HasColumnName("month");
+                        .HasColumnName("to_month");
+
+                    b.Property<int>("ToYear")
+                        .HasColumnType("integer")
+                        .HasColumnName("to_year");
 
                     b.Property<int>("Version")
                         .HasColumnType("integer")
                         .HasColumnName("version");
 
-                    b.Property<int>("Year")
-                        .HasColumnType("integer")
-                        .HasColumnName("year");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("Year", "Month")
+                    b.HasIndex("FromYear", "FromMonth", "ToYear", "ToMonth")
                         .IsUnique();
 
                     b.ToTable("report");
