@@ -127,13 +127,8 @@ public class AuthController(
         var cookieData = new { username = user.UserName ?? "Não definido", registration = user.Registration, roles };
         string jsonString = JsonSerializer.Serialize(cookieData);
         string cookieValue = WebUtility.UrlEncode(jsonString);
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = false,
-            Secure = false,
-            SameSite = SameSiteMode.Lax,
-            Expires = DateTimeOffset.UtcNow.AddDays(1)
-        };
+        var cookieOptions = BuildInfoCookieOptions();
+        cookieOptions.Expires = DateTimeOffset.UtcNow.AddDays(1);
         HttpContext.Response.Cookies.Append("auth-info", cookieValue, cookieOptions);
         
         return Ok();
@@ -147,11 +142,25 @@ public class AuthController(
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> PostSignOut()
     {
+        // SignOutAsync já apaga o auth-session com os mesmos atributos (SameSite/Secure) com que ele foi criado.
         await signInManager.SignOutAsync();
-        HttpContext.Response.Cookies.Delete("auth-session");
-        HttpContext.Response.Cookies.Delete("auth-info");
+        // Para apagar, o Set-Cookie precisa repetir os atributos do cookie original; um SameSite diferente
+        // seria ignorado pelo navegador em requisições cross-site.
+        HttpContext.Response.Cookies.Delete("auth-info", BuildInfoCookieOptions());
         return Ok();
     }
+
+    /// <summary>
+    /// Opções do cookie auth-info (dados de exibição lidos pelo front, por isso HttpOnly = false).
+    /// Sob HTTPS (Render, via X-Forwarded-Proto) sai SameSite=None; Secure para valer entre o front e a API em
+    /// sites diferentes; em http://localhost continua Lax.
+    /// </summary>
+    private CookieOptions BuildInfoCookieOptions() => new()
+    {
+        HttpOnly = false,
+        Secure = Request.IsHttps,
+        SameSite = Request.IsHttps ? SameSiteMode.None : SameSiteMode.Lax
+    };
 
     /// <summary>
     /// Solicitar redefinição de senha

@@ -4,6 +4,7 @@ using Backend.Handler;
 using Backend.Services;
 using Data;
 using Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Models;
@@ -59,12 +60,27 @@ builder.Services
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
+// O Render termina o HTTPS no proxy e repassa a requisição ao app por HTTP, avisando o esquema original em
+// X-Forwarded-Proto. Sem isso Request.IsHttps seria sempre false e os cookies não sairiam como Secure.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // O IP do proxy do Render não é fixo, então não dá para listá-lo em KnownProxies.
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// Front (Vercel) e API (Render) ficam em sites diferentes: para o navegador aceitar e reenviar o cookie nas
+// requisições cross-site (fetch com credentials: "include") ele precisa ser SameSite=None e Secure.
+// Em Development (http://localhost) continua Lax/SameAsRequest, porque SameSite=None exige HTTPS.
+var isDevelopment = builder.Environment.IsDevelopment();
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.Name = "auth-session";
     options.Cookie.HttpOnly = true;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None;
+    options.Cookie.SecurePolicy = isDevelopment ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
     options.ExpireTimeSpan = TimeSpan.FromDays(1);
     options.SlidingExpiration = true;
 
@@ -123,6 +139,9 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
+
+// Precisa vir antes de todo o resto para o esquema/IP originais valerem nos middlewares seguintes.
+app.UseForwardedHeaders();
 
 app.UseExceptionHandler();
 
