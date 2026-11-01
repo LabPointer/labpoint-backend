@@ -1,9 +1,11 @@
 {
   "ConnectionStrings": {
+    "DbConnection": "Host=<endpoint>.neon.tech;Port=5432;Database=<database>;Username=<usuario>;Password=<senha>;SSL Mode=Require;Timeout=30",
     "DbConnection": "Host=localhost;Port=5432;Database=pei;Username=pei;Password=pei"
   },
   "Frontend": {
-    "Url": "http://localhost/3000"
+    "Url": "https://labpoint.vercel.app",
+    "Url": "http://localhost:3000"
   },
   "Smtp": {
     "Host": "smtp.gmail.com",
