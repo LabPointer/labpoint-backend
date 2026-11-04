@@ -145,7 +145,7 @@ app.UseForwardedHeaders();
 
 app.UseExceptionHandler();
 
-/** Usar apenas em caso da chave for comprometida
+/* Usar apenas em caso da chave for comprometida
 var keyService = app.Services.GetRequiredService<IKeyManager>();
 keyService.CreateNewKey(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(90));
 keyService.RevokeAllKeys(DateTimeOffset.UtcNow, reason: "Chave comprometida");

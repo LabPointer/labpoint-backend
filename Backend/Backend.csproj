@@ -26,7 +26,7 @@
         </PackageReference>
         <PackageReference Include="Npgsql" Version="10.0.3" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-        <PackageReference Include="Scalar.AspNetCore" Version="2.18.5" />
+        <PackageReference Include="Scalar.AspNetCore" Version="2.18.7" />
         <PackageReference Include="Swashbuckle.AspNetCore.ReDoc" Version="10.3.1" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.3.1" />
     </ItemGroup>
