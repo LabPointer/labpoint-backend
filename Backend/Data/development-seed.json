@@ -1,27 +1,75 @@
 {
   "spaces": [
     {
-      "name": "Laboratório 02",
-      "description": "Laboratório equipado para aulas práticas de programação.",
+      "name": "Laboratorio 01",
+      "description": "Laboratório equipado para aulas práticas de programação. 20 notebooks.",
+      "capacity": 24,
+      "locked": false
+    },
+    {
+      "name": "Laboratorio 02",
+      "description": "Laboratório equipado para aulas práticas de programação. 19 notebooks.",
+      "capacity": 37,
+      "locked": false
+    },
+    {
+      "name": "Laboratorio 03",
+      "description": "Laboratório equipado para aulas práticas de automação. 30 notebooks.",
+      "capacity": 45,
+      "locked": false
+    },
+    {
+      "name": "Laboratorio 04",
+      "description": "Laboratório equipado para aulas práticas de programação. 29 notebooks.",
+      "capacity": 28,
+      "locked": false
+    },
+    {
+      "name": "Laboratorio 05",
+      "description": "Laboratório equipado para aulas práticas de programação. 34 notebooks.",
+      "capacity": 50,
+      "locked": false
+    },
+    {
+      "name": "Laboratorio 06",
+      "description": "Laboratório equipado para aulas práticas de programação. 30 notebooks.",
+      "capacity": 33,
+      "locked": false
+    },
+    {
+      "name": "Laboratorio 07",
+      "description": "Laboratório equipado para aulas práticas de programação. 35 notebooks.",
+      "capacity": 41,
+      "locked": false
+    },
+    {
+      "name": "Laboratorio 08",
+      "description": "Laboratório equipado para aulas práticas de programação. 39 notebooks.",
+      "capacity": 26,
+      "locked": false
+    },
+    {
+      "name": "Laboratorio 09",
+      "description": "Laboratório equipado para aulas práticas de programação. 25 notebooks.",
+      "capacity": 48,
+      "locked": false
+    },
+    {
+      "name": "Laboratorio 10",
+      "description": "Laboratório equipado para aulas práticas de programação. 23 notebooks.",
       "capacity": 30,
       "locked": false
     },
     {
-      "name": "Laboratório 08",
-      "description": "Laboratório equipado para aulas práticas de programação.",
-      "capacity": 40,
+      "name": "Laboratorio 11",
+      "description": "Laboratório equipado para aulas práticas de programação. 28 notebooks.",
+      "capacity": 22,
       "locked": false
     },
     {
       "name": "Quimica analitica",
       "description": "Laboratório equipado para aulas práticas de quimica.",
       "capacity": 30,
-      "locked": false
-    },
-    {
-      "name": "Laboratório 03",
-      "description": "Laboratório equipado para aulas práticas de automação.",
-      "capacity": 20,
       "locked": false
     }
   ],
@@ -72,6 +120,54 @@
       "startAt": "11:00:00",
       "endAt": "12:00:00",
       "shift": "Morning",
+      "enabled": true
+    },
+    {
+      "startAt": "13:00:00",
+      "endAt": "14:00:00",
+      "shift": "Afternoon",
+      "enabled": true
+    },
+    {
+      "startAt": "14:00:00",
+      "endAt": "15:00:00",
+      "shift": "Afternoon",
+      "enabled": true
+    },
+    {
+      "startAt": "15:00:00",
+      "endAt": "16:00:00",
+      "shift": "Afternoon",
+      "enabled": true
+    },
+    {
+      "startAt": "16:00:00",
+      "endAt": "17:00:00",
+      "shift": "Afternoon",
+      "enabled": true
+    },
+    {
+      "startAt": "18:30:00",
+      "endAt": "19:30:00",
+      "shift": "Night",
+      "enabled": true
+    },
+    {
+      "startAt": "19:30:00",
+      "endAt": "20:30:00",
+      "shift": "Night",
+      "enabled": true
+    },
+    {
+      "startAt": "20:30:00",
+      "endAt": "21:30:00",
+      "shift": "Night",
+      "enabled": true
+    },
+    {
+      "startAt": "21:30:00",
+      "endAt": "22:30:00",
+      "shift": "Night",
       "enabled": true
     }
   ],
