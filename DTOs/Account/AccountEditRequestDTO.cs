@@ -1,6 +1,9 @@
 using System.ComponentModel.DataAnnotations;
-using Models;
 
 namespace DTOs.Account;
 
-public record AccountEditRequestDTO([Required(ErrorMessage = "O novo nome de usuário é obrigatório.")] string Username);
+/// <summary>Edição da própria conta. Campos nulos são ignorados (PATCH parcial).</summary>
+public record AccountEditRequestDTO(
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "O nome de usuário deve ter no mínimo 1 e no máximo 100 caracteres")]
+    string? Username,
+    long? SubjectId);

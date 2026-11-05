@@ -1,5 +1,3 @@
-using System.Net;
-using System.Text.Json;
 using Backend.Handler;
 using Backend.Services;
 using DTOs.Auth;
@@ -123,14 +121,8 @@ public class AuthController(
             throw new UnauthorizedException("Matrícula ou senha incorretos.");
 
         var roles = await userManager.GetRolesAsync(user);
-        
-        var cookieData = new { username = user.UserName ?? "Não definido", registration = user.Registration, roles };
-        string jsonString = JsonSerializer.Serialize(cookieData);
-        string cookieValue = WebUtility.UrlEncode(jsonString);
-        var cookieOptions = BuildInfoCookieOptions();
-        cookieOptions.Expires = DateTimeOffset.UtcNow.AddDays(1);
-        HttpContext.Response.Cookies.Append("auth-info", cookieValue, cookieOptions);
-        
+        AuthInfoCookie.Write(HttpContext, user.UserName, user.Registration, roles);
+
         return Ok();
     }
 
@@ -144,23 +136,9 @@ public class AuthController(
     {
         // SignOutAsync já apaga o auth-session com os mesmos atributos (SameSite/Secure) com que ele foi criado.
         await signInManager.SignOutAsync();
-        // Para apagar, o Set-Cookie precisa repetir os atributos do cookie original; um SameSite diferente
-        // seria ignorado pelo navegador em requisições cross-site.
-        HttpContext.Response.Cookies.Delete("auth-info", BuildInfoCookieOptions());
+        AuthInfoCookie.Delete(HttpContext);
         return Ok();
     }
-
-    /// <summary>
-    /// Opções do cookie auth-info (dados de exibição lidos pelo front, por isso HttpOnly = false).
-    /// Sob HTTPS (Render, via X-Forwarded-Proto) sai SameSite=None; Secure para valer entre o front e a API em
-    /// sites diferentes; em http://localhost continua Lax.
-    /// </summary>
-    private CookieOptions BuildInfoCookieOptions() => new()
-    {
-        HttpOnly = false,
-        Secure = Request.IsHttps,
-        SameSite = Request.IsHttps ? SameSiteMode.None : SameSiteMode.Lax
-    };
 
     /// <summary>
     /// Solicitar redefinição de senha

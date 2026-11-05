@@ -13,7 +13,7 @@ public interface IAccountService
 {
     public Task<AccountResponseDTO> GetAccount(ClaimsPrincipal user);
 
-    public Task EditAccount(ClaimsPrincipal user, AccountEditRequestDTO data);
+    public Task<AccountResponseDTO> EditAccount(ClaimsPrincipal user, AccountEditRequestDTO data);
 
     public Task<IEnumerable<AccountResponseDTO>> AdminGetUsers(ClaimsPrincipal user, AdminAccountRequestDTO query);
 
@@ -43,7 +43,7 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
         return AccountDirectory.ToDto(account, roles, subjects);
     }
 
-    public async Task EditAccount(ClaimsPrincipal user, AccountEditRequestDTO data)
+    public async Task<AccountResponseDTO> EditAccount(ClaimsPrincipal user, AccountEditRequestDTO data)
     {
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
@@ -53,8 +53,20 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
             throw new UnauthorizedException("Usuário não identificado.", true);
         }
 
-        await ApplyUserName(account, data.Username);
+        if (!string.IsNullOrWhiteSpace(data.Username))
+        {
+            await ApplyUserName(account, data.Username.Trim());
+        }
+
+        if (data.SubjectId.HasValue)
+        {
+            // O próprio usuário só pode se associar a matérias ativas.
+            await ApplySubject(account.Id, data.SubjectId.Value, enabledOnly: true);
+        }
+
         await dbCtx.SaveChangesAsync();
+
+        return await GetAccount(user);
     }
 
     public async Task<IEnumerable<AccountResponseDTO>> AdminGetUsers(ClaimsPrincipal user, AdminAccountRequestDTO query)
@@ -226,36 +238,7 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
 
         if (data.SubjectId.HasValue)
         {
-            var subjectExists = await dbCtx.Subjects.AnyAsync(subject => subject.Id == data.SubjectId.Value);
-            if (!subjectExists)
-            {
-                throw new ResourceNotFoundException("Disciplina não encontrada.");
-            }
-
-            var accountSubjects = await dbCtx.AccountSubjects
-                .Where(accountSubject => accountSubject.FkAccountId == data.Id)
-                .OrderBy(accountSubject => accountSubject.Id)
-                .ToListAsync();
-
-            var accountSubject = accountSubjects.FirstOrDefault();
-
-            if (accountSubject == null)
-            {
-                dbCtx.AccountSubjects.Add(new AccountSubjectModel
-                {
-                    FkAccountId = data.Id,
-                    FkSubjectId = data.SubjectId.Value
-                });
-            }
-            else
-            {
-                accountSubject.FkSubjectId = data.SubjectId.Value;
-
-                if (accountSubjects.Count > 1)
-                {
-                    dbCtx.AccountSubjects.RemoveRange(accountSubjects.Skip(1));
-                }
-            }
+            await ApplySubject(data.Id, data.SubjectId.Value, enabledOnly: false);
         }
 
         // Troca de cargo ou bloqueio invalida as sessões abertas do usuário na próxima revalidação do cookie.
@@ -265,6 +248,53 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
         }
 
         await dbCtx.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Associa a conta a uma única matéria: atualiza o primeiro vínculo existente (ou cria um) e remove os extras.
+    /// Não salva; quem chama faz o SaveChanges.
+    /// </summary>
+    private async Task ApplySubject(string accountId, long subjectId, bool enabledOnly)
+    {
+        var subject = await dbCtx.Subjects.AsNoTracking()
+            .Where(s => s.Id == subjectId)
+            .Select(s => new { s.Enabled })
+            .FirstOrDefaultAsync();
+
+        if (subject == null)
+        {
+            throw new ResourceNotFoundException("Disciplina não encontrada.");
+        }
+
+        if (enabledOnly && !subject.Enabled)
+        {
+            throw new BadRequestException("Esta disciplina está desativada.");
+        }
+
+        var accountSubjects = await dbCtx.AccountSubjects
+            .Where(accountSubject => accountSubject.FkAccountId == accountId)
+            .OrderBy(accountSubject => accountSubject.Id)
+            .ToListAsync();
+
+        var current = accountSubjects.FirstOrDefault();
+
+        if (current == null)
+        {
+            dbCtx.AccountSubjects.Add(new AccountSubjectModel
+            {
+                FkAccountId = accountId,
+                FkSubjectId = subjectId
+            });
+        }
+        else
+        {
+            current.FkSubjectId = subjectId;
+
+            if (accountSubjects.Count > 1)
+            {
+                dbCtx.AccountSubjects.RemoveRange(accountSubjects.Skip(1));
+            }
+        }
     }
 
     /// <summary>Define o nome de usuário mantendo o valor normalizado em sincronia e checando duplicidade.</summary>
