@@ -102,14 +102,22 @@ public static class ResourceAvailability
         var rows = await query
             .Select(rr => new
             {
+                rr.Id,
+                rr.FkSpaceReserveId,
                 rr.FkResourceId,
                 rr.DateFrom,
                 rr.DateTo,
                 rr.Quantity,
-                Schedules = rr.ResourceReserveSchedules.Select(s => s.FkScheduleId).ToList()
+                Schedules = rr.ResourceReserveSchedules
+                    .Select(s => new { s.FkScheduleId, s.Schedule.Shift })
+                    .ToList()
             })
             .AsSplitQuery()
             .ToListAsync();
+
+        // Turno ausente (sem check-in no prazo) devolve as unidades naquele dia: o da sala vale para os vinculados.
+        var absentSpace = await UsageRules.LoadAbsentSpace(dbCtx, start, end);
+        var absentResource = await UsageRules.LoadAbsentResource(dbCtx, start, end);
 
         foreach (var row in rows)
         {
@@ -118,9 +126,18 @@ public static class ResourceAvailability
 
             for (var day = from; day <= to; day = day.AddDays(1))
             {
-                foreach (var scheduleId in row.Schedules)
+                foreach (var slot in row.Schedules)
                 {
+                    var scheduleId = slot.FkScheduleId;
                     if (scheduleIds is { Count: > 0 } && !scheduleIds.Contains(scheduleId))
+                    {
+                        continue;
+                    }
+
+                    var released = row.FkSpaceReserveId is { } spaceReserveId
+                        ? absentSpace.Contains((spaceReserveId, day, slot.Shift))
+                        : absentResource.Contains((row.Id, day, slot.Shift));
+                    if (released)
                     {
                         continue;
                     }

@@ -1,10 +1,12 @@
 using DTOs.Account;
 using DTOs.Schedule;
 using DTOs.Space;
+using DTOs.Usage;
 using Models;
 
 namespace DTOs.SpaceReserve;
 
+/// <param name="Usage">Contagem das sessões de uso (check-in/check-out) da reserva.</param>
 public record AdminSpaceReserveResponseDTO(
     long Id,
     DateTimeOffset CreatedAt,
@@ -15,4 +17,5 @@ public record AdminSpaceReserveResponseDTO(
     SpaceResponseDTO Spaces,
     AccountResponseDTO Account,
     List<ScheduleResponseDTO> Schedules,
-    List<LinkedResourceDTO> Resources);
+    List<LinkedResourceDTO> Resources,
+    UsageSummaryDTO? Usage = null);

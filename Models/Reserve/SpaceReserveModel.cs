@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Models.Account;
+using Models.Usage;
 
 namespace Models.Reserve;
 
@@ -48,4 +49,6 @@ public class SpaceReserveModel
     public virtual ICollection<SpaceReserveScheduleModel> SpaceReserveSchedules { get; set; } =  new List<SpaceReserveScheduleModel>();
 
     public virtual ICollection<ResourceReserveModel> ResourceReserves { get; set; } = new List<ResourceReserveModel>();
+
+    public virtual ICollection<ReserveUsageModel> Usages { get; set; } = new List<ReserveUsageModel>();
 }

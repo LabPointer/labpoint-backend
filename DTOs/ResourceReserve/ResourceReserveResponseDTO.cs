@@ -1,6 +1,7 @@
 using DTOs.Account;
 using DTOs.Resource;
 using DTOs.Schedule;
+using DTOs.Usage;
 using Models;
 
 namespace DTOs.ResourceReserve;
@@ -19,7 +20,8 @@ public record ResourceReserveResponseDTO(
     int Quantity,
     ResourceResponseDTO Resource,
     List<ScheduleResponseDTO> Schedules,
-    LinkedSpaceReserveDTO? SpaceReserve
+    LinkedSpaceReserveDTO? SpaceReserve,
+    UsageSummaryDTO? Usage = null
 );
 
 public record AdminResourceReserveResponseDTO(
@@ -33,5 +35,6 @@ public record AdminResourceReserveResponseDTO(
     ResourceResponseDTO Resource,
     List<ScheduleResponseDTO> Schedules,
     LinkedSpaceReserveDTO? SpaceReserve,
-    AccountResponseDTO Account
+    AccountResponseDTO Account,
+    UsageSummaryDTO? Usage = null
 );

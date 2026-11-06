@@ -7,6 +7,7 @@ using Models.Reserve;
 using Models.Resource;
 using Models.Schedule;
 using Models.Subject;
+using Models.Usage;
 
 namespace Data;
 
@@ -37,6 +38,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<ReportModel> Reports { get; set; }
 
+    public DbSet<ReserveUsageModel> ReserveUsages { get; set; }
+
+    public DbSet<ReserveUsageEntryModel> ReserveUsageEntries { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -61,5 +66,23 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         // Consultas de disponibilidade: reservas de um recurso que se sobrepõem a um período.
         builder.Entity<ResourceReserveModel>()
             .HasIndex(r => new { r.FkResourceId, r.DateFrom, r.DateTo });
+
+        // Sessão de uso: de uma reserva de sala OU de uma reserva de recurso avulsa (nunca as duas).
+        builder.Entity<ReserveUsageModel>()
+            .ToTable(t => t.HasCheckConstraint(
+                "ck_reserve_usage_single_reserve",
+                "(fk_space_reserve_id IS NULL) <> (fk_resource_reserve_id IS NULL)"));
+
+        // Duas FKs para a conta: o dono da reserva e o admin que fechou o check-out.
+        builder.Entity<ReserveUsageModel>()
+            .HasOne(u => u.Account)
+            .WithMany()
+            .HasForeignKey(u => u.FkAccountId);
+
+        builder.Entity<ReserveUsageModel>()
+            .HasOne(u => u.CheckedOutBy)
+            .WithMany()
+            .HasForeignKey(u => u.FkCheckedOutById)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

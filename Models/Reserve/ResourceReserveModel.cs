@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Models.Account;
 using Models.Resource;
+using Models.Usage;
 
 namespace Models.Reserve;
 
@@ -62,4 +63,7 @@ public class ResourceReserveModel
     public virtual AccountModel Account { get; set; }
 
     public virtual ICollection<ResourceReserveScheduleModel> ResourceReserveSchedules { get; set; } = new List<ResourceReserveScheduleModel>();
+
+    /// <summary>Sessões de uso próprias (só reservas avulsas; as vinculadas usam as da sala).</summary>
+    public virtual ICollection<ReserveUsageModel> Usages { get; set; } = new List<ReserveUsageModel>();
 }

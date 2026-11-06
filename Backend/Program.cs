@@ -105,7 +105,9 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddSingleton<IBackgroundTaskService>(new BackgroundTaskService(capacity: 200));
 builder.Services.AddHostedService<QueueService>();
-builder.Services.AddScoped<IEmailSender<AccountModel>, SmtpEmailService>();
+builder.Services.AddScoped<SmtpEmailService>();
+builder.Services.AddScoped<IEmailSender<AccountModel>>(sp => sp.GetRequiredService<SmtpEmailService>());
+builder.Services.AddScoped<IMailSender>(sp => sp.GetRequiredService<SmtpEmailService>());
 builder.Services.AddScoped<ISubjectService, SubjectService>();
 builder.Services.AddScoped<IResourceService, ResourceService>();
 builder.Services.AddScoped<ISpaceService, SpaceService>();
@@ -113,6 +115,10 @@ builder.Services.AddScoped<ISpaceReserveService, SpaceReserveService>();
 builder.Services.AddScoped<IResourceReserveService, ResourceReserveService>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IReserveUsageService, ReserveUsageService>();
+builder.Services.AddScoped<ReserveUsageScheduler>();
+// Check-in/check-out: cria as sessões do dia, envia os links e marca ausências/check-outs vencidos (1 min).
+builder.Services.AddHostedService<ReserveUsageWorker>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>

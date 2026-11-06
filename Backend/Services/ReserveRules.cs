@@ -47,10 +47,44 @@ public static class ReserveRules
         AppDbContext dbCtx, long reserveId, long spaceId, DateOnly start, DateOnly end, IReadOnlySet<long> scheduleIds)
     {
         var ids = scheduleIds.ToList();
-        bool hasConflict = await dbCtx.SpaceReserves
+        var candidates = await dbCtx.SpaceReserves.AsNoTracking()
             .Where(sr => sr.Id != reserveId && sr.FkSpaceId == spaceId && sr.DateFrom <= end && sr.DateTo >= start)
             .Where(IsSpaceReserveActive)
-            .AnyAsync(sr => sr.SpaceReserveSchedules.Any(s => ids.Contains(s.FkScheduleId)));
+            .Where(sr => sr.SpaceReserveSchedules.Any(s => ids.Contains(s.FkScheduleId)))
+            .Select(sr => new
+            {
+                sr.Id,
+                sr.DateFrom,
+                sr.DateTo,
+                Shifts = sr.SpaceReserveSchedules
+                    .Where(s => ids.Contains(s.FkScheduleId))
+                    .Select(s => s.Schedule.Shift)
+                    .Distinct()
+                    .ToList()
+            })
+            .ToListAsync();
+
+        if (candidates.Count == 0)
+        {
+            return;
+        }
+
+        // Turno ausente (sem check-in no prazo) libera a sala naquele dia.
+        var absent = await UsageRules.LoadAbsentSpace(dbCtx, start, end);
+        bool hasConflict = candidates.Any(c =>
+        {
+            var from = c.DateFrom > start ? c.DateFrom : start;
+            var to = c.DateTo < end ? c.DateTo : end;
+            for (var day = from; day <= to; day = day.AddDays(1))
+            {
+                if (c.Shifts.Any(shift => !absent.Contains((c.Id, day, shift))))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        });
 
         if (hasConflict)
         {

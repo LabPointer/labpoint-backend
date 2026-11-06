@@ -678,6 +678,163 @@ namespace Backend.Migrations
                     b.ToTable("subject");
                 });
 
+            modelBuilder.Entity("Models.Usage.ReserveUsageEntryModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("ChargersIn")
+                        .HasColumnType("integer")
+                        .HasColumnName("chargers_in");
+
+                    b.Property<int?>("ChargersOut")
+                        .HasColumnType("integer")
+                        .HasColumnName("chargers_out");
+
+                    b.Property<string>("ClassName")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("class_name");
+
+                    b.Property<long>("FkScheduleId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_schedule_id");
+
+                    b.Property<long>("FkUsageId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_usage_id");
+
+                    b.Property<int>("Modality")
+                        .HasColumnType("integer")
+                        .HasColumnName("modality");
+
+                    b.Property<int>("NotebooksIn")
+                        .HasColumnType("integer")
+                        .HasColumnName("notebooks_in");
+
+                    b.Property<int?>("NotebooksOut")
+                        .HasColumnType("integer")
+                        .HasColumnName("notebooks_out");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FkScheduleId");
+
+                    b.HasIndex("FkUsageId", "FkScheduleId")
+                        .IsUnique();
+
+                    b.ToTable("reserve_usage_entry");
+                });
+
+            modelBuilder.Entity("Models.Usage.ReserveUsageModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CheckInClosesAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("check_in_closes_at");
+
+                    b.Property<DateTimeOffset?>("CheckInEmailSentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("check_in_email_sent_at");
+
+                    b.Property<DateTimeOffset>("CheckInOpensAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("check_in_opens_at");
+
+                    b.Property<string>("CheckInTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("check_in_token_hash");
+
+                    b.Property<DateTimeOffset>("CheckOutClosesAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("check_out_closes_at");
+
+                    b.Property<DateTimeOffset?>("CheckOutEmailSentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("check_out_email_sent_at");
+
+                    b.Property<DateTimeOffset>("CheckOutOpensAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("check_out_opens_at");
+
+                    b.Property<string>("CheckOutTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("check_out_token_hash");
+
+                    b.Property<DateTimeOffset?>("CheckedInAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("checked_in_at");
+
+                    b.Property<DateTimeOffset?>("CheckedOutAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("checked_out_at");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("FkAccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("fk_account_id");
+
+                    b.Property<string>("FkCheckedOutById")
+                        .HasColumnType("text")
+                        .HasColumnName("fk_checked_out_by_id");
+
+                    b.Property<long?>("FkResourceReserveId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_resource_reserve_id");
+
+                    b.Property<long?>("FkSpaceReserveId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_space_reserve_id");
+
+                    b.Property<EShift>("Shift")
+                        .HasColumnType("shift_enum")
+                        .HasColumnName("shift");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CheckInTokenHash");
+
+                    b.HasIndex("CheckOutTokenHash");
+
+                    b.HasIndex("FkAccountId");
+
+                    b.HasIndex("FkCheckedOutById");
+
+                    b.HasIndex("Date", "Status");
+
+                    b.HasIndex("FkResourceReserveId", "Date", "Shift")
+                        .IsUnique();
+
+                    b.HasIndex("FkSpaceReserveId", "Date", "Shift")
+                        .IsUnique();
+
+                    b.ToTable("reserve_usage", t =>
+                        {
+                            t.HasCheckConstraint("ck_reserve_usage_single_reserve", "(fk_space_reserve_id IS NULL) <> (fk_resource_reserve_id IS NULL)");
+                        });
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -868,6 +1025,55 @@ namespace Backend.Migrations
                     b.Navigation("Subject");
                 });
 
+            modelBuilder.Entity("Models.Usage.ReserveUsageEntryModel", b =>
+                {
+                    b.HasOne("Models.Schedule.ScheduleModel", "Schedule")
+                        .WithMany()
+                        .HasForeignKey("FkScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Models.Usage.ReserveUsageModel", "Usage")
+                        .WithMany("Entries")
+                        .HasForeignKey("FkUsageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Schedule");
+
+                    b.Navigation("Usage");
+                });
+
+            modelBuilder.Entity("Models.Usage.ReserveUsageModel", b =>
+                {
+                    b.HasOne("Models.Account.AccountModel", "Account")
+                        .WithMany()
+                        .HasForeignKey("FkAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Models.Account.AccountModel", "CheckedOutBy")
+                        .WithMany()
+                        .HasForeignKey("FkCheckedOutById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Models.Reserve.ResourceReserveModel", "ResourceReserve")
+                        .WithMany("Usages")
+                        .HasForeignKey("FkResourceReserveId");
+
+                    b.HasOne("Models.Reserve.SpaceReserveModel", "SpaceReserve")
+                        .WithMany("Usages")
+                        .HasForeignKey("FkSpaceReserveId");
+
+                    b.Navigation("Account");
+
+                    b.Navigation("CheckedOutBy");
+
+                    b.Navigation("ResourceReserve");
+
+                    b.Navigation("SpaceReserve");
+                });
+
             modelBuilder.Entity("Models.Account.AccountModel", b =>
                 {
                     b.Navigation("AccountSubjects");
@@ -880,6 +1086,8 @@ namespace Backend.Migrations
             modelBuilder.Entity("Models.Reserve.ResourceReserveModel", b =>
                 {
                     b.Navigation("ResourceReserveSchedules");
+
+                    b.Navigation("Usages");
                 });
 
             modelBuilder.Entity("Models.Reserve.SpaceReserveModel", b =>
@@ -887,6 +1095,8 @@ namespace Backend.Migrations
                     b.Navigation("ResourceReserves");
 
                     b.Navigation("SpaceReserveSchedules");
+
+                    b.Navigation("Usages");
                 });
 
             modelBuilder.Entity("Models.Resource.ResourceModel", b =>
@@ -910,6 +1120,11 @@ namespace Backend.Migrations
                     b.Navigation("AccountSubjects");
 
                     b.Navigation("SpaceSubjects");
+                });
+
+            modelBuilder.Entity("Models.Usage.ReserveUsageModel", b =>
+                {
+                    b.Navigation("Entries");
                 });
 #pragma warning restore 612, 618
         }

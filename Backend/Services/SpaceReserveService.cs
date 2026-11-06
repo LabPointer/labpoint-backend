@@ -5,6 +5,7 @@ using DTOs.Account;
 using DTOs.Schedule;
 using DTOs.Space;
 using DTOs.SpaceReserve;
+using DTOs.Usage;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using Models.Reserve;
@@ -101,7 +102,10 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
             throw new ResourceNotFoundException("Nenhuma reserva encontrada para o período informado.");
         }
 
-        return reserves;
+        var usage = await UsageRules.LoadSpaceSummaries(dbCtx, reserves.Select(r => r.Id).ToList());
+        return reserves
+            .Select(r => r with { Usage = usage.GetValueOrDefault(r.Id, UsageSummaryDTO.Empty) })
+            .ToList();
     }
 
     public async Task<List<ScheduleResponseDTO>> GetExistingSchedules(ClaimsPrincipal user, long spaceId, ExistingScheduleRequestDTO query)
@@ -111,18 +115,47 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
             throw new BadRequestException("Data de inicio precisa ser igual ou anterior a data de término.");
         }
 
-        var existingSchedules = await dbCtx.SpaceReserves
+        var reserves = await dbCtx.SpaceReserves.AsNoTracking()
             .Where(sr => sr.FkSpaceId == spaceId && sr.DateFrom <= query.EndAt && sr.DateTo >= query.StartAt)
             .Where(ReserveRules.IsSpaceReserveActive)
-            .SelectMany(sr => sr.SpaceReserveSchedules.Select(s => new ScheduleResponseDTO(
-                s.Schedule.Id,
-                s.Schedule.StartAt,
-                s.Schedule.EndAt,
-                s.Schedule.Shift,
-                s.Schedule.Enabled
-            )))
-            .Distinct()
+            .Select(sr => new
+            {
+                sr.Id,
+                sr.DateFrom,
+                sr.DateTo,
+                Schedules = sr.SpaceReserveSchedules.Select(s => new ScheduleResponseDTO(
+                    s.Schedule.Id,
+                    s.Schedule.StartAt,
+                    s.Schedule.EndAt,
+                    s.Schedule.Shift,
+                    s.Schedule.Enabled
+                )).ToList()
+            })
+            .AsSplitQuery()
             .ToListAsync();
+
+        // Um horário só está ocupado se, em algum dia do período, o turno dele não ficou ausente (sem check-in).
+        var absent = await UsageRules.LoadAbsentSpace(dbCtx, query.StartAt, query.EndAt);
+        var existingSchedules = reserves
+            .SelectMany(sr =>
+            {
+                var from = sr.DateFrom > query.StartAt ? sr.DateFrom : query.StartAt;
+                var to = sr.DateTo < query.EndAt ? sr.DateTo : query.EndAt;
+                return sr.Schedules.Where(s =>
+                {
+                    for (var day = from; day <= to; day = day.AddDays(1))
+                    {
+                        if (!absent.Contains((sr.Id, day, s.Shift)))
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
+            })
+            .DistinctBy(s => s.Id)
+            .ToList();
 
         if (existingSchedules.Count == 0)
         {
@@ -329,6 +362,7 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
         var accountIds = rows.Select(row => row.Account.Id).Distinct().ToList();
         var roles = await AccountDirectory.LoadRoles(dbCtx, accountIds);
         var subjects = await AccountDirectory.LoadSubjects(dbCtx, accountIds);
+        var usage = await UsageRules.LoadSpaceSummaries(dbCtx, rows.Select(row => row.Id).ToList());
 
         return rows
             .Select(row => new AdminSpaceReserveResponseDTO(
@@ -341,7 +375,8 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
                 row.Space,
                 AccountDirectory.ToDto(row.Account, roles, subjects),
                 row.Schedules,
-                row.Resources))
+                row.Resources,
+                usage.GetValueOrDefault(row.Id, UsageSummaryDTO.Empty)))
             .ToList();
     }
 

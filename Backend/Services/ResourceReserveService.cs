@@ -4,6 +4,7 @@ using Data;
 using DTOs.Resource;
 using DTOs.ResourceReserve;
 using DTOs.Schedule;
+using DTOs.Usage;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using Models.Reserve;
@@ -97,10 +98,13 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
             throw new ResourceNotFoundException("Nenhuma reserva de recurso encontrada com os filtros fornecidos.");
         }
 
+        var usage = await UsageRules.LoadResourceSummaries(
+            dbCtx, rows.Select(row => (row.Id, row.SpaceReserve?.Id)).ToList());
+
         return rows
             .Select(row => new ResourceReserveResponseDTO(
                 row.Id, row.CreatedAt, row.DateFrom, row.DateTo, row.Purpose, row.Status, row.Quantity,
-                row.Resource, row.Schedules, row.SpaceReserve))
+                row.Resource, row.Schedules, row.SpaceReserve, usage.GetValueOrDefault(row.Id, UsageSummaryDTO.Empty)))
             .ToList();
     }
 
@@ -252,11 +256,14 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
         var accountIds = rows.Select(row => row.Account.Id).Distinct().ToList();
         var roles = await AccountDirectory.LoadRoles(dbCtx, accountIds);
         var subjects = await AccountDirectory.LoadSubjects(dbCtx, accountIds);
+        var usage = await UsageRules.LoadResourceSummaries(
+            dbCtx, rows.Select(row => (row.Id, row.SpaceReserve?.Id)).ToList());
 
         return rows
             .Select(row => new AdminResourceReserveResponseDTO(
                 row.Id, row.CreatedAt, row.DateFrom, row.DateTo, row.Purpose, row.Status, row.Quantity,
-                row.Resource, row.Schedules, row.SpaceReserve, AccountDirectory.ToDto(row.Account, roles, subjects)))
+                row.Resource, row.Schedules, row.SpaceReserve, AccountDirectory.ToDto(row.Account, roles, subjects),
+                usage.GetValueOrDefault(row.Id, UsageSummaryDTO.Empty)))
             .ToList();
     }
 

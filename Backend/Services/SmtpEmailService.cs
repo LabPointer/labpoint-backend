@@ -10,6 +10,18 @@ using Services;
 
 namespace Backend.Services;
 
+/// <summary>Envio de e-mail HTML genérico (avisos de check-in/check-out etc.).</summary>
+public interface IMailSender
+{
+    Task SendAsync(string to, string subject, string htmlBody);
+
+    /// <summary>
+    /// Lê <c>Templates/Email/{name}</c> e troca cada <c>{chave}</c> pelo valor (já codificado em HTML).
+    /// Nulo quando o arquivo não existe.
+    /// </summary>
+    Task<string?> RenderTemplateAsync(string name, IReadOnlyDictionary<string, string> values);
+}
+
 /// <summary>
 /// Implementação do IEmailSender&lt;TUser&gt; do Identity usando MailKit.
 /// Se Smtp:Host estiver vazio, em Development o e-mail (com o link) é só escrito no log, para facilitar testes.
@@ -18,8 +30,25 @@ namespace Backend.Services;
 public class SmtpEmailService(
     IOptions<SmtpSettings> options,
     IHostEnvironment environment,
-    ILogger<SmtpEmailService> logger) : IEmailSender<AccountModel>
+    ILogger<SmtpEmailService> logger) : IEmailSender<AccountModel>, IMailSender
 {
+    public async Task<string?> RenderTemplateAsync(string name, IReadOnlyDictionary<string, string> values)
+    {
+        var templatePath = Path.Combine(environment.ContentRootPath, "Templates", "Email", name);
+        if (!File.Exists(templatePath))
+        {
+            return null;
+        }
+
+        var html = await File.ReadAllTextAsync(templatePath);
+        foreach (var (key, value) in values)
+        {
+            html = html.Replace("{" + key + "}", WebUtility.HtmlEncode(value));
+        }
+
+        return html;
+    }
+
     private readonly SmtpSettings _settings = options.Value;
 
     public async Task SendConfirmationLinkAsync(AccountModel user, string email, string confirmationLink)
@@ -77,7 +106,7 @@ public class SmtpEmailService(
     }
         
 
-    private async Task SendAsync(string to, string subject, string htmlBody)
+    public async Task SendAsync(string to, string subject, string htmlBody)
     {
         if (string.IsNullOrWhiteSpace(_settings.Host))
         {
