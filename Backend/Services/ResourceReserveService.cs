@@ -1,10 +1,9 @@
 using System.Security.Claims;
 using Backend.Handler;
 using Data;
+using DTOs.Resource;
 using DTOs.ResourceReserve;
 using DTOs.Schedule;
-using DTOs.Space;
-using DTOs.SpaceReserve;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using Models.Reserve;
@@ -13,145 +12,138 @@ namespace Backend.Services;
 
 public interface IResourceReserveService
 {
-    public Task<IEnumerable<ResourceReserveResponseDTO>> GetResourceReserves(ClaimsPrincipal user, ResourceReserveRequestDTO query);
+    public Task<List<ResourceReserveResponseDTO>> GetResourceReserves(ClaimsPrincipal user, ResourceReserveRequestDTO query);
 
-    public Task CreateResourceReserve(ClaimsPrincipal user, long spaceReserveId, ResourceReserveCreateRequestDTO data);
+    public Task<List<ResourceScheduleAvailabilityDTO>> GetAvailability(long resourceId, ResourceAvailabilityRequestDTO query);
+
+    public Task CreateResourceReserve(ClaimsPrincipal user, long resourceId, ResourceReserveCreateRequestDTO data);
 
     public Task EditResourceReserve(ClaimsPrincipal user, long resourceReserveId, ResourceReserveEditRequestDTO data);
 
     public Task CancelResourceReserve(ClaimsPrincipal user, long resourceReserveId);
+
+    public Task<List<AdminResourceReserveResponseDTO>> AdminGetResourceReserves(ClaimsPrincipal user, AdminResourceReserveRequestDTO query);
+
+    public Task AdminEditResourceReserve(ClaimsPrincipal user, long resourceReserveId, AdminResourceReserveEditRequestDTO data);
 }
+
+/// <summary>Linha projetada de uma reserva de recurso (com a conta, usada só pelo admin).</summary>
+internal sealed record ResourceReserveRow(
+    long Id,
+    DateTimeOffset CreatedAt,
+    DateOnly DateFrom,
+    DateOnly DateTo,
+    string Purpose,
+    EReserveStatus Status,
+    int Quantity,
+    ResourceResponseDTO Resource,
+    List<ScheduleResponseDTO> Schedules,
+    LinkedSpaceReserveDTO? SpaceReserve,
+    AccountRow Account);
 
 public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveService
 {
-    public async Task<IEnumerable<ResourceReserveResponseDTO>> GetResourceReserves(ClaimsPrincipal user, ResourceReserveRequestDTO query)
+    public async Task<List<ResourceReserveResponseDTO>> GetResourceReserves(ClaimsPrincipal user, ResourceReserveRequestDTO query)
     {
         string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
-        var queryable = dbCtx.ResourceReserves.AsNoTracking()
-            .Where(r => r.FkAccountId == userId);
+        var queryable = dbCtx.ResourceReserves.AsNoTracking().Where(rr => rr.FkAccountId == userId);
 
-        if (!string.IsNullOrEmpty(query.SearchQuery))
+        if (query.StartAt.HasValue || query.EndAt.HasValue)
         {
-            var pattern = QueryHelpers.ContainsPattern(query.SearchQuery);
-            queryable = queryable.Where(r => EF.Functions.ILike(r.Resource.Name, pattern));
+            if (query.StartAt == null || query.EndAt == null)
+            {
+                throw new BadRequestException("Informe as datas de início e término juntas.");
+            }
+
+            ReserveRules.EnsureValidPeriod(query.StartAt.Value, query.EndAt.Value);
+            var start = query.StartAt.Value;
+            var end = query.EndAt.Value;
+            queryable = queryable.Where(rr => rr.DateFrom <= end && rr.DateTo >= start);
         }
 
-        if (query.SpaceIds != null && query.SpaceIds.Count > 0)
+        if (!string.IsNullOrWhiteSpace(query.SearchQuery))
         {
-            queryable = queryable.Where(r => query.SpaceIds.Contains(r.SpaceReserve.FkSpaceId));
+            queryable = queryable.Where(ResourceAvailability.ReserveMatchesText(query.SearchQuery));
         }
 
-        // Tudo é projetado dentro da consulta. Antes a entidade era carregada com ToListAsync() e as navegações
-        // eram lidas depois: com UseLazyLoadingProxies() cada acesso disparava uma consulta própria (N+1).
-        // Também estava Take(...).Skip(...) (ordem invertida) e o id do horário era o da tabela de junção.
-        var resourceReserves = await queryable
-            .OrderBy(r => r.Id)
-            .Skip(query.Offset)
-            .Take(query.Limit)
-            .Select(r => new ResourceReserveResponseDTO(
-                r.Id,
-                r.Resource.Name,
-                new SpaceReserveResponseDTO(
-                    r.SpaceReserve.Id,
-                    r.SpaceReserve.CreatedAt,
-                    r.SpaceReserve.DateFrom,
-                    r.SpaceReserve.DateTo,
-                    r.SpaceReserve.Purpose,
-                    r.SpaceReserve.Status,
-                    new SpaceResponseDTO(
-                        r.SpaceReserve.Space.Id,
-                        r.SpaceReserve.Space.Name,
-                        r.SpaceReserve.Space.Capacity,
-                        r.SpaceReserve.Space.Description,
-                        r.SpaceReserve.Space.Locked,
-                        r.SpaceReserve.Space.SpaceSubjects
-                            .Select(ss => new SpaceHashDataDTO(ss.FkSubjectId, ss.Subject.Name))
-                            .ToHashSet(),
-                        r.SpaceReserve.Space.SpaceResources
-                            .Select(sr => new SpaceHashDataDTO(sr.FkResourceId, sr.Resource.Name))
-                            .ToHashSet()
-                    ),
-                    r.SpaceReserve.SpaceReserveSchedules
-                        .Select(srs => new ScheduleResponseDTO(
-                            srs.Schedule.Id,
-                            srs.Schedule.StartAt,
-                            srs.Schedule.EndAt,
-                            srs.Schedule.Shift,
-                            srs.Schedule.Enabled
-                        ))
-                        .ToList()
-                )
-            ))
-            .AsSplitQuery()
+        if (query.ScheduleIds is { Count: > 0 })
+        {
+            queryable = queryable.Where(rr => rr.ResourceReserveSchedules.Any(s => query.ScheduleIds.Contains(s.FkScheduleId)));
+        }
+
+        if (query.Status != null)
+        {
+            queryable = queryable.Where(rr => rr.Status == query.Status);
+        }
+
+        if (query.Standalone != null)
+        {
+            queryable = query.Standalone.Value
+                ? queryable.Where(rr => rr.FkSpaceReserveId == null)
+                : queryable.Where(rr => rr.FkSpaceReserveId != null);
+        }
+
+        // Limit + 1: o item extra indica ao front que existe próxima página.
+        var rows = await Project(queryable
+                .OrderBy(rr => rr.DateFrom)
+                .ThenBy(rr => rr.Id)
+                .Skip(query.Offset)
+                .Take(query.Limit + 1))
             .ToListAsync();
 
-        if (resourceReserves.Count == 0)
+        if (rows.Count == 0)
         {
             throw new ResourceNotFoundException("Nenhuma reserva de recurso encontrada com os filtros fornecidos.");
         }
 
-        return resourceReserves;
+        return rows
+            .Select(row => new ResourceReserveResponseDTO(
+                row.Id, row.CreatedAt, row.DateFrom, row.DateTo, row.Purpose, row.Status, row.Quantity,
+                row.Resource, row.Schedules, row.SpaceReserve))
+            .ToList();
     }
 
-    public async Task CreateResourceReserve(ClaimsPrincipal user, long spaceReserveId, ResourceReserveCreateRequestDTO data)
+    public async Task<List<ResourceScheduleAvailabilityDTO>> GetAvailability(long resourceId, ResourceAvailabilityRequestDTO query)
     {
-        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new UnauthorizedException("Usuário não identificado.", true);
-        }
+        ReserveRules.EnsureValidPeriod(query.StartAt, query.EndAt);
 
-        var spaceReserve = await dbCtx.SpaceReserves
-            .Include(reserve => reserve.SpaceReserveSchedules)
-            .FirstOrDefaultAsync(reserve => reserve.Id == spaceReserveId && reserve.FkAccountId == userId);
+        var free = await ResourceAvailability.FreeBySchedule(
+            dbCtx,
+            resourceId,
+            query.StartAt,
+            query.EndAt,
+            new ReserveExclusion(query.ExcludeSpaceReserveId, query.ExcludeResourceReserveId));
 
-        if (spaceReserve == null)
-        {
-            throw new BadRequestException("A reserva de espaço informada não existe.");
-        }
+        return free.Select(item => new ResourceScheduleAvailabilityDTO(item.ScheduleId, item.Available)).ToList();
+    }
 
-        if (spaceReserve.Status is EReserveStatus.Confirmed or EReserveStatus.Canceled or EReserveStatus.Rejected)
-        {
-            throw new BadRequestException("A reserva de espaço não permite reservas de recursos neste status.");
-        }
+    public async Task CreateResourceReserve(ClaimsPrincipal user, long resourceId, ResourceReserveCreateRequestDTO data)
+    {
+        string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
-        var resourceBelongsToSpace = await dbCtx.SpaceResources
-            .AnyAsync(spaceResource =>
-                spaceResource.FkSpaceId == spaceReserve.FkSpaceId &&
-                spaceResource.FkResourceId == data.ResourceId &&
-                spaceResource.Resource.Enabled);
-
-        if (!resourceBelongsToSpace)
-        {
-            throw new BadRequestException("O recurso informado não está disponível para o espaço da reserva.");
-        }
-
-        var scheduleIds = spaceReserve.SpaceReserveSchedules
-            .Select(schedule => schedule.FkScheduleId)
-            .ToHashSet();
-
-        var hasConflict = await dbCtx.ResourceReserves
-            .Where(resourceReserve => resourceReserve.FkResourceId == data.ResourceId)
-            .Where(resourceReserve => resourceReserve.SpaceReserve.Status != EReserveStatus.Canceled &&
-                                      resourceReserve.SpaceReserve.Status != EReserveStatus.Rejected)
-            .Where(resourceReserve =>
-                resourceReserve.SpaceReserve.DateFrom <= spaceReserve.DateTo &&
-                resourceReserve.SpaceReserve.DateTo >= spaceReserve.DateFrom)
-            .AnyAsync(resourceReserve => resourceReserve.SpaceReserve.SpaceReserveSchedules
-                .Any(schedule => scheduleIds.Contains(schedule.FkScheduleId)));
-
-        if (hasConflict)
-        {
-            throw new BadRequestException("O recurso já está reservado para um horário conflitante.");
-        }
+        ReserveRules.EnsureValidPeriod(data.StartAt, data.EndAt);
+        await ReserveRules.EnsureSchedulesAvailable(dbCtx, data.ScheduleIds);
+        await ResourceAvailability.EnsureAvailable(
+            dbCtx,
+            [new ResourceDemand(resourceId, data.Quantity)],
+            data.StartAt,
+            data.EndAt,
+            data.ScheduleIds,
+            ReserveExclusion.None);
 
         dbCtx.ResourceReserves.Add(new ResourceReserveModel
         {
-            FkResourceId = data.ResourceId,
-            FkSpaceReserveId = spaceReserve.Id,
+            FkResourceId = resourceId,
             FkAccountId = userId,
-            Purpose = data.Purpose
+            Purpose = data.Purpose.Trim(),
+            Quantity = data.Quantity,
+            DateFrom = data.StartAt,
+            DateTo = data.EndAt,
+            Status = EReserveStatus.Booking,
+            ResourceReserveSchedules = data.ScheduleIds
+                .Select(scheduleId => new ResourceReserveScheduleModel { FkScheduleId = scheduleId })
+                .ToList()
         });
 
         await dbCtx.SaveChangesAsync();
@@ -159,103 +151,269 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
 
     public async Task EditResourceReserve(ClaimsPrincipal user, long resourceReserveId, ResourceReserveEditRequestDTO data)
     {
-        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
+        string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
+        var reserve = await dbCtx.ResourceReserves
+            .Include(rr => rr.ResourceReserveSchedules)
+            .FirstOrDefaultAsync(rr => rr.Id == resourceReserveId && rr.FkAccountId == userId);
+
+        if (reserve == null)
         {
-            throw new UnauthorizedException("Usuário não identificado.", true);
+            throw new ResourceNotFoundException("Reserva de recurso não encontrada.");
         }
 
-        var resourceReserve = await dbCtx.ResourceReserves
-            .Include(reserve => reserve.SpaceReserve)
-                .ThenInclude(spaceReserve => spaceReserve.SpaceReserveSchedules)
-            .FirstOrDefaultAsync(reserve => reserve.Id == resourceReserveId && reserve.FkAccountId == userId);
-
-        if (resourceReserve == null)
+        if (!ResourceAvailability.IsActiveStatus(reserve.Status))
         {
-            throw new BadRequestException("A reserva de recurso informada não existe.");
+            throw new BadRequestException("Só é possível editar reservas pendentes ou confirmadas.");
         }
 
-        var targetSpaceReserve = await dbCtx.SpaceReserves
-            .Include(reserve => reserve.SpaceReserveSchedules)
-            .FirstOrDefaultAsync(reserve => reserve.Id == data.SpaceReserveId && reserve.FkAccountId == userId);
-
-        if (targetSpaceReserve == null)
+        if (data.StartAt == null && data.EndAt == null && data.ScheduleIds == null && data.Quantity == null)
         {
-            throw new BadRequestException("A nova reserva de espaço informada não existe.");
+            throw new BadRequestException("Informe ao menos um campo para alterar.");
         }
 
-        if (targetSpaceReserve.Status is EReserveStatus.Confirmed or EReserveStatus.Canceled or EReserveStatus.Rejected)
-        {
-            throw new BadRequestException("A nova reserva de espaço não permite reservas de recursos neste status.");
-        }
-
-        var resourceBelongsToSpace = await dbCtx.SpaceResources
-            .AnyAsync(spaceResource =>
-                spaceResource.FkSpaceId == targetSpaceReserve.FkSpaceId &&
-                spaceResource.FkResourceId == resourceReserve.FkResourceId &&
-                spaceResource.Resource.Enabled);
-
-        if (!resourceBelongsToSpace)
-        {
-            throw new BadRequestException("O recurso não está associado ao novo espaço da reserva.");
-        }
-
-        var scheduleIds = targetSpaceReserve.SpaceReserveSchedules
-            .Select(schedule => schedule.FkScheduleId)
-            .ToHashSet();
-
-        var hasConflict = await dbCtx.ResourceReserves
-            .Where(otherReserve =>
-                otherReserve.Id != resourceReserveId &&
-                otherReserve.FkResourceId == resourceReserve.FkResourceId)
-            .Where(otherReserve => otherReserve.SpaceReserve.Status != EReserveStatus.Canceled &&
-                                   otherReserve.SpaceReserve.Status != EReserveStatus.Rejected)
-            .Where(otherReserve =>
-                otherReserve.SpaceReserve.DateFrom <= targetSpaceReserve.DateTo &&
-                otherReserve.SpaceReserve.DateTo >= targetSpaceReserve.DateFrom)
-            .AnyAsync(otherReserve => otherReserve.SpaceReserve.SpaceReserveSchedules
-                .Any(schedule => scheduleIds.Contains(schedule.FkScheduleId)));
-
-        if (hasConflict)
-        {
-            throw new BadRequestException("O recurso já está reservado para um horário conflitante.");
-        }
-
-        resourceReserve.FkSpaceReserveId = targetSpaceReserve.Id;
-        resourceReserve.Purpose = data.Purpose ?? resourceReserve.Purpose;
-
+        await using var transaction = await dbCtx.Database.BeginTransactionAsync();
+        await ApplyEdit(reserve, data.StartAt, data.EndAt, data.ScheduleIds, data.Quantity);
         await dbCtx.SaveChangesAsync();
+        await transaction.CommitAsync();
     }
 
     public async Task CancelResourceReserve(ClaimsPrincipal user, long resourceReserveId)
     {
-        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new UnauthorizedException("Usuário não identificado.", true);
-        }
+        string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
-        var resourceReserve = await dbCtx.ResourceReserves
-            .Include(reserve => reserve.SpaceReserve)
-            .FirstOrDefaultAsync(reserve => reserve.Id == resourceReserveId && reserve.FkAccountId == userId);
+        var reserve = await dbCtx.ResourceReserves
+            .FirstOrDefaultAsync(rr => rr.Id == resourceReserveId && rr.FkAccountId == userId);
 
-        if (resourceReserve == null)
+        if (reserve == null)
         {
-            throw new BadRequestException("A reserva de recurso informada não existe.");
+            throw new ResourceNotFoundException("Reserva de recurso não encontrada.");
         }
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        if (resourceReserve.SpaceReserve.DateTo < today)
+        if (reserve.DateTo < today)
         {
-            throw new BadRequestException("Não é possível cancelar uma reserva de recurso cuja reserva de espaço já terminou.");
+            throw new BadRequestException("Não é possível cancelar uma reserva que já terminou.");
         }
 
-        if (resourceReserve.SpaceReserve.Status is EReserveStatus.Canceled or EReserveStatus.Rejected or EReserveStatus.Locked)
+        if (!ResourceAvailability.IsActiveStatus(reserve.Status))
         {
-            throw new BadRequestException("A reserva de espaço não permite o cancelamento desta reserva de recurso no status atual.");
+            throw new BadRequestException("A reserva já está cancelada ou recusada.");
         }
 
-        dbCtx.ResourceReserves.Remove(resourceReserve);
+        // Cancelar o recurso não cancela a sala a que ele está vinculado.
+        reserve.Status = EReserveStatus.Canceled;
         await dbCtx.SaveChangesAsync();
     }
+
+    public async Task<List<AdminResourceReserveResponseDTO>> AdminGetResourceReserves(ClaimsPrincipal user, AdminResourceReserveRequestDTO query)
+    {
+        ReserveRules.EnsureValidPeriod(query.StartAt, query.EndAt);
+
+        string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
+        // Admin não gerencia as próprias reservas (mesma regra das reservas de sala).
+        var queryable = dbCtx.ResourceReserves.AsNoTracking()
+            .Where(rr => rr.FkAccountId != userId)
+            .Where(rr => rr.DateFrom <= query.EndAt && rr.DateTo >= query.StartAt);
+
+        if (!string.IsNullOrWhiteSpace(query.SearchQuery))
+        {
+            queryable = queryable.Where(ResourceAvailability.ReserveMatchesText(query.SearchQuery));
+        }
+
+        if (query.SpaceIds is { Count: > 0 })
+        {
+            queryable = queryable.Where(rr => rr.SpaceReserve != null && query.SpaceIds.Contains(rr.SpaceReserve.FkSpaceId));
+        }
+
+        if (query.AccountIds is { Count: > 0 })
+        {
+            queryable = queryable.Where(rr => query.AccountIds.Contains(rr.FkAccountId));
+        }
+
+        if (query.Status != null)
+        {
+            queryable = queryable.Where(rr => rr.Status == query.Status);
+        }
+
+        var rows = await Project(queryable
+                .OrderBy(rr => rr.DateFrom)
+                .ThenBy(rr => rr.Id)
+                .Skip(query.Offset)
+                .Take(query.Limit + 1))
+            .ToListAsync();
+
+        if (rows.Count == 0)
+        {
+            throw new ResourceNotFoundException("Nenhuma reserva de recurso encontrada com os filtros fornecidos.");
+        }
+
+        var accountIds = rows.Select(row => row.Account.Id).Distinct().ToList();
+        var roles = await AccountDirectory.LoadRoles(dbCtx, accountIds);
+        var subjects = await AccountDirectory.LoadSubjects(dbCtx, accountIds);
+
+        return rows
+            .Select(row => new AdminResourceReserveResponseDTO(
+                row.Id, row.CreatedAt, row.DateFrom, row.DateTo, row.Purpose, row.Status, row.Quantity,
+                row.Resource, row.Schedules, row.SpaceReserve, AccountDirectory.ToDto(row.Account, roles, subjects)))
+            .ToList();
+    }
+
+    public async Task AdminEditResourceReserve(ClaimsPrincipal user, long resourceReserveId, AdminResourceReserveEditRequestDTO data)
+    {
+        string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
+        var reserve = await dbCtx.ResourceReserves
+            .Include(rr => rr.ResourceReserveSchedules)
+            .FirstOrDefaultAsync(rr => rr.Id == resourceReserveId && rr.FkAccountId != userId);
+
+        if (reserve == null)
+        {
+            throw new ResourceNotFoundException("Reserva de recurso não encontrada.");
+        }
+
+        bool periodChanged = data.StartAt != null || data.EndAt != null || data.ScheduleIds != null || data.Quantity != null;
+        if (data.Status == null && !periodChanged)
+        {
+            throw new BadRequestException("Informe ao menos um campo para alterar.");
+        }
+
+        var wasActive = ResourceAvailability.IsActiveStatus(reserve.Status);
+        reserve.Status = data.Status ?? reserve.Status;
+        var becomesActive = !wasActive && ResourceAvailability.IsActiveStatus(reserve.Status);
+
+        await using var transaction = await dbCtx.Database.BeginTransactionAsync();
+
+        // Reativar uma reserva volta a ocupar unidades: confere a disponibilidade mesmo sem mudar o período.
+        if (periodChanged || becomesActive)
+        {
+            await ApplyEdit(reserve, data.StartAt, data.EndAt, data.ScheduleIds, data.Quantity);
+        }
+
+        await dbCtx.SaveChangesAsync();
+        await transaction.CommitAsync();
+    }
+
+    /// <summary>
+    /// Aplica período, horários e quantidade (nulos não mudam) conferindo a disponibilidade.
+    /// Reserva vinculada: período e horários são os da sala, então a mudança vai para a reserva de sala (com checagem
+    /// de conflito da sala) e para todos os recursos vinculados a ela. Não salva.
+    /// </summary>
+    private async Task ApplyEdit(
+        ResourceReserveModel reserve, DateOnly? startAt, DateOnly? endAt, HashSet<long>? scheduleIds, int? quantity)
+    {
+        if ((startAt == null) != (endAt == null))
+        {
+            throw new BadRequestException("Ambas as datas de início e término devem ser fornecidas para atualização.");
+        }
+
+        var targetStart = startAt ?? reserve.DateFrom;
+        var targetEnd = endAt ?? reserve.DateTo;
+        ReserveRules.EnsureValidPeriod(targetStart, targetEnd);
+
+        var currentScheduleIds = reserve.ResourceReserveSchedules.Select(s => s.FkScheduleId).ToHashSet();
+        bool schedulesChanged = scheduleIds is { Count: > 0 };
+        var targetScheduleIds = schedulesChanged ? scheduleIds! : currentScheduleIds;
+
+        if (schedulesChanged)
+        {
+            await ReserveRules.EnsureSchedulesAvailable(
+                dbCtx, targetScheduleIds.Where(id => !currentScheduleIds.Contains(id)).ToHashSet());
+        }
+
+        var targetQuantity = quantity ?? reserve.Quantity;
+
+        if (reserve.FkSpaceReserveId is { } spaceReserveId)
+        {
+            var spaceReserve = await dbCtx.SpaceReserves
+                .Include(sr => sr.SpaceReserveSchedules)
+                .FirstAsync(sr => sr.Id == spaceReserveId);
+
+            if (ResourceAvailability.IsActiveStatus(spaceReserve.Status))
+            {
+                await ReserveRules.EnsureSpaceNoConflict(
+                    dbCtx, spaceReserve.Id, spaceReserve.FkSpaceId, targetStart, targetEnd, targetScheduleIds);
+            }
+
+            // Os vinculados (inclusive este) passam para o novo período; só a quantidade deste muda.
+            await ReserveRules.SyncLinkedResources(
+                dbCtx,
+                spaceReserve,
+                targetStart,
+                targetEnd,
+                targetScheduleIds,
+                requested: null,
+                quantityOverrides: new Dictionary<long, int> { [reserve.Id] = targetQuantity });
+
+            spaceReserve.DateFrom = targetStart;
+            spaceReserve.DateTo = targetEnd;
+            if (schedulesChanged)
+            {
+                ReserveRules.ReplaceSpaceSchedules(spaceReserve, targetScheduleIds);
+            }
+
+            return;
+        }
+
+        if (ResourceAvailability.IsActiveStatus(reserve.Status))
+        {
+            await ResourceAvailability.EnsureAvailable(
+                dbCtx,
+                [new ResourceDemand(reserve.FkResourceId, targetQuantity)],
+                targetStart,
+                targetEnd,
+                targetScheduleIds,
+                new ReserveExclusion(ResourceReserveId: reserve.Id));
+        }
+
+        reserve.DateFrom = targetStart;
+        reserve.DateTo = targetEnd;
+        reserve.Quantity = targetQuantity;
+        if (schedulesChanged)
+        {
+            ReserveRules.ReplaceResourceSchedules(reserve, targetScheduleIds);
+        }
+    }
+
+    private static IQueryable<ResourceReserveRow> Project(IQueryable<ResourceReserveModel> query) =>
+        query
+            .Select(rr => new ResourceReserveRow(
+                rr.Id,
+                rr.CreatedAt,
+                rr.DateFrom,
+                rr.DateTo,
+                rr.Purpose,
+                rr.Status,
+                rr.Quantity,
+                new ResourceResponseDTO(
+                    rr.Resource.Id,
+                    rr.Resource.Name,
+                    rr.Resource.Enabled,
+                    rr.Resource.Description,
+                    rr.Resource.Reservable,
+                    rr.Resource.Quantity,
+                    null),
+                rr.ResourceReserveSchedules
+                    .Select(s => new ScheduleResponseDTO(
+                        s.Schedule.Id,
+                        s.Schedule.StartAt,
+                        s.Schedule.EndAt,
+                        s.Schedule.Shift,
+                        s.Schedule.Enabled))
+                    .ToList(),
+                rr.SpaceReserve == null
+                    ? null
+                    : new LinkedSpaceReserveDTO(
+                        rr.SpaceReserve.Id,
+                        rr.SpaceReserve.FkSpaceId,
+                        rr.SpaceReserve.Space.Name,
+                        rr.SpaceReserve.Status),
+                new AccountRow(
+                    rr.Account.Id,
+                    rr.Account.Registration,
+                    rr.Account.UserName,
+                    rr.Account.Email,
+                    rr.Account.LockoutEnd)))
+            .AsSplitQuery();
 }

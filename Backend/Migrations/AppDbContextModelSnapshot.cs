@@ -18,7 +18,7 @@ namespace Backend.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true)
@@ -294,6 +294,10 @@ namespace Backend.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("generated_at");
 
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer")
+                        .HasColumnName("kind");
+
                     b.Property<int>("ToMonth")
                         .HasColumnType("integer")
                         .HasColumnName("to_month");
@@ -308,7 +312,7 @@ namespace Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FromYear", "FromMonth", "ToYear", "ToMonth")
+                    b.HasIndex("Kind", "FromYear", "FromMonth", "ToYear", "ToMonth")
                         .IsUnique();
 
                     b.ToTable("report");
@@ -327,6 +331,14 @@ namespace Backend.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<DateOnly>("DateFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("date_from");
+
+                    b.Property<DateOnly>("DateTo")
+                        .HasColumnType("date")
+                        .HasColumnName("date_to");
+
                     b.Property<string>("FkAccountId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -336,7 +348,7 @@ namespace Backend.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("fk_resource_id");
 
-                    b.Property<long>("FkSpaceReserveId")
+                    b.Property<long?>("FkSpaceReserveId")
                         .HasColumnType("bigint")
                         .HasColumnName("fk_space_reserve_id");
 
@@ -346,15 +358,50 @@ namespace Backend.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("purpose");
 
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<EReserveStatus>("Status")
+                        .HasColumnType("reserve_status_enum")
+                        .HasColumnName("status");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FkAccountId");
 
-                    b.HasIndex("FkResourceId");
-
                     b.HasIndex("FkSpaceReserveId");
 
+                    b.HasIndex("FkResourceId", "DateFrom", "DateTo");
+
                     b.ToTable("resource_reserve");
+                });
+
+            modelBuilder.Entity("Models.Reserve.ResourceReserveScheduleModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("FkResourceReserveId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_resource_reserve_id");
+
+                    b.Property<long>("FkScheduleId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_schedule_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FkScheduleId");
+
+                    b.HasIndex("FkResourceReserveId", "FkScheduleId")
+                        .IsUnique();
+
+                    b.ToTable("resource_reserve_schedule");
                 });
 
             modelBuilder.Entity("Models.Reserve.SpaceReserveModel", b =>
@@ -415,6 +462,11 @@ namespace Backend.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean")
                         .HasColumnName("enabled");
@@ -425,10 +477,23 @@ namespace Backend.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
+                    b.Property<int?>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<bool>("Reservable")
+                        .HasColumnType("boolean")
+                        .HasColumnName("reservable");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.HasIndex("Name", "Description")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name", "Description"), "GIN");
 
                     b.ToTable("resource");
                 });
@@ -692,22 +757,39 @@ namespace Backend.Migrations
                         .IsRequired();
 
                     b.HasOne("Models.Resource.ResourceModel", "Resource")
-                        .WithMany()
+                        .WithMany("ResourceReserves")
                         .HasForeignKey("FkResourceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Models.Reserve.SpaceReserveModel", "SpaceReserve")
                         .WithMany("ResourceReserves")
-                        .HasForeignKey("FkSpaceReserveId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("FkSpaceReserveId");
 
                     b.Navigation("Account");
 
                     b.Navigation("Resource");
 
                     b.Navigation("SpaceReserve");
+                });
+
+            modelBuilder.Entity("Models.Reserve.ResourceReserveScheduleModel", b =>
+                {
+                    b.HasOne("Models.Reserve.ResourceReserveModel", "ResourceReserve")
+                        .WithMany("ResourceReserveSchedules")
+                        .HasForeignKey("FkResourceReserveId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Models.Schedule.ScheduleModel", "Schedule")
+                        .WithMany()
+                        .HasForeignKey("FkScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ResourceReserve");
+
+                    b.Navigation("Schedule");
                 });
 
             modelBuilder.Entity("Models.Reserve.SpaceReserveModel", b =>
@@ -795,6 +877,11 @@ namespace Backend.Migrations
                     b.Navigation("SpaceReserves");
                 });
 
+            modelBuilder.Entity("Models.Reserve.ResourceReserveModel", b =>
+                {
+                    b.Navigation("ResourceReserveSchedules");
+                });
+
             modelBuilder.Entity("Models.Reserve.SpaceReserveModel", b =>
                 {
                     b.Navigation("ResourceReserves");
@@ -804,6 +891,8 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Models.Resource.ResourceModel", b =>
                 {
+                    b.Navigation("ResourceReserves");
+
                     b.Navigation("SpaceResources");
                 });
 

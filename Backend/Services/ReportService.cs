@@ -16,12 +16,15 @@ public interface IReportService
     /// Usa o relatório gravado quando existir; caso contrário calcula, grava e devolve.
     /// </summary>
     public Task<ReportResponseDTO> GetReport(ReportRequestDTO query);
+
+    /// <summary>Relatório de uso dos recursos reserváveis, com as mesmas regras e cache do relatório de salas.</summary>
+    public Task<ResourceReportResponseDTO> GetResourceReport(ReportRequestDTO query);
 }
 
 public class ReportService(AppDbContext dbCtx) : IReportService
 {
     /// <summary>Suba este número quando mudar o cálculo ou o formato do DTO: os relatórios antigos são refeitos.</summary>
-    private const int CacheVersion = 2;
+    private const int CacheVersion = 3;
 
     /// <summary>Limite de meses por consulta, para uma única requisição não varrer anos de reservas.</summary>
     private const int MaxRangeMonths = 60;
@@ -31,7 +34,20 @@ public class ReportService(AppDbContext dbCtx) : IReportService
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public async Task<ReportResponseDTO> GetReport(ReportRequestDTO query)
+    public Task<ReportResponseDTO> GetReport(ReportRequestDTO query) =>
+        GetCached(EReportKind.Spaces, query, BuildReport, report => report.GeneratedAt);
+
+    public Task<ResourceReportResponseDTO> GetResourceReport(ReportRequestDTO query) =>
+        GetCached(EReportKind.Resources, query, BuildResourceReport, report => report.GeneratedAt);
+
+    /// <summary>
+    /// Usa o relatório gravado do tipo e período quando existir (e estiver na versão atual); senão calcula e grava.
+    /// </summary>
+    private async Task<T> GetCached<T>(
+        EReportKind kind,
+        ReportRequestDTO query,
+        Func<DateOnly, DateOnly, DateOnly, Task<T>> build,
+        Func<T, DateTimeOffset> generatedAt) where T : class
     {
         var (rangeStart, lastMonth) = ResolveRange(query);
 
@@ -44,38 +60,40 @@ public class ReportService(AppDbContext dbCtx) : IReportService
         }
 
         var stored = await dbCtx.Reports.FirstOrDefaultAsync(r =>
-            r.FromYear == rangeStart.Year && r.FromMonth == rangeStart.Month
+            r.Kind == kind
+            && r.FromYear == rangeStart.Year && r.FromMonth == rangeStart.Month
             && r.ToYear == lastMonth.Year && r.ToMonth == lastMonth.Month);
 
         if (stored != null && !query.Refresh && stored.Version == CacheVersion)
         {
-            var cached = TryDeserialize(stored.Data);
+            var cached = TryDeserialize<T>(stored.Data);
             if (cached != null)
             {
                 return cached;
             }
         }
 
-        var report = await BuildReport(rangeStart, lastMonth, today);
+        var report = await build(rangeStart, lastMonth, today);
         var json = JsonSerializer.Serialize(report, JsonOptions);
 
         if (stored == null)
         {
             dbCtx.Reports.Add(new ReportModel
             {
+                Kind = kind,
                 FromYear = rangeStart.Year,
                 FromMonth = rangeStart.Month,
                 ToYear = lastMonth.Year,
                 ToMonth = lastMonth.Month,
                 Version = CacheVersion,
-                GeneratedAt = report.GeneratedAt,
+                GeneratedAt = generatedAt(report),
                 Data = json
             });
         }
         else
         {
             stored.Version = CacheVersion;
-            stored.GeneratedAt = report.GeneratedAt;
+            stored.GeneratedAt = generatedAt(report);
             stored.Data = json;
         }
 
@@ -134,11 +152,11 @@ public class ReportService(AppDbContext dbCtx) : IReportService
         return (first, last);
     }
 
-    private static ReportResponseDTO? TryDeserialize(string json)
+    private static T? TryDeserialize<T>(string json) where T : class
     {
         try
         {
-            return JsonSerializer.Deserialize<ReportResponseDTO>(json, JsonOptions);
+            return JsonSerializer.Deserialize<T>(json, JsonOptions);
         }
         catch (JsonException)
         {
@@ -216,6 +234,7 @@ public class ReportService(AppDbContext dbCtx) : IReportService
                 var items = bySpace[space.Id].ToList();
                 var absent = items.Count(i => i.Status == EReportReserveStatus.Absent);
                 var slotDays = items.Sum(i => i.SlotDays);
+                var absentSlotDays = items.Where(i => i.Status == EReportReserveStatus.Absent).Sum(i => i.SlotDays);
 
                 return new ReportSpaceStatDTO(
                     space.Id,
@@ -224,7 +243,8 @@ public class ReportService(AppDbContext dbCtx) : IReportService
                     items.Count,
                     items.Count - absent,
                     absent,
-                    Percent(absent, items.Count));
+                    // Ausência = horários ausentes / horários reservados (reserva maior pesa mais).
+                    Percent(absentSlotDays, slotDays));
             })
             .ToList();
 
@@ -257,6 +277,8 @@ public class ReportService(AppDbContext dbCtx) : IReportService
                 var first = group.First().Row;
                 var total = group.Count();
                 var absent = group.Count(i => i.Status == EReportReserveStatus.Absent);
+                var slots = group.Sum(i => i.SlotDays);
+                var absentSlots = group.Where(i => i.Status == EReportReserveStatus.Absent).Sum(i => i.SlotDays);
 
                 return new ReportUserStatDTO(
                     group.Key,
@@ -265,7 +287,7 @@ public class ReportService(AppDbContext dbCtx) : IReportService
                     total,
                     total - absent,
                     absent,
-                    Percent(absent, total));
+                    Percent(absentSlots, slots));
             })
             .ToList();
 
@@ -277,6 +299,8 @@ public class ReportService(AppDbContext dbCtx) : IReportService
             u => u.Name);
 
         var totalAbsent = counted.Count(c => c.Status == EReportReserveStatus.Absent);
+        var totalSlotDays = counted.Sum(c => c.SlotDays);
+        var absentSlotDaysTotal = counted.Where(c => c.Status == EReportReserveStatus.Absent).Sum(c => c.SlotDays);
         var averageOccupancy = spaceStats.Count == 0
             ? 0
             : Math.Round(spaceStats.Average(s => s.OccupancyRate), 1, MidpointRounding.AwayFromZero);
@@ -302,12 +326,187 @@ public class ReportService(AppDbContext dbCtx) : IReportService
             DateTimeOffset.UtcNow,
             new ReportSummaryDTO(
                 averageOccupancy,
-                Percent(totalAbsent, counted.Count),
+                Percent(absentSlotDaysTotal, totalSlotDays),
                 counted.Count,
                 counted.Count - totalAbsent,
                 totalAbsent,
                 highestDemand),
             new ReportRankingDTO(highestDemand, lowestDemand, mostIdleSpaces),
+            new ReportUsersDTO(mostReservesUsers, mostIdleUsers),
+            reserves);
+    }
+
+    private async Task<ResourceReportResponseDTO> BuildResourceReport(DateOnly rangeStart, DateOnly lastMonth, DateOnly today)
+    {
+        var rangeEnd = lastMonth.AddMonths(1).AddDays(-1);
+        var daysInRange = rangeEnd.DayNumber - rangeStart.DayNumber + 1;
+
+        // Mesmas regras das salas: só pendentes e confirmadas entram (canceladas e recusadas nunca).
+        var rows = await dbCtx.ResourceReserves.AsNoTracking()
+            .Where(rr => rr.DateFrom <= rangeEnd && rr.DateTo >= rangeStart)
+            .Where(rr => rr.Status == EReserveStatus.Booking || rr.Status == EReserveStatus.Confirmed)
+            .Where(rr => rr.Resource.Reservable)
+            .Select(rr => new ReportResourceReserveRow(
+                rr.Id,
+                rr.FkResourceId,
+                rr.Resource.Name,
+                rr.FkAccountId,
+                rr.Account.UserName,
+                rr.Account.Registration,
+                rr.Quantity,
+                rr.SpaceReserve == null ? null : rr.SpaceReserve.Space.Name,
+                rr.DateFrom,
+                rr.DateTo,
+                rr.Status,
+                rr.ResourceReserveSchedules.Select(s => s.FkScheduleId).ToList()))
+            .AsSplitQuery()
+            .ToListAsync();
+
+        var resources = await dbCtx.Resources.AsNoTracking()
+            .Where(r => r.Reservable && r.Quantity != null)
+            .Select(r => new ReportResourceRow(r.Id, r.Name, r.Quantity!.Value, r.Enabled))
+            .ToListAsync();
+
+        var enabledScheduleIds = await dbCtx.Schedules.AsNoTracking()
+            .Where(s => s.Enabled)
+            .Select(s => s.Id)
+            .ToListAsync();
+
+        var counted = new List<ReportCountedResourceReserve>();
+        foreach (var row in rows)
+        {
+            var status = Classify(row.Status, row.DateFrom, today);
+            if (status == null)
+            {
+                continue;
+            }
+
+            var from = row.DateFrom > rangeStart ? row.DateFrom : rangeStart;
+            var to = row.DateTo < rangeEnd ? row.DateTo : rangeEnd;
+            var days = Math.Max(0, to.DayNumber - from.DayNumber + 1);
+
+            // unidades x horários x dias dentro do período
+            counted.Add(new ReportCountedResourceReserve(row, status.Value, row.Quantity * days * row.ScheduleIds.Count));
+        }
+
+        var slotsPerDay = enabledScheduleIds
+            .Concat(counted.SelectMany(c => c.Row.ScheduleIds))
+            .Distinct()
+            .Count();
+
+        // Recurso desativado só aparece se teve reserva contabilizada (como o espaço bloqueado no relatório de salas).
+        var countedResourceIds = counted.Select(c => c.Row.ResourceId).ToHashSet();
+        var byResource = counted.ToLookup(c => c.Row.ResourceId);
+
+        var resourceStats = resources
+            .Where(r => r.Enabled || countedResourceIds.Contains(r.Id))
+            .Select(resource =>
+            {
+                var items = byResource[resource.Id].ToList();
+                var absent = items.Count(i => i.Status == EReportReserveStatus.Absent);
+                var unitSlotDays = items.Sum(i => i.UnitSlotDays);
+                var absentUnitSlotDays = items.Where(i => i.Status == EReportReserveStatus.Absent).Sum(i => i.UnitSlotDays);
+                double capacity = (double)resource.Quantity * slotsPerDay * daysInRange;
+
+                return new ReportResourceStatDTO(
+                    resource.Id,
+                    resource.Name,
+                    resource.Quantity,
+                    Percent(unitSlotDays, capacity),
+                    items.Count,
+                    items.Count - absent,
+                    absent,
+                    items.Sum(i => i.Row.Quantity),
+                    // Ausência = unidades x horários ausentes / unidades x horários reservados.
+                    Percent(absentUnitSlotDays, unitSlotDays));
+            })
+            .ToList();
+
+        var highestDemand = TopTied(
+            resourceStats.Where(r => r.UtilizationRate > 0),
+            r => r.UtilizationRate,
+            r => r.Name);
+
+        var lowestDemand = resourceStats.Count < 2
+            ? new List<ReportResourceStatDTO>()
+            : TopTied(resourceStats, r => r.UtilizationRate, r => r.Name, descending: false);
+        if (highestDemand.Count > 0 && lowestDemand.Count > 0
+            && lowestDemand[0].UtilizationRate >= highestDemand[0].UtilizationRate)
+        {
+            lowestDemand = [];
+        }
+
+        var mostIdleResources = TopTied(
+            resourceStats.Where(r => r.AbsentReserves > 0),
+            r => (r.AbsentReserves, r.IdleRate),
+            r => r.Name);
+
+        var userStats = counted
+            .GroupBy(c => c.Row.AccountId)
+            .Select(group =>
+            {
+                var first = group.First().Row;
+                var total = group.Count();
+                var absent = group.Count(i => i.Status == EReportReserveStatus.Absent);
+                var slots = group.Sum(i => i.UnitSlotDays);
+                var absentSlots = group.Where(i => i.Status == EReportReserveStatus.Absent).Sum(i => i.UnitSlotDays);
+
+                return new ReportUserStatDTO(
+                    group.Key,
+                    first.UserName ?? "Sem nome",
+                    first.Registration,
+                    total,
+                    total - absent,
+                    absent,
+                    Percent(absentSlots, slots));
+            })
+            .ToList();
+
+        var mostReservesUsers = TopTied(userStats, u => u.TotalReserves, u => u.Name);
+        var mostIdleUsers = TopTied(
+            userStats.Where(u => u.AbsentReserves > 0),
+            u => (u.AbsentReserves, u.IdleRate),
+            u => u.Name);
+
+        var totalAbsent = counted.Count(c => c.Status == EReportReserveStatus.Absent);
+        var totalUnitSlotDays = counted.Sum(c => c.UnitSlotDays);
+        var absentUnitSlotDaysTotal = counted.Where(c => c.Status == EReportReserveStatus.Absent).Sum(c => c.UnitSlotDays);
+        var linked = counted.Count(c => c.Row.SpaceName != null);
+        var averageUtilization = resourceStats.Count == 0
+            ? 0
+            : Math.Round(resourceStats.Average(r => r.UtilizationRate), 1, MidpointRounding.AwayFromZero);
+
+        var reserves = counted
+            .OrderBy(c => c.Row.DateFrom)
+            .ThenBy(c => c.Row.ResourceName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(c => c.Row.Id)
+            .Select(c => new ResourceReportReserveDTO(
+                c.Row.Id,
+                c.Row.ResourceName,
+                c.Row.UserName ?? "Sem nome",
+                c.Row.Quantity,
+                c.Row.SpaceName,
+                c.Row.DateFrom,
+                c.Row.DateTo,
+                c.Status))
+            .ToList();
+
+        return new ResourceReportResponseDTO(
+            rangeStart.Year,
+            rangeStart.Month,
+            lastMonth.Year,
+            lastMonth.Month,
+            DateTimeOffset.UtcNow,
+            new ResourceReportSummaryDTO(
+                averageUtilization,
+                Percent(absentUnitSlotDaysTotal, totalUnitSlotDays),
+                counted.Count,
+                counted.Count - totalAbsent,
+                totalAbsent,
+                linked,
+                counted.Count - linked,
+                highestDemand),
+            new ResourceReportRankingDTO(highestDemand, lowestDemand, mostIdleResources),
             new ReportUsersDTO(mostReservesUsers, mostIdleUsers),
             reserves);
     }
@@ -318,14 +517,17 @@ public class ReportService(AppDbContext dbCtx) : IReportService
     /// em "Booking" cuja data de início já passou = Ausente (a confirmação deveria ter chegado antes da reserva);
     /// em "Booking" que ainda não chegou ao dia = fora do relatório (retorna null).
     /// </summary>
-    private static EReportReserveStatus? Classify(ReportReserveRow row, DateOnly today)
+    private static EReportReserveStatus? Classify(ReportReserveRow row, DateOnly today) =>
+        Classify(row.Status, row.DateFrom, today);
+
+    private static EReportReserveStatus? Classify(EReserveStatus status, DateOnly dateFrom, DateOnly today)
     {
-        if (row.Status == EReserveStatus.Confirmed)
+        if (status == EReserveStatus.Confirmed)
         {
             return EReportReserveStatus.Confirmed;
         }
 
-        return row.DateFrom < today ? EReportReserveStatus.Absent : null;
+        return dateFrom < today ? EReportReserveStatus.Absent : null;
     }
 
     /// <summary>
@@ -380,3 +582,22 @@ internal sealed record ReportSpaceRow(long Id, string Name, bool Locked);
 
 /// <param name="SlotDays">Horários ocupados no mês: dias da reserva dentro do mês x horários da reserva.</param>
 internal sealed record ReportCountedReserve(ReportReserveRow Row, EReportReserveStatus Status, int SlotDays);
+
+internal sealed record ReportResourceReserveRow(
+    long Id,
+    long ResourceId,
+    string ResourceName,
+    string AccountId,
+    string? UserName,
+    string Registration,
+    int Quantity,
+    string? SpaceName,
+    DateOnly DateFrom,
+    DateOnly DateTo,
+    EReserveStatus Status,
+    List<long> ScheduleIds);
+
+internal sealed record ReportResourceRow(long Id, string Name, int Quantity, bool Enabled);
+
+/// <summary><c>UnitSlotDays</c>: unidades x horários x dias da reserva dentro do período.</summary>
+internal sealed record ReportCountedResourceReserve(ReportResourceReserveRow Row, EReportReserveStatus Status, int UnitSlotDays);

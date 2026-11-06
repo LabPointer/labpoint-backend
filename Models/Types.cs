@@ -14,6 +14,12 @@ public enum EShift
     Night
 }
 
+public enum EReportKind
+{
+    Spaces,
+    Resources
+}
+
 public enum EReserveStatus
 {
     Booking,

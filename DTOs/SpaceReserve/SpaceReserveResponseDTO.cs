@@ -12,5 +12,6 @@ public record SpaceReserveResponseDTO(
     string Purpose,
     EReserveStatus Status,
     SpaceResponseDTO Space,
-    List<ScheduleResponseDTO> Schedules
+    List<ScheduleResponseDTO> Schedules,
+    List<LinkedResourceDTO> Resources
 );

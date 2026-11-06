@@ -33,6 +33,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<ResourceReserveModel> ResourceReserves { get; set; }
 
+    public DbSet<ResourceReserveScheduleModel> ResourceReserveSchedules { get; set; }
+
     public DbSet<ReportModel> Reports { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -50,5 +52,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             .HasIndex(a => new { a.Name, a.Description })
             .HasMethod("GIN")
             .IsTsVectorExpressionIndex("portuguese");
+
+        builder.Entity<ResourceModel>()
+            .HasIndex(r => new { r.Name, r.Description })
+            .HasMethod("GIN")
+            .IsTsVectorExpressionIndex("portuguese");
+
+        // Consultas de disponibilidade: reservas de um recurso que se sobrepõem a um período.
+        builder.Entity<ResourceReserveModel>()
+            .HasIndex(r => new { r.FkResourceId, r.DateFrom, r.DateTo });
     }
 }

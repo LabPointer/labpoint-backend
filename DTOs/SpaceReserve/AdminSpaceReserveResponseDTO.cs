@@ -14,4 +14,5 @@ public record AdminSpaceReserveResponseDTO(
     EReserveStatus Status,
     SpaceResponseDTO Spaces,
     AccountResponseDTO Account,
-    List<ScheduleResponseDTO> Schedules);
+    List<ScheduleResponseDTO> Schedules,
+    List<LinkedResourceDTO> Resources);

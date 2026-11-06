@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using System.Security.Claims;
 using Backend.Handler;
 using Data;
@@ -6,7 +5,6 @@ using DTOs.Account;
 using DTOs.Schedule;
 using DTOs.Space;
 using DTOs.SpaceReserve;
-using DTOs.Subject;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using Models.Reserve;
@@ -32,10 +30,6 @@ public interface ISpaceReserveService
 
 public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
 {
-    /// <summary>Só reservas pendentes ou confirmadas ocupam horários.</summary>
-    private static readonly Expression<Func<SpaceReserveModel, bool>> IsActive =
-        sr => sr.Status == EReserveStatus.Booking || sr.Status == EReserveStatus.Confirmed;
-
     public async Task<List<SpaceReserveResponseDTO>> GetSpaceReserve(ClaimsPrincipal user, SpaceReserveRequestDTO query)
     {
         if (query.StartAt > query.EndAt)
@@ -92,6 +86,11 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
                         sc.Schedule.Shift,
                         sc.Schedule.Enabled
                     ))
+                    .ToList(),
+                sr.ResourceReserves
+                    .OrderBy(rr => rr.Resource.Name)
+                    .Select(rr => new LinkedResourceDTO(
+                        rr.Id, rr.FkResourceId, rr.Resource.Name, rr.Resource.Description, rr.Quantity, rr.Status))
                     .ToList()
             ))
             .AsSplitQuery()
@@ -114,7 +113,7 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
 
         var existingSchedules = await dbCtx.SpaceReserves
             .Where(sr => sr.FkSpaceId == spaceId && sr.DateFrom <= query.EndAt && sr.DateTo >= query.StartAt)
-            .Where(IsActive)
+            .Where(ReserveRules.IsSpaceReserveActive)
             .SelectMany(sr => sr.SpaceReserveSchedules.Select(s => new ScheduleResponseDTO(
                 s.Schedule.Id,
                 s.Schedule.StartAt,
@@ -137,10 +136,7 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
     {
         string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
-        if (data.StartAt > data.EndAt)
-        {
-            throw new BadRequestException("Data de início precisa ser igual ou anterior à data de término.");
-        }
+        ReserveRules.EnsureValidPeriod(data.StartAt, data.EndAt);
 
         // Regras de negócio no servidor (o front só esconde espaços bloqueados): sem isso, chamar a API direto
         // reservava espaços bloqueados e IDs inexistentes terminavam em erro 500 de chave estrangeira.
@@ -159,17 +155,8 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
             throw new BadRequestException("O espaço está bloqueado e não aceita novas reservas.");
         }
 
-        await EnsureSchedulesAvailable(data.ScheduleIds);
-
-        bool hasConflict = await dbCtx.SpaceReserves
-            .Where(sr => sr.FkSpaceId == spaceId && sr.DateFrom <= data.EndAt && sr.DateTo >= data.StartAt)
-            .Where(IsActive)
-            .AnyAsync(sr => sr.SpaceReserveSchedules.Any(s => data.ScheduleIds.Contains(s.FkScheduleId)));
-
-        if (hasConflict)
-        {
-            throw new BadRequestException("A reserva conflita com uma reserva existente no mesmo período e horário.");
-        }
+        await ReserveRules.EnsureSchedulesAvailable(dbCtx, data.ScheduleIds);
+        await ReserveRules.EnsureSpaceNoConflict(dbCtx, 0, spaceId, data.StartAt, data.EndAt, data.ScheduleIds);
 
         var hasElevatedRole = user.IsInRole("Owner") || user.IsInRole("Admin");
         if (data.Lock && !hasElevatedRole)
@@ -190,6 +177,13 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
                 FkScheduleId = scheduleId
             }).ToList()
         };
+
+        // Recursos pedidos junto: conferidos e criados como reservas vinculadas (mesmo período e horários).
+        if (data.Resources is { Count: > 0 })
+        {
+            await ReserveRules.SyncLinkedResources(
+                dbCtx, spaceReserve, data.StartAt, data.EndAt, data.ScheduleIds, data.Resources);
+        }
 
         dbCtx.SpaceReserves.Add(spaceReserve);
         await dbCtx.SaveChangesAsync();
@@ -213,47 +207,7 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
             throw new BadRequestException("Não é possível editar uma reserva cancelada ou rejeitada.");
         }
 
-        bool dataChanged = data.StartAt != null || data.EndAt != null;
-        if (dataChanged)
-        {
-            if (data.StartAt == null || data.EndAt == null)
-            {
-                throw new BadRequestException("Ambas as datas de início e término devem ser fornecidas para atualização.");
-            }
-            if (data.StartAt > data.EndAt)
-            {
-                throw new BadRequestException("Data de início precisa ser igual ou anterior a data de término.");
-            }
-        }
-
-        bool schedulesChanged = data.ScheduleIds != null && data.ScheduleIds.Count > 0;
-        var currentScheduleIds = spaceReserve.SpaceReserveSchedules.Select(s => s.FkScheduleId).ToHashSet();
-
-        if (schedulesChanged)
-        {
-            await EnsureSchedulesAvailable(data.ScheduleIds!.Where(id => !currentScheduleIds.Contains(id)).ToHashSet());
-        }
-
-        var targetStart = data.StartAt ?? spaceReserve.DateFrom;
-        var targetEnd = data.EndAt ?? spaceReserve.DateTo;
-        var targetScheduleIds = schedulesChanged ? data.ScheduleIds! : currentScheduleIds;
-
-        if (targetScheduleIds.Any())
-        {
-            await EnsureNoConflict(reserveId, spaceReserve.FkSpaceId, targetStart, targetEnd, targetScheduleIds);
-        }
-
-        if (dataChanged)
-        {
-            spaceReserve.DateFrom = data.StartAt!.Value;
-            spaceReserve.DateTo = data.EndAt!.Value;
-        }
-
-        if (schedulesChanged)
-        {
-            ReplaceSchedules(spaceReserve, data.ScheduleIds!);
-        }
-
+        await ApplyPeriodAndResources(spaceReserve, data.StartAt, data.EndAt, data.ScheduleIds, data.Resources);
         await dbCtx.SaveChangesAsync();
     }
 
@@ -261,7 +215,8 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
     {
         string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
-        // Um único UPDATE (antes: SELECT + UPDATE).
+        await using var transaction = await dbCtx.Database.BeginTransactionAsync();
+
         var affected = await dbCtx.SpaceReserves
             .Where(sr => sr.Id == reserveId && sr.FkAccountId == userId)
             .ExecuteUpdateAsync(setters => setters.SetProperty(sr => sr.Status, EReserveStatus.Canceled));
@@ -270,6 +225,10 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
         {
             throw new ResourceNotFoundException("Reserva não encontrada.");
         }
+
+        // Cancelar a sala cancela os recursos reservados junto.
+        await ReserveRules.CascadeStatus(dbCtx, reserveId, EReserveStatus.Canceled);
+        await transaction.CommitAsync();
     }
 
     public async Task<List<AdminSpaceReserveResponseDTO>> AdminGetSpaceReserve(ClaimsPrincipal user, AdminSpaceReserveRequestDTO query)
@@ -351,6 +310,11 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
                         sc.Schedule.Shift,
                         sc.Schedule.Enabled
                     ))
+                    .ToList(),
+                Resources = sr.ResourceReserves
+                    .OrderBy(rr => rr.Resource.Name)
+                    .Select(rr => new LinkedResourceDTO(
+                        rr.Id, rr.FkResourceId, rr.Resource.Name, rr.Resource.Description, rr.Quantity, rr.Status))
                     .ToList()
             })
             .AsSplitQuery()
@@ -376,7 +340,8 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
                 row.Status,
                 row.Space,
                 AccountDirectory.ToDto(row.Account, roles, subjects),
-                row.Schedules))
+                row.Schedules,
+                row.Resources))
             .ToList();
     }
 
@@ -396,96 +361,86 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
         bool datesChanged = data.StartAt != null || data.EndAt != null;
         bool schedulesChanged = data.ScheduleIds != null && data.ScheduleIds.Count > 0;
 
-        if (data.Status == null && !datesChanged && !schedulesChanged)
+        if (data.Status == null && !datesChanged && !schedulesChanged && data.Resources == null)
         {
             throw new BadRequestException("Informe ao menos um campo para alterar.");
         }
 
+        var previousStatus = spaceReserve.Status;
+        var targetStatus = data.Status ?? spaceReserve.Status;
+
+        await using var transaction = await dbCtx.Database.BeginTransactionAsync();
+
+        // O status vem antes: a disponibilidade só é conferida se a reserva ficar (ou continuar) ativa.
+        spaceReserve.Status = targetStatus;
+        await ApplyPeriodAndResources(spaceReserve, data.StartAt, data.EndAt, data.ScheduleIds, data.Resources);
+        await dbCtx.SaveChangesAsync();
+
+        if (targetStatus != previousStatus)
+        {
+            await ReserveRules.CascadeStatus(dbCtx, spaceReserve.Id, targetStatus);
+        }
+
+        await transaction.CommitAsync();
+    }
+
+    /// <summary>
+    /// Valida e aplica período, horários e recursos vinculados (campos nulos não mudam). A sala só é conferida
+    /// contra conflitos se a reserva estiver ativa; os recursos vinculados seguem o mesmo período e horários.
+    /// Não salva.
+    /// </summary>
+    private async Task ApplyPeriodAndResources(
+        SpaceReserveModel spaceReserve,
+        DateOnly? startAt,
+        DateOnly? endAt,
+        HashSet<long>? scheduleIds,
+        List<ReserveResourceItemDTO>? resources)
+    {
+        bool datesChanged = startAt != null || endAt != null;
         if (datesChanged)
         {
-            if (data.StartAt == null || data.EndAt == null)
+            if (startAt == null || endAt == null)
             {
                 throw new BadRequestException("Ambas as datas de início e término devem ser fornecidas para atualização.");
             }
 
-            if (data.StartAt > data.EndAt)
-            {
-                throw new BadRequestException("Data de início precisa ser igual ou anterior a data de término.");
-            }
+            ReserveRules.EnsureValidPeriod(startAt.Value, endAt.Value);
         }
 
+        bool schedulesChanged = scheduleIds != null && scheduleIds.Count > 0;
         var currentScheduleIds = spaceReserve.SpaceReserveSchedules.Select(s => s.FkScheduleId).ToHashSet();
 
         if (schedulesChanged)
         {
-            await EnsureSchedulesAvailable(data.ScheduleIds!.Where(id => !currentScheduleIds.Contains(id)).ToHashSet());
+            await ReserveRules.EnsureSchedulesAvailable(
+                dbCtx, scheduleIds!.Where(id => !currentScheduleIds.Contains(id)).ToHashSet());
         }
 
-        var targetStart = data.StartAt ?? spaceReserve.DateFrom;
-        var targetEnd = data.EndAt ?? spaceReserve.DateTo;
-        var targetStatus = data.Status ?? spaceReserve.Status;
-        var targetScheduleIds = schedulesChanged ? data.ScheduleIds! : currentScheduleIds;
+        var targetStart = startAt ?? spaceReserve.DateFrom;
+        var targetEnd = endAt ?? spaceReserve.DateTo;
+        var targetScheduleIds = schedulesChanged ? scheduleIds! : currentScheduleIds;
 
-        // Só reservas ativas ocupam horários: só há conflito se a reserva ficar (ou continuar) ativa.
-        bool willBeActive = targetStatus == EReserveStatus.Booking || targetStatus == EReserveStatus.Confirmed;
-        if (willBeActive && targetScheduleIds.Any())
+        if (ResourceAvailability.IsActiveStatus(spaceReserve.Status) && targetScheduleIds.Count > 0)
         {
-            await EnsureNoConflict(reserveId, spaceReserve.FkSpaceId, targetStart, targetEnd, targetScheduleIds);
+            await ReserveRules.EnsureSpaceNoConflict(
+                dbCtx, spaceReserve.Id, spaceReserve.FkSpaceId, targetStart, targetEnd, targetScheduleIds);
+        }
+
+        if (datesChanged || schedulesChanged || resources != null)
+        {
+            await ReserveRules.SyncLinkedResources(
+                dbCtx, spaceReserve, targetStart, targetEnd, targetScheduleIds, resources);
         }
 
         if (datesChanged)
         {
-            spaceReserve.DateFrom = data.StartAt!.Value;
-            spaceReserve.DateTo = data.EndAt!.Value;
+            spaceReserve.DateFrom = targetStart;
+            spaceReserve.DateTo = targetEnd;
         }
 
         if (schedulesChanged)
         {
-            ReplaceSchedules(spaceReserve, data.ScheduleIds!);
-        }
-
-        spaceReserve.Status = targetStatus;
-        await dbCtx.SaveChangesAsync();
-    }
-
-    /// <summary>Os horários novos precisam existir e estar ativos (uma consulta só).</summary>
-    private async Task EnsureSchedulesAvailable(HashSet<long> scheduleIds)
-    {
-        if (scheduleIds.Count == 0)
-        {
-            return;
-        }
-
-        var validCount = await dbCtx.Schedules.CountAsync(s => scheduleIds.Contains(s.Id) && s.Enabled);
-        if (validCount != scheduleIds.Count)
-        {
-            throw new BadRequestException("Um ou mais horários informados não existem ou estão desativados.");
-        }
-    }
-
-    private async Task EnsureNoConflict(long reserveId, long spaceId, DateOnly start, DateOnly end, HashSet<long> scheduleIds)
-    {
-        bool hasConflict = await dbCtx.SpaceReserves
-            .Where(sr => sr.Id != reserveId && sr.FkSpaceId == spaceId && sr.DateFrom <= end && sr.DateTo >= start)
-            .Where(IsActive)
-            .AnyAsync(sr => sr.SpaceReserveSchedules.Any(s => scheduleIds.Contains(s.FkScheduleId)));
-
-        if (hasConflict)
-        {
-            throw new BadRequestException("A reserva conflita com uma reserva existente no mesmo período e horário.");
-        }
-    }
-
-    private static void ReplaceSchedules(SpaceReserveModel spaceReserve, HashSet<long> scheduleIds)
-    {
-        spaceReserve.SpaceReserveSchedules.Clear();
-        foreach (var scheduleId in scheduleIds)
-        {
-            spaceReserve.SpaceReserveSchedules.Add(new SpaceReserveScheduleModel
-            {
-                FkSpaceReserveId = spaceReserve.Id,
-                FkScheduleId = scheduleId
-            });
+            ReserveRules.ReplaceSpaceSchedules(spaceReserve, targetScheduleIds);
         }
     }
 }
