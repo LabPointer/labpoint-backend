@@ -1,4 +1,5 @@
 using System.Net;
+using MailKit;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.AspNetCore.Identity;
@@ -130,7 +131,7 @@ public class SmtpEmailService(
         if (!string.IsNullOrEmpty(_settings.User))
             await client.AuthenticateAsync(_settings.User, _settings.Password);
 
-        await client.SendAsync(message);
+        await client.SendAsync(new SendRequest(message));
         await client.DisconnectAsync(true);
     }
 }

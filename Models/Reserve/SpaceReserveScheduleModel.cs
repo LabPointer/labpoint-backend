@@ -20,11 +20,11 @@ public class SpaceReserveScheduleModel
     [Column("fk_space_reserve_id")]
     public long FkSpaceReserveId { get; set; }
     [ForeignKey(nameof(FkSpaceReserveId))]
-    public virtual SpaceReserveModel Space { get; set; }
+    public virtual SpaceReserveModel Space { get; set; } = null!;
     
     [Required]
     [Column("fk_schedule_id")]
     public long FkScheduleId { get; set; }
     [ForeignKey(nameof(FkScheduleId))]
-    public virtual ScheduleModel Schedule { get; set; }
+    public virtual ScheduleModel Schedule { get; set; } = null!;
 }

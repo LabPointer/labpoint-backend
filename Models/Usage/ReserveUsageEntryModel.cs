@@ -22,18 +22,18 @@ public class ReserveUsageEntryModel
     [Column("fk_usage_id")]
     public long FkUsageId { get; set; }
     [ForeignKey(nameof(FkUsageId))]
-    public virtual ReserveUsageModel Usage { get; set; }
+    public virtual ReserveUsageModel Usage { get; set; } = null!;
 
     [Required]
     [Column("fk_schedule_id")]
     public long FkScheduleId { get; set; }
     [ForeignKey(nameof(FkScheduleId))]
-    public virtual ScheduleModel Schedule { get; set; }
+    public virtual ScheduleModel Schedule { get; set; } = null!;
 
     [Required]
     [Column("class_name")]
     [StringLength(60)]
-    public string ClassName { get; set; }
+    public string ClassName { get; set; } = null!;
 
     [Required]
     [Column("modality")]

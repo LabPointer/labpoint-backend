@@ -36,9 +36,9 @@ public class ReserveUsageModel
 
     [Required]
     [Column("fk_account_id")]
-    public string FkAccountId { get; set; }
+    public string FkAccountId { get; set; } = null!;
     [ForeignKey(nameof(FkAccountId))]
-    public virtual AccountModel Account { get; set; }
+    public virtual AccountModel Account { get; set; } = null!;
 
     [Required]
     [Column("date")]

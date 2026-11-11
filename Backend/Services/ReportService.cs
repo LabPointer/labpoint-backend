@@ -661,6 +661,8 @@ internal sealed record ReportReserveRow(
 
 internal sealed record ReportSpaceRow(long Id, string Name, bool Locked);
 
+/// <param name="Row">Linha da reserva considerada no relatório.</param>
+/// <param name="Status">Status da reserva para o relatório.</param>
 /// <param name="SlotDays">Horários ocupados no período: dias da reserva dentro do período x horários da reserva.</param>
 /// <param name="AbsentSlotDays">Desses, os que ficaram sem check-in (ausência).</param>
 internal sealed record ReportCountedReserve(

@@ -23,7 +23,7 @@ public class ResourceModel
     [Required]
     [Column("name")]
     [StringLength(100)]
-    public string Name { get; set; }
+    public string Name { get; set; } = null!;
 
     [Column("description")]
     [StringLength(500)]

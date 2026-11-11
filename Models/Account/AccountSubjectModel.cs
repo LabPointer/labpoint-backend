@@ -17,13 +17,13 @@ public class AccountSubjectModel
     
     [Required]
     [Column("fk_account_id")]
-    public string FkAccountId { get; set; }
+    public string FkAccountId { get; set; } = null!;
     [ForeignKey(nameof(FkAccountId))]
-    public virtual AccountModel Account { get; set; }
+    public virtual AccountModel Account { get; set; } = null!;
     
     [Required]
     [Column("fk_subject_id")]
     public long FkSubjectId { get; set; }
     [ForeignKey(nameof(FkSubjectId))]
-    public virtual SubjectModel Subject { get; set; }
+    public virtual SubjectModel Subject { get; set; } = null!;
 }

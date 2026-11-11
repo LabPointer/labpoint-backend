@@ -43,13 +43,13 @@ public class ResourceReserveModel
     [Required]
     [Column("purpose")]
     [StringLength(200)]
-    public string Purpose{ get; set; }
+    public string Purpose{ get; set; } = null!;
 
     [Required]
     [Column("fk_resource_id")]
     public long FkResourceId { get; set; }
     [ForeignKey(nameof(FkResourceId))]
-    public virtual ResourceModel Resource { get; set; }
+    public virtual ResourceModel Resource { get; set; } = null!;
 
     [Column("fk_space_reserve_id")]
     public long? FkSpaceReserveId { get; set; }
@@ -58,9 +58,9 @@ public class ResourceReserveModel
 
     [Required]
     [Column("fk_account_id")]
-    public string FkAccountId { get; set; }
+    public string FkAccountId { get; set; } = null!;
     [ForeignKey(nameof(FkAccountId))]
-    public virtual AccountModel Account { get; set; }
+    public virtual AccountModel Account { get; set; } = null!;
 
     public virtual ICollection<ResourceReserveScheduleModel> ResourceReserveSchedules { get; set; } = new List<ResourceReserveScheduleModel>();
 

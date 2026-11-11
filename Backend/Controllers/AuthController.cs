@@ -2,7 +2,6 @@ using Backend.Handler;
 using Backend.Services;
 using DTOs.Auth;
 using DTOs.Error;
-using MailKit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,9 +18,7 @@ public class AuthController(
     UserManager<AccountModel> userManager,
     SignInManager<AccountModel> signInManager,
     IBackgroundTaskService queueService,
-    IConfiguration configuration,
-    IOptions<FrontendSettings> frontend,
-    ILogger<AuthController> logger) : ControllerBase
+    IOptions<FrontendSettings> frontend) : ControllerBase
 {
     /// <summary>
     /// Registrar
@@ -184,7 +181,7 @@ public class AuthController(
         await queueService.EnqueueAsync(async (sp, ct) =>
         {
             var emailService = sp.GetRequiredService<IEmailSender<AccountModel>>();
-            var userService = sp.GetService<UserManager<AccountModel>>();
+            var userService = sp.GetRequiredService<UserManager<AccountModel>>();
             var token = await userService.GenerateEmailConfirmationTokenAsync(user);
             var link = $"{frontend.Value.Url}/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
 
@@ -197,7 +194,7 @@ public class AuthController(
         await queueService.EnqueueAsync(async (sp, ct) =>
         {
             var emailService = sp.GetRequiredService<IEmailSender<AccountModel>>();
-            var userService = sp.GetService<UserManager<AccountModel>>();
+            var userService = sp.GetRequiredService<UserManager<AccountModel>>();
             var token = await userService.GeneratePasswordResetTokenAsync(user);
             var frontendUrl = frontend.Value.Url;
             var link = $"{frontendUrl.TrimEnd('/')}/reset-password" +

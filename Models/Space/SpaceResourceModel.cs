@@ -19,11 +19,11 @@ public class SpaceResourceModel
     [Required]
     public long FkSpaceId { get; set; }
     [ForeignKey(nameof(FkSpaceId))]
-    public virtual SpaceModel Space { get; set; }
+    public virtual SpaceModel Space { get; set; } = null!;
     
     [Column("fk_resource_id")]
     [Required]
     public long FkResourceId { get; set; }
     [ForeignKey(nameof(FkResourceId))]
-    public virtual ResourceModel Resource { get; set; }
+    public virtual ResourceModel Resource { get; set; } = null!;
 }

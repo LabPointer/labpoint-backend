@@ -2,5 +2,5 @@ namespace Services;
 
 public class FrontendSettings
 {
-    public string Url { get; set; }
+    public string Url { get; set; } = null!;
 }
