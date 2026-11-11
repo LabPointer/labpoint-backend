@@ -52,3 +52,12 @@ public enum EUsageModality
     Undergraduate,
     Postgraduate
 }
+
+/// <summary>Origem de um feriado: os três primeiros são gerados por ano; os extras são cadastrados pelo admin.</summary>
+public enum EHolidaySource
+{
+    National,
+    State,
+    Municipal,
+    Custom
+}

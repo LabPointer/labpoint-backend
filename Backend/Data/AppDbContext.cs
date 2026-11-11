@@ -1,7 +1,8 @@
-﻿using Models;
+using Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Models.Account;
+using Models.Calendar;
 using Models.Report;
 using Models.Reserve;
 using Models.Resource;
@@ -41,6 +42,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<ReserveUsageModel> ReserveUsages { get; set; }
 
     public DbSet<ReserveUsageEntryModel> ReserveUsageEntries { get; set; }
+
+    public DbSet<HolidayModel> Holidays { get; set; }
+
+    public DbSet<HolidayYearSyncModel> HolidayYearSyncs { get; set; }
+
+    public DbSet<ReleasedDateModel> ReleasedDates { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

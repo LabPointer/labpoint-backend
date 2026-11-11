@@ -21,7 +21,7 @@ public interface IReportService
     public Task<ResourceReportResponseDTO> GetResourceReport(ReportRequestDTO query);
 }
 
-public class ReportService(AppDbContext dbCtx) : IReportService
+public class ReportService(AppDbContext dbCtx, ICalendarService calendar) : IReportService
 {
     /// <summary>Suba este número quando mudar o cálculo ou o formato do DTO: os relatórios antigos são refeitos.</summary>
     private const int CacheVersion = 4;
@@ -169,7 +169,9 @@ public class ReportService(AppDbContext dbCtx) : IReportService
     {
         // Do primeiro dia do mês inicial ao último dia do mês final.
         var rangeEnd = lastMonth.AddMonths(1).AddDays(-1);
-        var daysInRange = rangeEnd.DayNumber - rangeStart.DayNumber + 1;
+        // Fins de semana e feriados sem liberação não aceitam reservas: não contam na capacidade.
+        var blocked = await calendar.Load(rangeStart, rangeEnd);
+        var daysInRange = CountOpenDays(blocked, rangeStart, rangeEnd);
 
         // Reservas que tocam o período. Canceladas, recusadas e bloqueadas nunca entram.
         var rows = await dbCtx.SpaceReserves.AsNoTracking()
@@ -206,7 +208,7 @@ public class ReportService(AppDbContext dbCtx) : IReportService
             // Só os dias que caem dentro do período contam para a ocupação dele.
             var (slotDays, absentSlotDays) = Measure(
                 (row.Id, null), row.Status, row.DateFrom, row.DateTo, row.ScheduleIds,
-                rangeStart, rangeEnd, today, shifts, sessions);
+                rangeStart, rangeEnd, today, shifts, sessions, blocked);
             if (slotDays == 0)
             {
                 continue;
@@ -340,7 +342,9 @@ public class ReportService(AppDbContext dbCtx) : IReportService
     private async Task<ResourceReportResponseDTO> BuildResourceReport(DateOnly rangeStart, DateOnly lastMonth, DateOnly today)
     {
         var rangeEnd = lastMonth.AddMonths(1).AddDays(-1);
-        var daysInRange = rangeEnd.DayNumber - rangeStart.DayNumber + 1;
+        // Fins de semana e feriados sem liberação não aceitam reservas: não contam na capacidade.
+        var blocked = await calendar.Load(rangeStart, rangeEnd);
+        var daysInRange = CountOpenDays(blocked, rangeStart, rangeEnd);
 
         // Mesmas regras das salas: só pendentes e confirmadas entram (canceladas e recusadas nunca).
         var rows = await dbCtx.ResourceReserves.AsNoTracking()
@@ -384,7 +388,7 @@ public class ReportService(AppDbContext dbCtx) : IReportService
             var key = row.SpaceReserveId is { } spaceReserveId ? (spaceReserveId, (long?)null) : (0L, row.Id);
             var (slotDays, absentSlotDays) = Measure(
                 key, row.Status, row.DateFrom, row.DateTo, row.ScheduleIds,
-                rangeStart, rangeEnd, today, shifts, sessions);
+                rangeStart, rangeEnd, today, shifts, sessions, blocked);
             if (slotDays == 0)
             {
                 continue;
@@ -553,7 +557,8 @@ public class ReportService(AppDbContext dbCtx) : IReportService
         DateOnly rangeEnd,
         DateOnly today,
         IReadOnlyDictionary<long, EShift> shifts,
-        IReadOnlyDictionary<(long, long?, DateOnly, EShift), EUsageStatus> sessions)
+        IReadOnlyDictionary<(long, long?, DateOnly, EShift), EUsageStatus> sessions,
+        BlockedDays blocked)
     {
         var fallback = Classify(status, dateFrom, today);
         var from = dateFrom > rangeStart ? dateFrom : rangeStart;
@@ -569,6 +574,11 @@ public class ReportService(AppDbContext dbCtx) : IReportService
                     && sessions.TryGetValue((key.SpaceReserveId, key.ResourceReserveId, day, shift), out var usage))
                 {
                     present = UsageRules.IsPresent(usage);
+                }
+                else if (!blocked.IsUsable(day, DateTimeOffset.MinValue))
+                {
+                    // Dia bloqueado sem sessão de uso: a reserva pulou esse dia.
+                    continue;
                 }
                 else if (fallback != null)
                 {
@@ -636,6 +646,21 @@ public class ReportService(AppDbContext dbCtx) : IReportService
     }
 
     /// <summary>Porcentagem de 0 a 100 com uma casa decimal (0 quando o total é zero).</summary>
+    /// <summary>Dias do período que aceitam reservas (dias úteis e fins de semana/feriados liberados).</summary>
+    private static int CountOpenDays(BlockedDays blocked, DateOnly start, DateOnly end)
+    {
+        var count = 0;
+        for (var day = start; day <= end; day = day.AddDays(1))
+        {
+            if (blocked.IsUsable(day, DateTimeOffset.MinValue))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
     private static double Percent(double part, double total)
     {
         if (total <= 0)

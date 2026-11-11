@@ -29,7 +29,7 @@ public interface ISpaceReserveService
     public Task AdminEditSpaceReserve(ClaimsPrincipal user, long reserveId, AdminSpaceReserveEditRequestDTO data);
 }
 
-public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
+public class SpaceReserveService(AppDbContext dbCtx, ICalendarService calendar) : ISpaceReserveService
 {
     public async Task<List<SpaceReserveResponseDTO>> GetSpaceReserve(ClaimsPrincipal user, SpaceReserveRequestDTO query)
     {
@@ -123,6 +123,7 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
                 sr.Id,
                 sr.DateFrom,
                 sr.DateTo,
+                sr.CreatedAt,
                 Schedules = sr.SpaceReserveSchedules.Select(s => new ScheduleResponseDTO(
                     s.Schedule.Id,
                     s.Schedule.StartAt,
@@ -136,6 +137,9 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
 
         // Um horário só está ocupado se, em algum dia do período, o turno dele não ficou ausente (sem check-in).
         var absent = await UsageRules.LoadAbsentSpace(dbCtx, query.StartAt, query.EndAt);
+        // Dias bloqueados (fim de semana ou feriado sem liberação) não ocupam nada.
+        var blocked = await calendar.Load(query.StartAt, query.EndAt);
+        var now = DateTimeOffset.UtcNow;
         var existingSchedules = reserves
             .SelectMany(sr =>
             {
@@ -145,6 +149,11 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
                 {
                     for (var day = from; day <= to; day = day.AddDays(1))
                     {
+                        if (!blocked.IsUsable(day, now) || !blocked.IsUsable(day, sr.CreatedAt))
+                        {
+                            continue;
+                        }
+
                         if (!absent.Contains((sr.Id, day, s.Shift)))
                         {
                             return true;
@@ -170,6 +179,7 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
         string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
         ReserveRules.EnsureValidPeriod(data.StartAt, data.EndAt);
+        await calendar.EnsureHasUsableDays(data.StartAt, data.EndAt);
 
         // Regras de negócio no servidor (o front só esconde espaços bloqueados): sem isso, chamar a API direto
         // reservava espaços bloqueados e IDs inexistentes terminavam em erro 500 de chave estrangeira.
@@ -189,7 +199,8 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
         }
 
         await ReserveRules.EnsureSchedulesAvailable(dbCtx, data.ScheduleIds);
-        await ReserveRules.EnsureSpaceNoConflict(dbCtx, 0, spaceId, data.StartAt, data.EndAt, data.ScheduleIds);
+        await ReserveRules.EnsureSpaceNoConflict(
+            dbCtx, 0, spaceId, data.StartAt, data.EndAt, data.ScheduleIds, DateTimeOffset.UtcNow);
 
         var hasElevatedRole = user.IsInRole("Owner") || user.IsInRole("Admin");
         if (data.Lock && !hasElevatedRole)
@@ -440,6 +451,7 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
             }
 
             ReserveRules.EnsureValidPeriod(startAt.Value, endAt.Value);
+            await calendar.EnsureHasUsableDays(startAt.Value, endAt.Value, spaceReserve.CreatedAt);
         }
 
         bool schedulesChanged = scheduleIds != null && scheduleIds.Count > 0;
@@ -458,7 +470,8 @@ public class SpaceReserveService(AppDbContext dbCtx) : ISpaceReserveService
         if (ResourceAvailability.IsActiveStatus(spaceReserve.Status) && targetScheduleIds.Count > 0)
         {
             await ReserveRules.EnsureSpaceNoConflict(
-                dbCtx, spaceReserve.Id, spaceReserve.FkSpaceId, targetStart, targetEnd, targetScheduleIds);
+                dbCtx, spaceReserve.Id, spaceReserve.FkSpaceId, targetStart, targetEnd, targetScheduleIds,
+                spaceReserve.CreatedAt);
         }
 
         if (datesChanged || schedulesChanged || resources != null)

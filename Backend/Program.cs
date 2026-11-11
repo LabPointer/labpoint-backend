@@ -16,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Settings
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("Frontend"));
+builder.Services.Configure<HolidaySettings>(builder.Configuration.GetSection("Holidays"));
 
 // Services
 builder.Services.AddControllers()
@@ -117,6 +118,15 @@ builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IReserveUsageService, ReserveUsageService>();
 builder.Services.AddScoped<ReserveUsageScheduler>();
+// Fins de semana e feriados bloqueados: feriados por ano (BrasilAPI + cálculo local) guardados no banco e em cache.
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient(HolidayProvider.HttpClientName, client =>
+{
+    client.BaseAddress = new Uri("https://brasilapi.com.br/");
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+builder.Services.AddSingleton<IHolidayProvider, HolidayProvider>();
+builder.Services.AddScoped<ICalendarService, CalendarService>();
 // Check-in/check-out: cria as sessões do dia, envia os links e marca ausências/check-outs vencidos (1 min).
 builder.Services.AddHostedService<ReserveUsageWorker>();
 

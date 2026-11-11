@@ -42,9 +42,13 @@ public static class ReserveRules
         }
     }
 
-    /// <summary>A sala não pode ter outra reserva ativa no mesmo período e horário.</summary>
+    /// <summary>
+    /// A sala não pode ter outra reserva ativa no mesmo período e horário. Dias bloqueados (fim de semana ou feriado
+    /// sem liberação) não contam, nem para a outra reserva nem para esta (criada em <paramref name="selfCreatedAt"/>).
+    /// </summary>
     public static async Task EnsureSpaceNoConflict(
-        AppDbContext dbCtx, long reserveId, long spaceId, DateOnly start, DateOnly end, IReadOnlySet<long> scheduleIds)
+        AppDbContext dbCtx, long reserveId, long spaceId, DateOnly start, DateOnly end, IReadOnlySet<long> scheduleIds,
+        DateTimeOffset selfCreatedAt)
     {
         var ids = scheduleIds.ToList();
         var candidates = await dbCtx.SpaceReserves.AsNoTracking()
@@ -56,6 +60,7 @@ public static class ReserveRules
                 sr.Id,
                 sr.DateFrom,
                 sr.DateTo,
+                sr.CreatedAt,
                 Shifts = sr.SpaceReserveSchedules
                     .Where(s => ids.Contains(s.FkScheduleId))
                     .Select(s => s.Schedule.Shift)
@@ -71,12 +76,18 @@ public static class ReserveRules
 
         // Turno ausente (sem check-in no prazo) libera a sala naquele dia.
         var absent = await UsageRules.LoadAbsentSpace(dbCtx, start, end);
+        var blocked = await BlockedDays.Load(dbCtx, start, end);
         bool hasConflict = candidates.Any(c =>
         {
             var from = c.DateFrom > start ? c.DateFrom : start;
             var to = c.DateTo < end ? c.DateTo : end;
             for (var day = from; day <= to; day = day.AddDays(1))
             {
+                if (!blocked.IsUsable(day, selfCreatedAt) || !blocked.IsUsable(day, c.CreatedAt))
+                {
+                    continue;
+                }
+
                 if (c.Shifts.Any(shift => !absent.Contains((c.Id, day, shift))))
                 {
                     return true;

@@ -42,7 +42,7 @@ internal sealed record ResourceReserveRow(
     LinkedSpaceReserveDTO? SpaceReserve,
     AccountRow Account);
 
-public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveService
+public class ResourceReserveService(AppDbContext dbCtx, ICalendarService calendar) : IResourceReserveService
 {
     public async Task<List<ResourceReserveResponseDTO>> GetResourceReserves(ClaimsPrincipal user, ResourceReserveRequestDTO query)
     {
@@ -127,6 +127,7 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
         string userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
         ReserveRules.EnsureValidPeriod(data.StartAt, data.EndAt);
+        await calendar.EnsureHasUsableDays(data.StartAt, data.EndAt);
         await ReserveRules.EnsureSchedulesAvailable(dbCtx, data.ScheduleIds);
         await ResourceAvailability.EnsureAvailable(
             dbCtx,
@@ -318,6 +319,10 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
         var targetStart = startAt ?? reserve.DateFrom;
         var targetEnd = endAt ?? reserve.DateTo;
         ReserveRules.EnsureValidPeriod(targetStart, targetEnd);
+        if (startAt != null)
+        {
+            await calendar.EnsureHasUsableDays(targetStart, targetEnd, reserve.CreatedAt);
+        }
 
         var currentScheduleIds = reserve.ResourceReserveSchedules.Select(s => s.FkScheduleId).ToHashSet();
         bool schedulesChanged = scheduleIds is { Count: > 0 };
@@ -340,7 +345,8 @@ public class ResourceReserveService(AppDbContext dbCtx) : IResourceReserveServic
             if (ResourceAvailability.IsActiveStatus(spaceReserve.Status))
             {
                 await ReserveRules.EnsureSpaceNoConflict(
-                    dbCtx, spaceReserve.Id, spaceReserve.FkSpaceId, targetStart, targetEnd, targetScheduleIds);
+                    dbCtx, spaceReserve.Id, spaceReserve.FkSpaceId, targetStart, targetEnd, targetScheduleIds,
+                    spaceReserve.CreatedAt);
             }
 
             // Os vinculados (inclusive este) passam para o novo período; só a quantidade deste muda.

@@ -107,6 +107,7 @@ public static class ResourceAvailability
                 rr.FkResourceId,
                 rr.DateFrom,
                 rr.DateTo,
+                rr.CreatedAt,
                 rr.Quantity,
                 Schedules = rr.ResourceReserveSchedules
                     .Select(s => new { s.FkScheduleId, s.Schedule.Shift })
@@ -118,6 +119,8 @@ public static class ResourceAvailability
         // Turno ausente (sem check-in no prazo) devolve as unidades naquele dia: o da sala vale para os vinculados.
         var absentSpace = await UsageRules.LoadAbsentSpace(dbCtx, start, end);
         var absentResource = await UsageRules.LoadAbsentResource(dbCtx, start, end);
+        // Dia bloqueado (fim de semana ou feriado sem liberação) não ocupa unidades.
+        var blocked = await BlockedDays.Load(dbCtx, start, end);
 
         foreach (var row in rows)
         {
@@ -126,6 +129,11 @@ public static class ResourceAvailability
 
             for (var day = from; day <= to; day = day.AddDays(1))
             {
+                if (!blocked.IsUsable(day, row.CreatedAt))
+                {
+                    continue;
+                }
+
                 foreach (var slot in row.Schedules)
                 {
                     var scheduleId = slot.FkScheduleId;
@@ -202,6 +210,9 @@ public static class ResourceAvailability
         }
 
         var usage = await LoadUsage(dbCtx, ids, start, end, scheduleIds, exclusion);
+        // A reserva pedida também não usa os dias bloqueados: conflito nesses dias não conta.
+        var blocked = await BlockedDays.Load(dbCtx, start, end);
+        var now = DateTimeOffset.UtcNow;
 
         // Primeiro conflito encontrado (o mais cedo), para a mensagem apontar dia e horário exatos.
         var conflict = usage
@@ -212,7 +223,7 @@ public static class ResourceAvailability
                 entry.Key.ScheduleId,
                 Free = resources.First(r => r.Id == entry.Key.ResourceId).Quantity!.Value - entry.Value
             })
-            .Where(item => item.Free < merged[item.ResourceId])
+            .Where(item => item.Free < merged[item.ResourceId] && blocked.IsUsable(item.Day, now))
             .OrderBy(item => item.Day)
             .FirstOrDefault();
 

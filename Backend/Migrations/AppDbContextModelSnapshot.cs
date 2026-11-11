@@ -18,7 +18,7 @@ namespace Backend.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.14")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true)
@@ -266,6 +266,99 @@ namespace Backend.Migrations
                         .IsUnique();
 
                     b.ToTable("account_subject");
+                });
+
+            modelBuilder.Entity("Models.Calendar.HolidayModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("integer")
+                        .HasColumnName("source");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date");
+
+                    b.ToTable("holiday");
+                });
+
+            modelBuilder.Entity("Models.Calendar.HolidayYearSyncModel", b =>
+                {
+                    b.Property<int>("Year")
+                        .HasColumnType("integer")
+                        .HasColumnName("year");
+
+                    b.Property<bool>("FromApi")
+                        .HasColumnType("boolean")
+                        .HasColumnName("from_api");
+
+                    b.Property<DateTimeOffset>("SyncedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("synced_at");
+
+                    b.HasKey("Year");
+
+                    b.ToTable("holiday_year_sync");
+                });
+
+            modelBuilder.Entity("Models.Calendar.ReleasedDateModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("FkAccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("fk_account_id");
+
+                    b.Property<bool>("KeepExistingReserves")
+                        .HasColumnType("boolean")
+                        .HasColumnName("keep_existing_reserves");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date")
+                        .IsUnique();
+
+                    b.HasIndex("FkAccountId");
+
+                    b.ToTable("released_date");
                 });
 
             modelBuilder.Entity("Models.Report.ReportModel", b =>
@@ -903,6 +996,17 @@ namespace Backend.Migrations
                     b.Navigation("Account");
 
                     b.Navigation("Subject");
+                });
+
+            modelBuilder.Entity("Models.Calendar.ReleasedDateModel", b =>
+                {
+                    b.HasOne("Models.Account.AccountModel", "Account")
+                        .WithMany()
+                        .HasForeignKey("FkAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
                 });
 
             modelBuilder.Entity("Models.Reserve.ResourceReserveModel", b =>

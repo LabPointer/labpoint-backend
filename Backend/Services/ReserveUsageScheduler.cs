@@ -15,6 +15,7 @@ namespace Backend.Services;
 /// </summary>
 public class ReserveUsageScheduler(
     AppDbContext dbCtx,
+    ICalendarService calendar,
     IMailSender mailSender,
     IOptions<FrontendSettings> frontend,
     ILogger<ReserveUsageScheduler> logger)
@@ -43,6 +44,11 @@ public class ReserveUsageScheduler(
     /// </summary>
     private async Task MaterializeSessions(DateOnly today, DateTimeOffset now, CancellationToken ct)
     {
+        // Fim de semana ou feriado sem liberação: a reserva pula o dia (sem sessão, sem e-mail, sem ausência).
+        // Gera também os feriados do ano seguinte com antecedência (sem custo depois da primeira vez: fica em cache).
+        var blocked = await calendar.Load(today, today, ct);
+        await calendar.Load(today.AddYears(1), today.AddYears(1), ct);
+
         var spaceRows = await dbCtx.SpaceReserves.AsNoTracking()
             .Where(sr => sr.DateFrom <= today && sr.DateTo >= today)
             .Where(ReserveRules.IsSpaceReserveActive)
@@ -50,6 +56,7 @@ public class ReserveUsageScheduler(
             {
                 sr.Id,
                 sr.FkAccountId,
+                sr.CreatedAt,
                 Slots = sr.SpaceReserveSchedules
                     .Select(s => new ShiftSlot(s.FkScheduleId, s.Schedule.StartAt, s.Schedule.EndAt, s.Schedule.Shift))
                     .ToList()
@@ -64,6 +71,7 @@ public class ReserveUsageScheduler(
             {
                 rr.Id,
                 rr.FkAccountId,
+                rr.CreatedAt,
                 Slots = rr.ResourceReserveSchedules
                     .Select(s => new ShiftSlot(s.FkScheduleId, s.Schedule.StartAt, s.Schedule.EndAt, s.Schedule.Shift))
                     .ToList()
@@ -72,9 +80,10 @@ public class ReserveUsageScheduler(
             .ToListAsync(ct);
 
         var expected = spaceRows
+            .Where(r => blocked.IsUsable(today, r.CreatedAt))
             .SelectMany(r => r.Slots.GroupBy(s => s.Shift)
                 .Select(g => new ExpectedSession(r.Id, null, r.FkAccountId, g.Key, g.ToList())))
-            .Concat(resourceRows.SelectMany(r => r.Slots.GroupBy(s => s.Shift)
+            .Concat(resourceRows.Where(r => blocked.IsUsable(today, r.CreatedAt)).SelectMany(r => r.Slots.GroupBy(s => s.Shift)
                 .Select(g => new ExpectedSession(null, r.Id, r.FkAccountId, g.Key, g.ToList()))))
             .ToList();
 
