@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Backend.Controllers;
 
 [ApiController]
-[Authorize(Roles = "Admin,Owner")]
+[Authorize(Roles = "Admin,Root")]
 [Route("report")]
 public class ReportController(IReportService reportService) : ControllerBase
 {

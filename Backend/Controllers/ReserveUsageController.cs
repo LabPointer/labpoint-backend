@@ -114,7 +114,7 @@ public class ReserveUsageController(IReserveUsageService usageService) : Control
     /// <summary>
     /// Sessões de uso de uma reserva de sala
     /// </summary>
-    /// <remarks>Dono da reserva ou Admin/Owner. Lista vazia quando ainda não há sessões.</remarks>
+    /// <remarks>Dono da reserva ou Admin/Root. Lista vazia quando ainda não há sessões.</remarks>
     [HttpGet("reserve/space/{spaceReserveId}")]
     [Authorize]
     [ProducesResponseType(typeof(IEnumerable<UsageSessionResponseDTO>), StatusCodes.Status200OK)]
@@ -125,7 +125,7 @@ public class ReserveUsageController(IReserveUsageService usageService) : Control
     /// <summary>
     /// Sessões de uso de uma reserva de recurso
     /// </summary>
-    /// <remarks>Reserva vinculada devolve as sessões da sala. Dono da reserva ou Admin/Owner.</remarks>
+    /// <remarks>Reserva vinculada devolve as sessões da sala. Dono da reserva ou Admin/Root.</remarks>
     [HttpGet("reserve/resource/{resourceReserveId}")]
     [Authorize]
     [ProducesResponseType(typeof(IEnumerable<UsageSessionResponseDTO>), StatusCodes.Status200OK)]
@@ -138,7 +138,7 @@ public class ReserveUsageController(IReserveUsageService usageService) : Control
     /// </summary>
     /// <remarks>Sessões dos outros usuários no período. Retorna até <c>Limit + 1</c> itens.</remarks>
     [HttpGet("admin")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(typeof(IEnumerable<UsageSessionResponseDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
@@ -150,7 +150,7 @@ public class ReserveUsageController(IReserveUsageService usageService) : Control
     /// </summary>
     /// <remarks>Qualquer sessão com check-in, inclusive já encerrada.</remarks>
     [HttpPut("admin/{usageId}/entries")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
@@ -165,7 +165,7 @@ public class ReserveUsageController(IReserveUsageService usageService) : Control
     /// </summary>
     /// <remarks>Para sessões em uso ou com o prazo de check-out vencido. Registra quem fechou.</remarks>
     [HttpPost("admin/{usageId}/check-out")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]

@@ -31,7 +31,7 @@ public static class AccountDirectory
     public static EAccountRole ResolveRole(IEnumerable<string?> roleNames)
     {
         var names = roleNames.ToHashSet();
-        if (names.Contains(nameof(EAccountRole.Owner))) return EAccountRole.Owner;
+        if (names.Contains(nameof(EAccountRole.Root))) return EAccountRole.Root;
         if (names.Contains(nameof(EAccountRole.Admin))) return EAccountRole.Admin;
         return EAccountRole.User;
     }

@@ -202,7 +202,7 @@ public class SpaceReserveService(AppDbContext dbCtx, ICalendarService calendar) 
         await ReserveRules.EnsureSpaceNoConflict(
             dbCtx, 0, spaceId, data.StartAt, data.EndAt, data.ScheduleIds, DateTimeOffset.UtcNow);
 
-        var hasElevatedRole = user.IsInRole("Owner") || user.IsInRole("Admin");
+        var hasElevatedRole = user.IsInRole("Root") || user.IsInRole("Admin");
         if (data.Lock && !hasElevatedRole)
         {
             throw new BadRequestException("Você não tem permissão para bloquear a reserva de um espaço.");
@@ -246,7 +246,7 @@ public class SpaceReserveService(AppDbContext dbCtx, ICalendarService calendar) 
             throw new ResourceNotFoundException("Reserva não encontrada.");
         }
 
-        if ((spaceReserve.Status == EReserveStatus.Canceled || spaceReserve.Status == EReserveStatus.Rejected) && !(user.IsInRole("Owner") || user.IsInRole("Admin")))
+        if ((spaceReserve.Status == EReserveStatus.Canceled || spaceReserve.Status == EReserveStatus.Rejected) && !(user.IsInRole("Root") || user.IsInRole("Admin")))
         {
             throw new BadRequestException("Não é possível editar uma reserva cancelada ou rejeitada.");
         }

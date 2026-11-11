@@ -58,7 +58,7 @@ public class AccountController(IAccountService accountService) : ControllerBase
     /// Lista todos os usuários cadastrados no sistema.
     /// </remarks>
     [HttpGet("admin")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(typeof(IEnumerable<AccountResponseDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status401Unauthorized)]
@@ -73,11 +73,11 @@ public class AccountController(IAccountService accountService) : ControllerBase
     /// Admin: editar usuário
     /// </summary>
     /// <remarks>
-    /// Somente o Owner altera cargos. Ativar/desativar a conta exige cargo superior ao do usuário alvo
-    /// (ordem crescente: User, Admin, Owner).
+    /// Somente o Root altera cargos. Ativar/desativar a conta exige cargo superior ao do usuário alvo
+    /// (ordem crescente: User, Admin, Root).
     /// </remarks>
     [HttpPatch("admin/edit")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status401Unauthorized)]

@@ -106,7 +106,7 @@ public class SpaceReserveController(ISpaceReserveService reserveService) : Contr
     /// Lista todos os espaços cadastrados
     /// </remarks>
     [HttpGet("admin")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(typeof(IEnumerable<AdminSpaceReserveResponseDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
@@ -124,7 +124,7 @@ public class SpaceReserveController(ISpaceReserveService reserveService) : Contr
     /// Edita status, período e/ou horários de uma reserva de espaço de outro usuário (campos nulos não são alterados).
     /// </remarks>
     [HttpPatch("admin/edit/{reserveId}")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]

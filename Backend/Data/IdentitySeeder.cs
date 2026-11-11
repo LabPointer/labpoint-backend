@@ -7,7 +7,7 @@ namespace Backend.Data;
 public static class IdentitySeeder
 {
     /// <summary>
-    /// Cria no banco uma role para cada valor do enum EAccountRole (User, Admin, Owner), se ainda não existir.
+    /// Cria no banco uma role para cada valor do enum EAccountRole (User, Admin, Root), se ainda não existir.
     /// </summary>
     public static async Task SeedRolesAsync(IServiceProvider services)
     {

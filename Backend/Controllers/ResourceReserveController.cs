@@ -105,7 +105,7 @@ public class ResourceReserveController(IResourceReserveService resourceReserveSe
     /// Reservas de recurso dos outros usuários (exceto o autenticado) que se sobrepõem ao período. Retorna até <c>Limit + 1</c> itens.
     /// </remarks>
     [HttpGet("admin")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(typeof(IEnumerable<AdminResourceReserveResponseDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
@@ -122,7 +122,7 @@ public class ResourceReserveController(IResourceReserveService resourceReserveSe
     /// Altera status, período, horários e/ou quantidade. O status do recurso não muda o da sala vinculada.
     /// </remarks>
     [HttpPatch("admin/edit/{resourceReserveId}")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]

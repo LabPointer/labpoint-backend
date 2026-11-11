@@ -4,7 +4,7 @@ public enum EAccountRole
 {
     User,
     Admin,
-    Owner
+    Root
 }
 
 public enum EShift

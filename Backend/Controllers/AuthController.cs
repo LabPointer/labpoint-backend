@@ -25,7 +25,7 @@ public class AuthController(
     /// </summary>
     /// <remarks>
     /// Registra um novo usuário com a role "User" e envia um e-mail de confirmação.
-    /// Apenas um Admin/Owner autenticado pode definir outra role através do campo "role".
+    /// Apenas um Admin/Root autenticado pode definir outra role através do campo "role".
     /// </remarks>
     [HttpPost("sign-up")]
     [ProducesResponseType(StatusCodes.Status200OK)]

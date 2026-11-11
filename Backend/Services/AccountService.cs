@@ -161,15 +161,15 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
             throw new ForbiddenException("Você não tem permissão para editar usuários.");
         }
 
-        // Regra 1: somente o Owner altera cargos.
+        // Regra 1: somente o Root altera cargos.
         var roleChanged = data.Role.HasValue && data.Role.Value != targetRole;
-        if (roleChanged && actorRole != EAccountRole.Owner)
+        if (roleChanged && actorRole != EAccountRole.Root)
         {
-            throw new ForbiddenException("Somente o proprietário (Owner) pode alterar o cargo de um usuário.");
+            throw new ForbiddenException("Somente o administrador geral (Root) pode alterar o cargo de um usuário.");
         }
 
         // Regra 2: ativar/desativar a conta exige cargo estritamente superior ao do usuário alvo
-        // (Admin só altera User; Owner altera User e Admin, nunca outro Owner).
+        // (Admin só altera User; Root altera User e Admin, nunca outro Root).
         var lockChanged = data.LockAccount.HasValue && data.LockAccount.Value != (account.LockoutEnd != null);
         if (lockChanged && actorRole <= targetRole)
         {

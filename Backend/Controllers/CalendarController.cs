@@ -33,7 +33,7 @@ public class CalendarController(ICalendarService calendarService) : ControllerBa
     /// Libera fins de semana e feriados para reservas. Datas já liberadas são ignoradas.
     /// </remarks>
     [HttpPost("admin/release")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AdminPostRelease([FromBody] ReleaseDatesRequestDTO data)
@@ -50,7 +50,7 @@ public class CalendarController(ICalendarService calendarService) : ControllerBa
     /// antes de bloquear o dia de novo.
     /// </remarks>
     [HttpGet("admin/affected")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(typeof(AffectedReservesResponseDTO), StatusCodes.Status200OK)]
     public async Task<IActionResult> AdminGetAffected([FromQuery] DateOnly date)
     {
@@ -65,7 +65,7 @@ public class CalendarController(ICalendarService calendarService) : ControllerBa
     /// as que ficam sem nenhum outro dia são canceladas.
     /// </remarks>
     [HttpPost("admin/revoke")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
@@ -82,7 +82,7 @@ public class CalendarController(ICalendarService calendarService) : ControllerBa
     /// Feriado que não vem da lista nacional, estadual ou municipal (recesso, ponte, feriado decretado).
     /// </remarks>
     [HttpPost("admin/holiday")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AdminPostHoliday([FromBody] HolidayCreateRequestDTO data)
@@ -98,7 +98,7 @@ public class CalendarController(ICalendarService calendarService) : ControllerBa
     /// Só feriados cadastrados pela coordenação podem ser removidos.
     /// </remarks>
     [HttpDelete("admin/holiday/{holidayId:long}")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]

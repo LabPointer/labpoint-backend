@@ -38,7 +38,7 @@ public interface IReserveUsageService
 
 /// <summary>
 /// Check-in, relatório de uso e check-out das sessões (reserva x dia x turno). O usuário só mexe nas próprias sessões
-/// e dentro das janelas; depois do check-out o relatório fica só leitura para ele. Admin/Owner edita e fecha sessões
+/// e dentro das janelas; depois do check-out o relatório fica só leitura para ele. Admin/Root edita e fecha sessões
 /// dos outros usuários a qualquer momento depois do check-in.
 /// </summary>
 public class ReserveUsageService(AppDbContext dbCtx) : IReserveUsageService
@@ -451,7 +451,7 @@ public class ReserveUsageService(AppDbContext dbCtx) : IReserveUsageService
         return rows.Select(r => r.ToDto()).ToList();
     }
 
-    /// <summary>Dono da reserva ou Admin/Owner. Reserva inexistente = 404.</summary>
+    /// <summary>Dono da reserva ou Admin/Root. Reserva inexistente = 404.</summary>
     private static void EnsureCanView(ClaimsPrincipal user, string? ownerId)
     {
         if (ownerId == null)
@@ -459,7 +459,7 @@ public class ReserveUsageService(AppDbContext dbCtx) : IReserveUsageService
             throw new ResourceNotFoundException("Reserva não encontrada.");
         }
 
-        if (ownerId != UserId(user) && !user.IsInRole("Admin") && !user.IsInRole("Owner"))
+        if (ownerId != UserId(user) && !user.IsInRole("Admin") && !user.IsInRole("Root"))
         {
             throw new ResourceNotFoundException("Reserva não encontrada.");
         }
