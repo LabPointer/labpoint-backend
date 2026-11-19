@@ -36,7 +36,7 @@ public class ScheduleController(IScheduleService scheduleService) : ControllerBa
     /// Cria um novo horario. Apenas usuários com permissões adequadas podem criar horarios.
     /// </remarks>
     [HttpPost("admin/create")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PostCreate([FromBody] ScheduleCreateRequestDTO data)
@@ -53,7 +53,7 @@ public class ScheduleController(IScheduleService scheduleService) : ControllerBa
     /// Edita um horario existente. Apenas usuários com permissões adequadas podem editar horarios.
     /// </remarks>
     [HttpPatch("admin/edit")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]

@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Models.Account;
+using Models.Usage;
 
 namespace Models.Reserve;
 
@@ -27,7 +28,7 @@ public class SpaceReserveModel
     [Required]
     [Column("purpose")]
     [StringLength(200)]
-    public string Purpose{ get; set; }
+    public string Purpose{ get; set; } = null!;
     
     [Required]
     [Column("status")]
@@ -37,15 +38,17 @@ public class SpaceReserveModel
     [Column("fk_space_id")]
     public long FkSpaceId { get; set; }
     [ForeignKey(nameof(FkSpaceId))]
-    public virtual SpaceModel Space { get; set; }
+    public virtual SpaceModel Space { get; set; } = null!;
     
     [Required]
     [Column("fk_account_id")]
-    public string FkAccountId { get; set; }
+    public string FkAccountId { get; set; } = null!;
     [ForeignKey(nameof(FkAccountId))]
-    public virtual AccountModel Account { get; set; }
+    public virtual AccountModel Account { get; set; } = null!;
     
     public virtual ICollection<SpaceReserveScheduleModel> SpaceReserveSchedules { get; set; } =  new List<SpaceReserveScheduleModel>();
 
     public virtual ICollection<ResourceReserveModel> ResourceReserves { get; set; } = new List<ResourceReserveModel>();
+
+    public virtual ICollection<ReserveUsageModel> Usages { get; set; } = new List<ReserveUsageModel>();
 }

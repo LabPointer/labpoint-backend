@@ -18,7 +18,7 @@ namespace Backend.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true)
@@ -268,6 +268,99 @@ namespace Backend.Migrations
                     b.ToTable("account_subject");
                 });
 
+            modelBuilder.Entity("Models.Calendar.HolidayModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("integer")
+                        .HasColumnName("source");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date");
+
+                    b.ToTable("holiday");
+                });
+
+            modelBuilder.Entity("Models.Calendar.HolidayYearSyncModel", b =>
+                {
+                    b.Property<int>("Year")
+                        .HasColumnType("integer")
+                        .HasColumnName("year");
+
+                    b.Property<bool>("FromApi")
+                        .HasColumnType("boolean")
+                        .HasColumnName("from_api");
+
+                    b.Property<DateTimeOffset>("SyncedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("synced_at");
+
+                    b.HasKey("Year");
+
+                    b.ToTable("holiday_year_sync");
+                });
+
+            modelBuilder.Entity("Models.Calendar.ReleasedDateModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("FkAccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("fk_account_id");
+
+                    b.Property<bool>("KeepExistingReserves")
+                        .HasColumnType("boolean")
+                        .HasColumnName("keep_existing_reserves");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date")
+                        .IsUnique();
+
+                    b.HasIndex("FkAccountId");
+
+                    b.ToTable("released_date");
+                });
+
             modelBuilder.Entity("Models.Report.ReportModel", b =>
                 {
                     b.Property<long>("Id")
@@ -294,6 +387,10 @@ namespace Backend.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("generated_at");
 
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer")
+                        .HasColumnName("kind");
+
                     b.Property<int>("ToMonth")
                         .HasColumnType("integer")
                         .HasColumnName("to_month");
@@ -308,7 +405,7 @@ namespace Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FromYear", "FromMonth", "ToYear", "ToMonth")
+                    b.HasIndex("Kind", "FromYear", "FromMonth", "ToYear", "ToMonth")
                         .IsUnique();
 
                     b.ToTable("report");
@@ -327,6 +424,14 @@ namespace Backend.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<DateOnly>("DateFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("date_from");
+
+                    b.Property<DateOnly>("DateTo")
+                        .HasColumnType("date")
+                        .HasColumnName("date_to");
+
                     b.Property<string>("FkAccountId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -336,7 +441,7 @@ namespace Backend.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("fk_resource_id");
 
-                    b.Property<long>("FkSpaceReserveId")
+                    b.Property<long?>("FkSpaceReserveId")
                         .HasColumnType("bigint")
                         .HasColumnName("fk_space_reserve_id");
 
@@ -346,15 +451,50 @@ namespace Backend.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("purpose");
 
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<EReserveStatus>("Status")
+                        .HasColumnType("reserve_status_enum")
+                        .HasColumnName("status");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FkAccountId");
 
-                    b.HasIndex("FkResourceId");
-
                     b.HasIndex("FkSpaceReserveId");
 
+                    b.HasIndex("FkResourceId", "DateFrom", "DateTo");
+
                     b.ToTable("resource_reserve");
+                });
+
+            modelBuilder.Entity("Models.Reserve.ResourceReserveScheduleModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("FkResourceReserveId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_resource_reserve_id");
+
+                    b.Property<long>("FkScheduleId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_schedule_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FkScheduleId");
+
+                    b.HasIndex("FkResourceReserveId", "FkScheduleId")
+                        .IsUnique();
+
+                    b.ToTable("resource_reserve_schedule");
                 });
 
             modelBuilder.Entity("Models.Reserve.SpaceReserveModel", b =>
@@ -415,6 +555,11 @@ namespace Backend.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean")
                         .HasColumnName("enabled");
@@ -425,10 +570,23 @@ namespace Backend.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
+                    b.Property<int?>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<bool>("Reservable")
+                        .HasColumnType("boolean")
+                        .HasColumnName("reservable");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.HasIndex("Name", "Description")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "portuguese");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name", "Description"), "GIN");
 
                     b.ToTable("resource");
                 });
@@ -613,6 +771,163 @@ namespace Backend.Migrations
                     b.ToTable("subject");
                 });
 
+            modelBuilder.Entity("Models.Usage.ReserveUsageEntryModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("ChargersIn")
+                        .HasColumnType("integer")
+                        .HasColumnName("chargers_in");
+
+                    b.Property<int?>("ChargersOut")
+                        .HasColumnType("integer")
+                        .HasColumnName("chargers_out");
+
+                    b.Property<string>("ClassName")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("class_name");
+
+                    b.Property<long>("FkScheduleId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_schedule_id");
+
+                    b.Property<long>("FkUsageId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_usage_id");
+
+                    b.Property<int>("Modality")
+                        .HasColumnType("integer")
+                        .HasColumnName("modality");
+
+                    b.Property<int>("NotebooksIn")
+                        .HasColumnType("integer")
+                        .HasColumnName("notebooks_in");
+
+                    b.Property<int?>("NotebooksOut")
+                        .HasColumnType("integer")
+                        .HasColumnName("notebooks_out");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FkScheduleId");
+
+                    b.HasIndex("FkUsageId", "FkScheduleId")
+                        .IsUnique();
+
+                    b.ToTable("reserve_usage_entry");
+                });
+
+            modelBuilder.Entity("Models.Usage.ReserveUsageModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CheckInClosesAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("check_in_closes_at");
+
+                    b.Property<DateTimeOffset?>("CheckInEmailSentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("check_in_email_sent_at");
+
+                    b.Property<DateTimeOffset>("CheckInOpensAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("check_in_opens_at");
+
+                    b.Property<string>("CheckInTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("check_in_token_hash");
+
+                    b.Property<DateTimeOffset>("CheckOutClosesAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("check_out_closes_at");
+
+                    b.Property<DateTimeOffset?>("CheckOutEmailSentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("check_out_email_sent_at");
+
+                    b.Property<DateTimeOffset>("CheckOutOpensAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("check_out_opens_at");
+
+                    b.Property<string>("CheckOutTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("check_out_token_hash");
+
+                    b.Property<DateTimeOffset?>("CheckedInAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("checked_in_at");
+
+                    b.Property<DateTimeOffset?>("CheckedOutAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("checked_out_at");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("FkAccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("fk_account_id");
+
+                    b.Property<string>("FkCheckedOutById")
+                        .HasColumnType("text")
+                        .HasColumnName("fk_checked_out_by_id");
+
+                    b.Property<long?>("FkResourceReserveId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_resource_reserve_id");
+
+                    b.Property<long?>("FkSpaceReserveId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_space_reserve_id");
+
+                    b.Property<EShift>("Shift")
+                        .HasColumnType("shift_enum")
+                        .HasColumnName("shift");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CheckInTokenHash");
+
+                    b.HasIndex("CheckOutTokenHash");
+
+                    b.HasIndex("FkAccountId");
+
+                    b.HasIndex("FkCheckedOutById");
+
+                    b.HasIndex("Date", "Status");
+
+                    b.HasIndex("FkResourceReserveId", "Date", "Shift")
+                        .IsUnique();
+
+                    b.HasIndex("FkSpaceReserveId", "Date", "Shift")
+                        .IsUnique();
+
+                    b.ToTable("reserve_usage", t =>
+                        {
+                            t.HasCheckConstraint("ck_reserve_usage_single_reserve", "(fk_space_reserve_id IS NULL) <> (fk_resource_reserve_id IS NULL)");
+                        });
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -683,6 +998,17 @@ namespace Backend.Migrations
                     b.Navigation("Subject");
                 });
 
+            modelBuilder.Entity("Models.Calendar.ReleasedDateModel", b =>
+                {
+                    b.HasOne("Models.Account.AccountModel", "Account")
+                        .WithMany()
+                        .HasForeignKey("FkAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+                });
+
             modelBuilder.Entity("Models.Reserve.ResourceReserveModel", b =>
                 {
                     b.HasOne("Models.Account.AccountModel", "Account")
@@ -692,22 +1018,39 @@ namespace Backend.Migrations
                         .IsRequired();
 
                     b.HasOne("Models.Resource.ResourceModel", "Resource")
-                        .WithMany()
+                        .WithMany("ResourceReserves")
                         .HasForeignKey("FkResourceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Models.Reserve.SpaceReserveModel", "SpaceReserve")
                         .WithMany("ResourceReserves")
-                        .HasForeignKey("FkSpaceReserveId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("FkSpaceReserveId");
 
                     b.Navigation("Account");
 
                     b.Navigation("Resource");
 
                     b.Navigation("SpaceReserve");
+                });
+
+            modelBuilder.Entity("Models.Reserve.ResourceReserveScheduleModel", b =>
+                {
+                    b.HasOne("Models.Reserve.ResourceReserveModel", "ResourceReserve")
+                        .WithMany("ResourceReserveSchedules")
+                        .HasForeignKey("FkResourceReserveId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Models.Schedule.ScheduleModel", "Schedule")
+                        .WithMany()
+                        .HasForeignKey("FkScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ResourceReserve");
+
+                    b.Navigation("Schedule");
                 });
 
             modelBuilder.Entity("Models.Reserve.SpaceReserveModel", b =>
@@ -786,6 +1129,55 @@ namespace Backend.Migrations
                     b.Navigation("Subject");
                 });
 
+            modelBuilder.Entity("Models.Usage.ReserveUsageEntryModel", b =>
+                {
+                    b.HasOne("Models.Schedule.ScheduleModel", "Schedule")
+                        .WithMany()
+                        .HasForeignKey("FkScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Models.Usage.ReserveUsageModel", "Usage")
+                        .WithMany("Entries")
+                        .HasForeignKey("FkUsageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Schedule");
+
+                    b.Navigation("Usage");
+                });
+
+            modelBuilder.Entity("Models.Usage.ReserveUsageModel", b =>
+                {
+                    b.HasOne("Models.Account.AccountModel", "Account")
+                        .WithMany()
+                        .HasForeignKey("FkAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Models.Account.AccountModel", "CheckedOutBy")
+                        .WithMany()
+                        .HasForeignKey("FkCheckedOutById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Models.Reserve.ResourceReserveModel", "ResourceReserve")
+                        .WithMany("Usages")
+                        .HasForeignKey("FkResourceReserveId");
+
+                    b.HasOne("Models.Reserve.SpaceReserveModel", "SpaceReserve")
+                        .WithMany("Usages")
+                        .HasForeignKey("FkSpaceReserveId");
+
+                    b.Navigation("Account");
+
+                    b.Navigation("CheckedOutBy");
+
+                    b.Navigation("ResourceReserve");
+
+                    b.Navigation("SpaceReserve");
+                });
+
             modelBuilder.Entity("Models.Account.AccountModel", b =>
                 {
                     b.Navigation("AccountSubjects");
@@ -795,15 +1187,26 @@ namespace Backend.Migrations
                     b.Navigation("SpaceReserves");
                 });
 
+            modelBuilder.Entity("Models.Reserve.ResourceReserveModel", b =>
+                {
+                    b.Navigation("ResourceReserveSchedules");
+
+                    b.Navigation("Usages");
+                });
+
             modelBuilder.Entity("Models.Reserve.SpaceReserveModel", b =>
                 {
                     b.Navigation("ResourceReserves");
 
                     b.Navigation("SpaceReserveSchedules");
+
+                    b.Navigation("Usages");
                 });
 
             modelBuilder.Entity("Models.Resource.ResourceModel", b =>
                 {
+                    b.Navigation("ResourceReserves");
+
                     b.Navigation("SpaceResources");
                 });
 
@@ -821,6 +1224,11 @@ namespace Backend.Migrations
                     b.Navigation("AccountSubjects");
 
                     b.Navigation("SpaceSubjects");
+                });
+
+            modelBuilder.Entity("Models.Usage.ReserveUsageModel", b =>
+                {
+                    b.Navigation("Entries");
                 });
 #pragma warning restore 612, 618
         }

@@ -16,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Settings
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("Frontend"));
+builder.Services.Configure<HolidaySettings>(builder.Configuration.GetSection("Holidays"));
 
 // Services
 builder.Services.AddControllers()
@@ -105,7 +106,9 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddSingleton<IBackgroundTaskService>(new BackgroundTaskService(capacity: 200));
 builder.Services.AddHostedService<QueueService>();
-builder.Services.AddScoped<IEmailSender<AccountModel>, SmtpEmailService>();
+builder.Services.AddScoped<SmtpEmailService>();
+builder.Services.AddScoped<IEmailSender<AccountModel>>(sp => sp.GetRequiredService<SmtpEmailService>());
+builder.Services.AddScoped<IMailSender>(sp => sp.GetRequiredService<SmtpEmailService>());
 builder.Services.AddScoped<ISubjectService, SubjectService>();
 builder.Services.AddScoped<IResourceService, ResourceService>();
 builder.Services.AddScoped<ISpaceService, SpaceService>();
@@ -113,6 +116,19 @@ builder.Services.AddScoped<ISpaceReserveService, SpaceReserveService>();
 builder.Services.AddScoped<IResourceReserveService, ResourceReserveService>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IReserveUsageService, ReserveUsageService>();
+builder.Services.AddScoped<ReserveUsageScheduler>();
+// Fins de semana e feriados bloqueados: feriados por ano (BrasilAPI + cálculo local) guardados no banco e em cache.
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient(HolidayProvider.HttpClientName, client =>
+{
+    client.BaseAddress = new Uri("https://brasilapi.com.br/");
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+builder.Services.AddSingleton<IHolidayProvider, HolidayProvider>();
+builder.Services.AddScoped<ICalendarService, CalendarService>();
+// Check-in/check-out: cria as sessões do dia, envia os links e marca ausências/check-outs vencidos (1 min).
+builder.Services.AddHostedService<ReserveUsageWorker>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>

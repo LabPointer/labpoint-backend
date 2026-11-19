@@ -1,3 +1,4 @@
+using Backend.Handler;
 using Backend.Services;
 using DTOs.Account;
 using DTOs.Error;
@@ -31,17 +32,23 @@ public class AccountController(IAccountService accountService) : ControllerBase
     /// Editar conta
     /// </summary>
     /// <remarks>
-    /// Edita as informações da conta do usuário autenticado, incluindo nome de usuário.
+    /// Edita a conta do usuário autenticado: nome de usuário e/ou matéria associada (campos nulos são ignorados).
+    /// Regrava o cookie auth-info com os dados atualizados e devolve a conta.
     /// </remarks>
     [HttpPatch("edit")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(AccountResponseDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> PatchEdit([FromBody] AccountEditRequestDTO data)
     {
-        await accountService.EditAccount(User, data);
-        
-        return NoContent();
+        var account = await accountService.EditAccount(User, data);
+
+        // Mantém o nome exibido no front em dia sem exigir novo login.
+        AuthInfoCookie.Write(HttpContext, account.Username, account.Registration, [account.Role.ToString()]);
+
+        return Ok(account);
     }
 
     /// <summary>
@@ -51,7 +58,7 @@ public class AccountController(IAccountService accountService) : ControllerBase
     /// Lista todos os usuários cadastrados no sistema.
     /// </remarks>
     [HttpGet("admin")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(typeof(IEnumerable<AccountResponseDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status401Unauthorized)]
@@ -66,11 +73,11 @@ public class AccountController(IAccountService accountService) : ControllerBase
     /// Admin: editar usuário
     /// </summary>
     /// <remarks>
-    /// Somente o Owner altera cargos. Ativar/desativar a conta exige cargo superior ao do usuário alvo
-    /// (ordem crescente: User, Admin, Owner).
+    /// Somente o Root altera cargos. Ativar/desativar a conta exige cargo superior ao do usuário alvo
+    /// (ordem crescente: User, Admin, Root).
     /// </remarks>
     [HttpPatch("admin/edit")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status401Unauthorized)]

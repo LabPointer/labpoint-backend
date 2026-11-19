@@ -35,7 +35,7 @@ public class ResourceController(IResourceService resourceService) : ControllerBa
     /// Cria um novo recurso. Apenas usuários com permissões adequadas podem criar recursos.
     /// </remarks>
     [HttpPost("admin/create")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PostCreate([FromBody] ResourceCreateRequestDTO data)
@@ -52,7 +52,7 @@ public class ResourceController(IResourceService resourceService) : ControllerBa
     /// Edita um recurso existente. Apenas usuários com permissões adequadas podem editar recursos.
     /// </remarks>
     [HttpPatch("admin/edit")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]

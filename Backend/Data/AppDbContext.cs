@@ -1,12 +1,14 @@
-﻿using Models;
+using Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Models.Account;
+using Models.Calendar;
 using Models.Report;
 using Models.Reserve;
 using Models.Resource;
 using Models.Schedule;
 using Models.Subject;
+using Models.Usage;
 
 namespace Data;
 
@@ -33,7 +35,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<ResourceReserveModel> ResourceReserves { get; set; }
 
+    public DbSet<ResourceReserveScheduleModel> ResourceReserveSchedules { get; set; }
+
     public DbSet<ReportModel> Reports { get; set; }
+
+    public DbSet<ReserveUsageModel> ReserveUsages { get; set; }
+
+    public DbSet<ReserveUsageEntryModel> ReserveUsageEntries { get; set; }
+
+    public DbSet<HolidayModel> Holidays { get; set; }
+
+    public DbSet<HolidayYearSyncModel> HolidayYearSyncs { get; set; }
+
+    public DbSet<ReleasedDateModel> ReleasedDates { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -50,5 +64,32 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             .HasIndex(a => new { a.Name, a.Description })
             .HasMethod("GIN")
             .IsTsVectorExpressionIndex("portuguese");
+
+        builder.Entity<ResourceModel>()
+            .HasIndex(r => new { r.Name, r.Description })
+            .HasMethod("GIN")
+            .IsTsVectorExpressionIndex("portuguese");
+
+        // Consultas de disponibilidade: reservas de um recurso que se sobrepõem a um período.
+        builder.Entity<ResourceReserveModel>()
+            .HasIndex(r => new { r.FkResourceId, r.DateFrom, r.DateTo });
+
+        // Sessão de uso: de uma reserva de sala OU de uma reserva de recurso avulsa (nunca as duas).
+        builder.Entity<ReserveUsageModel>()
+            .ToTable(t => t.HasCheckConstraint(
+                "ck_reserve_usage_single_reserve",
+                "(fk_space_reserve_id IS NULL) <> (fk_resource_reserve_id IS NULL)"));
+
+        // Duas FKs para a conta: o dono da reserva e o admin que fechou o check-out.
+        builder.Entity<ReserveUsageModel>()
+            .HasOne(u => u.Account)
+            .WithMany()
+            .HasForeignKey(u => u.FkAccountId);
+
+        builder.Entity<ReserveUsageModel>()
+            .HasOne(u => u.CheckedOutBy)
+            .WithMany()
+            .HasForeignKey(u => u.FkCheckedOutById)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

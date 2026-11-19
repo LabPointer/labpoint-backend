@@ -36,7 +36,7 @@ public class SubjectController(
     /// Cria uma nova matéria. Apenas usuários com permissões adequadas podem criar matérias.
     /// </remarks>
     [HttpPost("admin/create")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AdminPostCreate([FromBody] SubjectCreateRequestDTO data)
@@ -53,7 +53,7 @@ public class SubjectController(
     /// Edita os dados de uma matéria. Apenas usuários com permissões adequadas podem editar matérias.
     /// </remarks>
     [HttpPatch("admin/edit")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Root")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]   
     [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]

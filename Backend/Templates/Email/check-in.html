@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+<div style="max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 32px;">
+  <h2 style="color: #1a1a1a; text-align: center;">Check-in da sua reserva</h2>
+  <p>Olá {user}, sua reserva começa em breve:</p>
+
+  <table style="width: 100%; font-size: 14px; border-collapse: collapse; margin: 16px 0;">
+    <tr><td style="padding: 4px 0; color: #666;">Local</td><td style="padding: 4px 0;"><strong>{place}</strong></td></tr>
+    <tr><td style="padding: 4px 0; color: #666;">Data</td><td style="padding: 4px 0;">{date}</td></tr>
+    <tr><td style="padding: 4px 0; color: #666;">Turno</td><td style="padding: 4px 0;">{shift}</td></tr>
+    <tr><td style="padding: 4px 0; color: #666;">Horários</td><td style="padding: 4px 0;">{schedules}</td></tr>
+  </table>
+
+  <p>Confirme o uso e preencha o controle de entrada <strong>até {deadline}</strong>. Sem o check-in, a reserva deste
+    turno é marcada como ausente e o horário é liberado.</p>
+
+  <div style="text-align: center; margin: 32px 0;">
+    <a href="{link}"
+       style="background-color: #2563eb; color: #ffffff; padding: 12px 24px;
+                      text-decoration: none; border-radius: 6px; display: inline-block;">
+      Fazer check-in
+    </a>
+  </div>
+
+  <p style="font-size: 13px; color: #666;">O link vale só para este turno e só pode ser usado uma vez.</p>
+</div>
+</body>
+</html>

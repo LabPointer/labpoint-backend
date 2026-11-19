@@ -10,13 +10,18 @@ namespace Models.Report;
 /// assim as próximas consultas não precisam varrer reservas, espaços e contas de novo.
 /// </summary>
 [Table("report")]
-[Index(nameof(FromYear), nameof(FromMonth), nameof(ToYear), nameof(ToMonth), IsUnique = true)]
+[Index(nameof(Kind), nameof(FromYear), nameof(FromMonth), nameof(ToYear), nameof(ToMonth), IsUnique = true)]
 public class ReportModel
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
     public long Id { get; set; }
+
+    /// <summary>Tipo do relatório: salas ou recursos reserváveis.</summary>
+    [Required]
+    [Column("kind")]
+    public EReportKind Kind { get; set; } = EReportKind.Spaces;
 
     /// <summary>Ano do primeiro mês do período.</summary>
     [Required]

@@ -1,10 +1,7 @@
-using System.Net;
-using System.Text.Json;
 using Backend.Handler;
 using Backend.Services;
 using DTOs.Auth;
 using DTOs.Error;
-using MailKit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,16 +18,14 @@ public class AuthController(
     UserManager<AccountModel> userManager,
     SignInManager<AccountModel> signInManager,
     IBackgroundTaskService queueService,
-    IConfiguration configuration,
-    IOptions<FrontendSettings> frontend,
-    ILogger<AuthController> logger) : ControllerBase
+    IOptions<FrontendSettings> frontend) : ControllerBase
 {
     /// <summary>
     /// Registrar
     /// </summary>
     /// <remarks>
     /// Registra um novo usuário com a role "User" e envia um e-mail de confirmação.
-    /// Apenas um Admin/Owner autenticado pode definir outra role através do campo "role".
+    /// Apenas um Admin/Root autenticado pode definir outra role através do campo "role".
     /// </remarks>
     [HttpPost("sign-up")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -123,14 +118,8 @@ public class AuthController(
             throw new UnauthorizedException("Matrícula ou senha incorretos.");
 
         var roles = await userManager.GetRolesAsync(user);
-        
-        var cookieData = new { username = user.UserName ?? "Não definido", registration = user.Registration, roles };
-        string jsonString = JsonSerializer.Serialize(cookieData);
-        string cookieValue = WebUtility.UrlEncode(jsonString);
-        var cookieOptions = BuildInfoCookieOptions();
-        cookieOptions.Expires = DateTimeOffset.UtcNow.AddDays(1);
-        HttpContext.Response.Cookies.Append("auth-info", cookieValue, cookieOptions);
-        
+        AuthInfoCookie.Write(HttpContext, user.UserName, user.Registration, roles);
+
         return Ok();
     }
 
@@ -144,23 +133,9 @@ public class AuthController(
     {
         // SignOutAsync já apaga o auth-session com os mesmos atributos (SameSite/Secure) com que ele foi criado.
         await signInManager.SignOutAsync();
-        // Para apagar, o Set-Cookie precisa repetir os atributos do cookie original; um SameSite diferente
-        // seria ignorado pelo navegador em requisições cross-site.
-        HttpContext.Response.Cookies.Delete("auth-info", BuildInfoCookieOptions());
+        AuthInfoCookie.Delete(HttpContext);
         return Ok();
     }
-
-    /// <summary>
-    /// Opções do cookie auth-info (dados de exibição lidos pelo front, por isso HttpOnly = false).
-    /// Sob HTTPS (Render, via X-Forwarded-Proto) sai SameSite=None; Secure para valer entre o front e a API em
-    /// sites diferentes; em http://localhost continua Lax.
-    /// </summary>
-    private CookieOptions BuildInfoCookieOptions() => new()
-    {
-        HttpOnly = false,
-        Secure = Request.IsHttps,
-        SameSite = Request.IsHttps ? SameSiteMode.None : SameSiteMode.Lax
-    };
 
     /// <summary>
     /// Solicitar redefinição de senha
@@ -206,7 +181,7 @@ public class AuthController(
         await queueService.EnqueueAsync(async (sp, ct) =>
         {
             var emailService = sp.GetRequiredService<IEmailSender<AccountModel>>();
-            var userService = sp.GetService<UserManager<AccountModel>>();
+            var userService = sp.GetRequiredService<UserManager<AccountModel>>();
             var token = await userService.GenerateEmailConfirmationTokenAsync(user);
             var link = $"{frontend.Value.Url}/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
 
@@ -219,7 +194,7 @@ public class AuthController(
         await queueService.EnqueueAsync(async (sp, ct) =>
         {
             var emailService = sp.GetRequiredService<IEmailSender<AccountModel>>();
-            var userService = sp.GetService<UserManager<AccountModel>>();
+            var userService = sp.GetRequiredService<UserManager<AccountModel>>();
             var token = await userService.GeneratePasswordResetTokenAsync(user);
             var frontendUrl = frontend.Value.Url;
             var link = $"{frontendUrl.TrimEnd('/')}/reset-password" +

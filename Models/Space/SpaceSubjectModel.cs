@@ -18,11 +18,11 @@ public class SpaceSubjectModel
     [Column("fk_space_id")]
     public long FkSpaceId { get; set; }
     [ForeignKey(nameof(FkSpaceId))]
-    public virtual SpaceModel Space { get; set; }
+    public virtual SpaceModel Space { get; set; } = null!;
     
     [Required]
     [Column("fk_subject_id")]
     public long FkSubjectId { get; set; }
     [ForeignKey(nameof(FkSubjectId))]
-    public virtual SubjectModel Subject { get; set; }
+    public virtual SubjectModel Subject { get; set; } = null!;
 }

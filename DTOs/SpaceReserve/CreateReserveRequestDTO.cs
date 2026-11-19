@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DTOs.SpaceReserve;
 
+/// <param name="Resources">Recursos reserváveis pedidos junto com a sala (opcional).</param>
 public record SpaceReserveCreateRequestDTO(
     [Required(ErrorMessage = "A data de início é obrigatória")]
     DateOnly StartAt,
@@ -14,4 +15,5 @@ public record SpaceReserveCreateRequestDTO(
     bool Lock,
     [Required(ErrorMessage = "O propósito da reserva é obrigatório")]
     [StringLength(200, MinimumLength = 1, ErrorMessage = "O propósito deve ter entre 1 e 200 caracteres")]
-    string purpose);
+    string purpose,
+    List<ReserveResourceItemDTO>? Resources = null);

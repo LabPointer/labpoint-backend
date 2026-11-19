@@ -17,12 +17,12 @@ public class SpaceModel
     [Required]
     [Column("name")]
     [StringLength(100)]
-    public string Name { get; set; }
+    public string Name { get; set; } = null!;
 
     [Required]
     [Column("description")]
     [StringLength(200)]
-    public String Description { get; set; }
+    public String Description { get; set; } = null!;
 
     [Required]
     [Column("capacity")]

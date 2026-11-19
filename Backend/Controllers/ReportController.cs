@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Backend.Controllers;
 
 [ApiController]
-[Authorize(Roles = "Admin,Owner")]
+[Authorize(Roles = "Admin,Root")]
 [Route("report")]
 public class ReportController(IReportService reportService) : ControllerBase
 {
@@ -29,6 +29,25 @@ public class ReportController(IReportService reportService) : ControllerBase
     public async Task<IActionResult> GetReport([FromQuery] ReportRequestDTO query)
     {
         var report = await reportService.GetReport(query);
+
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Relatório de recursos de um período de meses
+    /// </summary>
+    /// <remarks>
+    /// Utilização e ociosidade dos recursos reserváveis, com as mesmas regras do relatório de salas (meses encerrados,
+    /// pendentes já iniciadas contam como ausentes, empates retornam todos, cache por período com <c>Refresh</c>).
+    /// A taxa de utilização considera a quantidade: unidades reservadas x horários x dias sobre
+    /// unidades x horários por dia x dias do período.
+    /// </remarks>
+    [HttpGet("resources")]
+    [ProducesResponseType(typeof(ResourceReportResponseDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetResourceReport([FromQuery] ReportRequestDTO query)
+    {
+        var report = await reportService.GetResourceReport(query);
 
         return Ok(report);
     }

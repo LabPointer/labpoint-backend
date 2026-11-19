@@ -14,7 +14,7 @@ namespace Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20261017175630_init")]
-    partial class init
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

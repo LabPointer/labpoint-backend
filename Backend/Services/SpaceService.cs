@@ -47,10 +47,11 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
             queryable = queryable.Where(s => s.SpaceSubjects.Any(ss => query.Subjects.Contains(ss.FkSubjectId)));
         }
 
-        // Resources filter
+        // Resources filter (só recursos fixos de espaço; reserváveis nunca ficam associados a um espaço)
         if (query.Resources != null && query.Resources.Count > 0)
         {
-            queryable = queryable.Where(s => s.SpaceResources.Any(sr => query.Resources.Contains(sr.FkResourceId)));
+            queryable = queryable.Where(s => s.SpaceResources.Any(sr =>
+                query.Resources.Contains(sr.FkResourceId) && !sr.Resource.Reservable));
         }
 
         // Date and schedule filter
@@ -120,15 +121,7 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
 
         if (data.Resources != null && data.Resources.Count > 0)
         {
-            var distinctResourceIds = data.Resources.Distinct().ToList();
-
-            var existingResourceCount = await dbCtx.Resources
-                .CountAsync(r => distinctResourceIds.Contains(r.Id));
-
-            if (existingResourceCount != distinctResourceIds.Count)
-            {
-                throw new BadRequestException("Uma ou mais recursos informados não existem no sistema.");
-            }
+            await ValidateResourcesExist(data.Resources.Distinct().ToList());
         }
 
         var space = new SpaceModel
@@ -268,12 +261,24 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
         }
     }
 
+    /// <summary>Os recursos precisam existir e ser fixos: recurso reservável nunca é associado a um espaço.</summary>
     private async Task ValidateResourcesExist(List<long> resourceIds)
     {
-        var count = await dbCtx.Resources.CountAsync(r => resourceIds.Contains(r.Id));
-        if (count != resourceIds.Count)
+        var resources = await dbCtx.Resources.AsNoTracking()
+            .Where(r => resourceIds.Contains(r.Id))
+            .Select(r => new { r.Name, r.Reservable })
+            .ToListAsync();
+
+        if (resources.Count != resourceIds.Count)
         {
             throw new BadRequestException("Uma ou mais recursos informados não existem no sistema.");
+        }
+
+        var reservable = resources.Where(r => r.Reservable).Select(r => r.Name).ToList();
+        if (reservable.Count > 0)
+        {
+            throw new BadRequestException(
+                $"Recursos reserváveis não podem ser associados a um espaço: {string.Join(", ", reservable)}.");
         }
     }
 }
