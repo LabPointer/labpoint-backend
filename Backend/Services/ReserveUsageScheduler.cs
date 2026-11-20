@@ -1,36 +1,25 @@
-using System.Globalization;
 using Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Models;
 using Models.Usage;
-using Services;
 
 namespace Backend.Services;
 
 /// <summary>
 /// Um ciclo do check-in/check-out (roda a cada minuto pelo <see cref="ReserveUsageWorker"/>):
-/// cria as sessões do dia, envia os e-mails de check-in, marca ausências, envia os e-mails de check-out e marca
-/// check-outs vencidos. Cada passo é idempotente: rodar de novo no mesmo minuto não duplica nada.
+/// cria as sessões do dia, marca ausências e marca check-outs vencidos. Cada passo é idempotente: rodar de novo no
+/// mesmo minuto não duplica nada. Os e-mails com os links de check-in/check-out são do serviço Email
+/// (projeto <c>Email</c>), que lê as sessões criadas aqui.
 /// </summary>
-public class ReserveUsageScheduler(
-    AppDbContext dbCtx,
-    ICalendarService calendar,
-    IMailSender mailSender,
-    IOptions<FrontendSettings> frontend,
-    ILogger<ReserveUsageScheduler> logger)
+public class ReserveUsageScheduler(AppDbContext dbCtx, ICalendarService calendar)
 {
-    private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
-
     public async Task RunAsync(CancellationToken ct)
     {
         var now = BrazilClock.UtcNow;
         var today = BrazilClock.Today;
 
         await MaterializeSessions(today, now, ct);
-        await SendCheckInEmails(now, ct);
         await MarkAbsent(now, ct);
-        await SendCheckOutEmails(now, ct);
         await MarkCheckoutPending(now, ct);
     }
 
@@ -155,116 +144,6 @@ public class ReserveUsageScheduler(
     private static DateTimeOffset LateClose(DateTimeOffset closesAt, DateTimeOffset now) =>
         now > closesAt ? now + UsageRules.LateCheckInGrace : closesAt;
 
-    private async Task SendCheckInEmails(DateTimeOffset now, CancellationToken ct)
-    {
-        var emailFrom = now + (UsageRules.CheckInEmailBefore - UsageRules.CheckInOpensBefore);
-        var sessions = await dbCtx.ReserveUsages
-            .Where(u => u.Status == EUsageStatus.Scheduled
-                        && u.CheckInEmailSentAt == null
-                        && u.CheckInOpensAt <= emailFrom
-                        && u.CheckInClosesAt > now)
-            .ToListAsync(ct);
-
-        await SendLinks(sessions, now, isCheckIn: true, ct);
-    }
-
-    private async Task SendCheckOutEmails(DateTimeOffset now, CancellationToken ct)
-    {
-        var sessions = await dbCtx.ReserveUsages
-            .Where(u => u.Status == EUsageStatus.CheckedIn
-                        && u.CheckOutEmailSentAt == null
-                        && u.CheckOutOpensAt <= now
-                        && u.CheckOutClosesAt > now)
-            .ToListAsync(ct);
-
-        await SendLinks(sessions, now, isCheckIn: false, ct);
-    }
-
-    /// <summary>
-    /// Gera o token, grava o hash e marca o envio ANTES de mandar o e-mail: se o envio falhar o usuário ainda pode usar
-    /// as páginas do sistema, e um reenvio nunca duplica o aviso.
-    /// </summary>
-    private async Task SendLinks(List<ReserveUsageModel> sessions, DateTimeOffset now, bool isCheckIn, CancellationToken ct)
-    {
-        if (sessions.Count == 0)
-        {
-            return;
-        }
-
-        var tokens = new Dictionary<long, string>();
-        foreach (var session in sessions)
-        {
-            var (token, hash) = UsageRules.NewToken();
-            tokens[session.Id] = token;
-
-            if (isCheckIn)
-            {
-                session.CheckInTokenHash = hash;
-                session.CheckInEmailSentAt = now;
-            }
-            else
-            {
-                session.CheckOutTokenHash = hash;
-                session.CheckOutEmailSentAt = now;
-            }
-        }
-
-        await dbCtx.SaveChangesAsync(ct);
-
-        var ids = tokens.Keys.ToList();
-        var rows = await UsageQueries.Project(dbCtx.ReserveUsages.AsNoTracking().Where(u => ids.Contains(u.Id)))
-            .ToListAsync(ct);
-
-        foreach (var row in rows)
-        {
-            if (string.IsNullOrWhiteSpace(row.Email))
-            {
-                continue;
-            }
-
-            try
-            {
-                await SendEmail(row, tokens[row.Id], isCheckIn);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Falha ao enviar o e-mail de {Step} da sessão {SessionId}",
-                    isCheckIn ? "check-in" : "check-out", row.Id);
-            }
-        }
-    }
-
-    private async Task SendEmail(UsageRow row, string token, bool isCheckIn)
-    {
-        var link = $"{frontend.Value.Url.TrimEnd('/')}/usage?token={Uri.EscapeDataString(token)}";
-        var deadline = BrazilClock.ToLocal(isCheckIn ? row.CheckInClosesAt : row.CheckOutClosesAt);
-        var schedules = string.Join(", ", row.Schedules.Select(s => $"{s.StartAt:HH\\:mm}–{s.EndAt:HH\\:mm}"));
-
-        var values = new Dictionary<string, string>
-        {
-            ["user"] = row.Account.UserName ?? "",
-            ["place"] = row.Place,
-            ["date"] = row.Date.ToString("dd/MM/yyyy", PtBr),
-            ["shift"] = ShiftLabel(row.Shift),
-            ["schedules"] = schedules,
-            ["deadline"] = deadline.ToString("HH:mm", PtBr),
-            ["link"] = link
-        };
-
-        var template = isCheckIn ? "check-in.html" : "check-out.html";
-        var html = await mailSender.RenderTemplateAsync(template, values)
-                   ?? $"<p>Olá, {System.Net.WebUtility.HtmlEncode(values["user"])}!</p>" +
-                      $"<p>{(isCheckIn ? "Faça o check-in" : "Faça o check-out")} de {System.Net.WebUtility.HtmlEncode(row.Place)} " +
-                      $"({values["date"]}, {values["shift"]}) até {values["deadline"]}: " +
-                      $"<a href=\"{System.Net.WebUtility.HtmlEncode(link)}\">abrir</a>.</p>";
-
-        var subject = isCheckIn
-            ? $"Check-in: {row.Place} — {values["shift"]} {values["date"]}"
-            : $"Check-out: {row.Place} — {values["shift"]} {values["date"]}";
-
-        await mailSender.SendAsync(row.Email!, subject, html);
-    }
-
     /// <summary>Sem check-in até o fim da janela: ausente (os horários do turno deixam de ocupar a sala/recursos).</summary>
     private Task MarkAbsent(DateTimeOffset now, CancellationToken ct) =>
         dbCtx.ReserveUsages
@@ -287,22 +166,12 @@ public class ReserveUsageScheduler(
         {
             await dbCtx.SaveChangesAsync(ct);
         }
-        catch (DbUpdateException ex) when (ex.InnerException is Npgsql.PostgresException
-                                           {
-                                               SqlState: Npgsql.PostgresErrorCodes.UniqueViolation
-                                           })
+        catch (DbUpdateException ex) when (ex.IsUniqueViolation())
         {
             // Outra instância criou a mesma sessão ao mesmo tempo: o próximo ciclo segue normalmente.
             dbCtx.ChangeTracker.Clear();
         }
     }
-
-    public static string ShiftLabel(EShift shift) => shift switch
-    {
-        EShift.Morning => "Manhã",
-        EShift.Afternoon => "Tarde",
-        _ => "Noite"
-    };
 }
 
 /// <summary>Roda o <see cref="ReserveUsageScheduler"/> a cada minuto, em um escopo de DI novo por ciclo.</summary>

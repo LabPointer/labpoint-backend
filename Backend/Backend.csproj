@@ -11,7 +11,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MailKit" Version="5.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.15" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.15" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.15" />
@@ -24,9 +23,9 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Npgsql" Version="10.0.3" />
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-        <PackageReference Include="Scalar.AspNetCore" Version="2.20.0" />
+        <PackageReference Include="Npgsql" Version="10.0.4" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.4" />
+        <PackageReference Include="Scalar.AspNetCore" Version="3.1.1" />
         <PackageReference Include="Swashbuckle.AspNetCore.ReDoc" Version="10.3.1" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.3.1" />
     </ItemGroup>
@@ -39,16 +38,17 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
       <Content Remove="Migrations\**" />
-      <None Remove="Templates\**" />
-      <Content Include="Templates\**">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </Content>
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Config\Config.csproj" />
+      <ProjectReference Include="..\Core\Core.csproj" />
       <ProjectReference Include="..\DTOs\DTOs.csproj" />
       <ProjectReference Include="..\Models\Models.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <!-- BrazilClock e UsageTokens (projeto Core) são usados em quase todos os serviços. -->
+      <Using Include="Core" />
     </ItemGroup>
 </Project>

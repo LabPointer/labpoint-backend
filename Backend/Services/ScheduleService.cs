@@ -1,3 +1,4 @@
+using DTOs.Common;
 using Backend.Handler;
 using Data;
 using DTOs.Schedule;
@@ -13,6 +14,7 @@ public interface IScheduleService
     public Task<List<ScheduleResponseDTO>> GetSchedules(ScheduleRequestDTO query);
     public Task AdminCreateSchedule(ScheduleCreateRequestDTO data);
     public Task AdminEditSchedule(ScheduleEditRequestDTO data);
+    public Task AdminDeleteSchedule(AdminDeleteRequestDTO data);
 }
 
 public class ScheduleService(AppDbContext dbCtx) : IScheduleService
@@ -82,4 +84,24 @@ public class ScheduleService(AppDbContext dbCtx) : IScheduleService
         
         await dbCtx.SaveChangesAsync();
     }
+
+    public async Task AdminDeleteSchedule(AdminDeleteRequestDTO data)
+    {
+        var schedule = await dbCtx.Schedules.AsNoTracking().FirstOrDefaultAsync(s => s.Id == data.Id);
+        if (schedule is null)
+            throw new ResourceNotFoundException("Horário não encontrado.");
+
+        PermanentDeletion.EnsureConfirmed($"{Label(schedule.StartAt)} - {Label(schedule.EndAt)}", data.ConfirmName);
+
+        await using var transaction = await dbCtx.Database.BeginTransactionAsync();
+        // O horário sai das reservas e dos relatórios de uso em cascata.
+        await dbCtx.Schedules.Where(s => s.Id == schedule.Id).ExecuteDeleteAsync();
+        // Reservas que ficaram sem nenhum horário deixam de fazer sentido e são removidas.
+        await PermanentDeletion.DeleteSpaceReserves(dbCtx, dbCtx.SpaceReserves.Where(sr => !sr.SpaceReserveSchedules.Any()));
+        await PermanentDeletion.DeleteResourceReserves(
+            dbCtx, dbCtx.ResourceReserves.Where(rr => !rr.ResourceReserveSchedules.Any()));
+        await transaction.CommitAsync();
+    }
+
+    private static string Label(TimeOnly time) => time.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture);
 }

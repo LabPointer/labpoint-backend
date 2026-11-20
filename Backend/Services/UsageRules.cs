@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Core.Email;
 using Data;
 using DTOs.Schedule;
 using DTOs.Usage;
@@ -53,17 +54,10 @@ public static class UsageRules
         status is EUsageStatus.CheckedIn or EUsageStatus.Completed or EUsageStatus.CheckoutPending;
 
     /// <summary>Token aleatório (base64url, vai no link) e o hash dele (vai para o banco).</summary>
-    public static (string Token, string Hash) NewToken()
-    {
-        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
-        return (token, HashToken(token));
-    }
+    /// <remarks>Formato definido em <see cref="UsageTokens"/> (projeto Core), o mesmo usado pelo serviço de e-mail.</remarks>
+    public static (string Token, string Hash) NewToken() => UsageTokens.NewToken();
 
-    public static string HashToken(string token) =>
-        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+    public static string HashToken(string token) => UsageTokens.Hash(token);
 
     /// <summary>(reserva de sala, dia, turno) ausentes no período: esses horários não ocupam mais a sala.</summary>
     public static async Task<HashSet<(long ReserveId, DateOnly Day, EShift Shift)>> LoadAbsentSpace(
@@ -176,7 +170,9 @@ internal sealed record UsageRow(
     DateTimeOffset? CheckedInAt,
     DateTimeOffset? CheckedOutAt,
     UsageAccountDTO? CheckedOutBy,
-    List<UsageEntryResponseDTO> Entries)
+    List<UsageEntryResponseDTO> Entries,
+    UsageEmailDTO? CheckInEmail = null,
+    UsageEmailDTO? CheckOutEmail = null)
 {
     public List<ScheduleResponseDTO> Schedules =>
         SpaceSchedules.Concat(ResourceSchedules).OrderBy(s => s.StartAt).ToList();
@@ -201,7 +197,9 @@ internal sealed record UsageRow(
         CheckedInAt,
         CheckedOutAt,
         CheckedOutBy,
-        Entries.OrderBy(e => Schedules.FindIndex(s => s.Id == e.ScheduleId)).ToList());
+        Entries.OrderBy(e => Schedules.FindIndex(s => s.Id == e.ScheduleId)).ToList(),
+        CheckInEmail,
+        CheckOutEmail);
 }
 
 internal static class UsageQueries
@@ -259,6 +257,17 @@ internal static class UsageQueries
                 u.Entries
                     .Select(e => new UsageEntryResponseDTO(
                         e.FkScheduleId, e.ClassName, e.Modality, e.NotebooksIn, e.ChargersIn, e.NotebooksOut, e.ChargersOut))
-                    .ToList()))
+                    .ToList(),
+                // Último aviso de cada etapa na fila de e-mails (gerado pelo serviço de e-mail).
+                u.Emails
+                    .Where(m => m.Template == EmailOutbox.CheckInTemplate)
+                    .OrderByDescending(m => m.Id)
+                    .Select(m => new UsageEmailDTO(m.Status, m.Attempts, m.CreatedAt, m.SentAt))
+                    .FirstOrDefault(),
+                u.Emails
+                    .Where(m => m.Template == EmailOutbox.CheckOutTemplate)
+                    .OrderByDescending(m => m.Id)
+                    .Select(m => new UsageEmailDTO(m.Status, m.Attempts, m.CreatedAt, m.SentAt))
+                    .FirstOrDefault()))
             .AsSplitQuery();
 }

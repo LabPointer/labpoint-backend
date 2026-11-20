@@ -93,4 +93,7 @@ public class ReserveUsageModel
     public string? CheckOutTokenHash { get; set; }
 
     public virtual ICollection<ReserveUsageEntryModel> Entries { get; set; } = new List<ReserveUsageEntryModel>();
+
+    /// <summary>Avisos de check-in/check-out desta sessão na fila de e-mails (mostram se o e-mail saiu).</summary>
+    public virtual ICollection<Email.EmailOutboxModel> Emails { get; set; } = new List<Email.EmailOutboxModel>();
 }

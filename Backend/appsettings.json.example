@@ -1,23 +1,25 @@
 {
+  // Base do Backend (vale em todos os ambientes). appsettings.{Ambiente}.json sobrescreve só o que muda.
+
+  // Banco de dados: "PostgreSql" (usa ConnectionStrings:DbConnection) ou "Sqlite" (usa ConnectionStrings:SqliteConnection).
+  // O serviço de e-mail (projeto Email) precisa apontar para o mesmo banco.
+  "Database": {
+    "Provider": "PostgreSql"
+  },
   "ConnectionStrings": {
     "DbConnection": "Host=<endpoint>.neon.tech;Port=5432;Database=<database>;Username=<usuario>;Password=<senha>;SSL Mode=Require;Timeout=30",
-    "DbConnection": "Host=localhost;Port=5432;Database=pei;Username=pei;Password=pei"
+    "SqliteConnection": "Data Source=labpoint.db"
   },
   "Frontend": {
-    "Url": "https://labpoint.vercel.app",
-    "Url": "http://localhost:3000"
-  },
-  "Smtp": {
-    "Host": "smtp.gmail.com",
-    "Port": 587,
-    "User": "<e-mail>",
-    "Password": "<email app password>",
-    "FromName": "Labpoint",
-    "FromAddress": "<e-mail>"
+    "Url": "https://labpoint.vercel.app"
   },
   "Cors": {
-    "AllowedOrigins": [
-      "http://localhost:3000"
+    "AllowedOrigins": ["https://labpoint.vercel.app"]
+  },
+  "Holidays": {
+    "State": "GO",
+    "Municipal": [
+      { "Date": "07-31", "Name": "Aniversário de Anápolis" }
     ]
   },
   "Logging": {

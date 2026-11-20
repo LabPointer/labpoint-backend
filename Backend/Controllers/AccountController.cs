@@ -90,5 +90,26 @@ public class AccountController(IAccountService accountService) : ControllerBase
         
         return NoContent();
     }
-}
 
+    /// <summary>
+    /// Admin: excluir usuário permanentemente
+    /// </summary>
+    /// <remarks>
+    /// Exclui a conta de vez, junto com as reservas e o histórico de uso dela. Exige cargo estritamente superior ao do
+    /// usuário alvo e digitar o nome de usuário para confirmar. Liberações de calendário feitas pela conta passam
+    /// para quem excluiu.
+    /// </remarks>
+    [HttpDelete("admin/delete")]
+    [Authorize(Roles = "Admin,Root")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AdminDeleteUser([FromBody] AdminAccountDeleteRequestDTO data)
+    {
+        await accountService.AdminDeleteAccount(User, data);
+
+        return NoContent();
+    }
+}

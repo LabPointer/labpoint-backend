@@ -361,6 +361,80 @@ namespace Backend.Migrations
                     b.ToTable("released_date");
                 });
 
+            modelBuilder.Entity("Models.Email.EmailOutboxModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<long?>("FkUsageId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fk_usage_id");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_attempt_at");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload");
+
+                    b.Property<DateTimeOffset?>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("subject");
+
+                    b.Property<string>("Template")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("template");
+
+                    b.Property<string>("ToAddress")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("to_address");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FkUsageId");
+
+                    b.HasIndex("Status", "NextAttemptAt");
+
+                    b.ToTable("email_outbox");
+                });
+
             modelBuilder.Entity("Models.Report.ReportModel", b =>
                 {
                     b.Property<long>("Id")
@@ -1009,6 +1083,16 @@ namespace Backend.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("Models.Email.EmailOutboxModel", b =>
+                {
+                    b.HasOne("Models.Usage.ReserveUsageModel", "Usage")
+                        .WithMany("Emails")
+                        .HasForeignKey("FkUsageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Usage");
+                });
+
             modelBuilder.Entity("Models.Reserve.ResourceReserveModel", b =>
                 {
                     b.HasOne("Models.Account.AccountModel", "Account")
@@ -1228,6 +1312,8 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Models.Usage.ReserveUsageModel", b =>
                 {
+                    b.Navigation("Emails");
+
                     b.Navigation("Entries");
                 });
 #pragma warning restore 612, 618

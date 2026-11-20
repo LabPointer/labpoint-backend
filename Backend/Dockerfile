@@ -6,9 +6,10 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 # Copia só os .csproj primeiro para o restore ficar em cache enquanto as dependências não mudarem.
-# O Backend referencia Config, DTOs e Models, então os quatro projetos precisam estar presentes.
+# O Backend referencia Config, Core, DTOs e Models, então os cinco projetos precisam estar presentes.
 COPY Backend/Backend.csproj Backend/
 COPY Config/Config.csproj Config/
+COPY Core/Core.csproj Core/
 COPY DTOs/DTOs.csproj DTOs/
 COPY Models/Models.csproj Models/
 RUN dotnet restore Backend/Backend.csproj

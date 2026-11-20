@@ -1,0 +1,24 @@
+{
+  // Desenvolvimento (DOTNET_ENVIRONMENT=Development, definido no Properties/launchSettings.json): só o que muda em
+  // relação ao appsettings.json. Para usar SQLite, troque Provider para "Sqlite" (igual ao Backend) e aponte
+  // SqliteConnection para o mesmo arquivo do Backend (ex.: "Data Source=../Backend/labpoint.db").
+  "Database": {
+    "Provider": "PostgreSql"
+  },
+  "ConnectionStrings": {
+    "DbConnection": "Host=localhost;Port=5432;Database=pei;Username=pei;Password=pei",
+    "SqliteConnection": "Data Source=../Backend/labpoint.db"
+  },
+  "Frontend": {
+    "Url": "http://localhost:3000"
+  },
+  // Deixe Host vazio para só registrar os e-mails no log, sem enviar.
+  "Smtp": {
+    "Host": "smtp.gmail.com",
+    "Port": 587,
+    "User": "<e-mail>",
+    "Password": "<senha de app do e-mail>",
+    "FromName": "Labpoint",
+    "FromAddress": "<e-mail>"
+  }
+}

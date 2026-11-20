@@ -14,7 +14,6 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Settings
-builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("Frontend"));
 builder.Services.Configure<HolidaySettings>(builder.Configuration.GetSection("Holidays"));
 
@@ -35,19 +34,8 @@ builder.Services.AddControllers()
     });
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
-builder.Services.AddDbContext<AppDbContext>(options =>
-{
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DbConnection"),
-        npgsql =>
-        {
-            npgsql.MapEnum<EShift>("shift_enum");
-            npgsql.MapEnum<EReserveStatus>("reserve_status_enum");
-        }
-    ).UseLazyLoadingProxies();
-    // Map enun type
-
-});
+// PostgreSQL ou SQLite, conforme Database:Provider no appsettings (projeto Core).
+builder.Services.AddLabpointDatabase(builder.Configuration);
 
 builder.Services
     .AddIdentity<AccountModel, IdentityRole>(options =>
@@ -106,9 +94,10 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddSingleton<IBackgroundTaskService>(new BackgroundTaskService(capacity: 200));
 builder.Services.AddHostedService<QueueService>();
-builder.Services.AddScoped<SmtpEmailService>();
-builder.Services.AddScoped<IEmailSender<AccountModel>>(sp => sp.GetRequiredService<SmtpEmailService>());
-builder.Services.AddScoped<IMailSender>(sp => sp.GetRequiredService<SmtpEmailService>());
+// E-mails: o backend só grava na fila email_outbox; o envio (SMTP) é feito pelo serviço Email.
+builder.Services.AddScoped<EmailQueue>();
+builder.Services.AddScoped<IEmailQueue>(sp => sp.GetRequiredService<EmailQueue>());
+builder.Services.AddScoped<IEmailSender<AccountModel>>(sp => sp.GetRequiredService<EmailQueue>());
 builder.Services.AddScoped<ISubjectService, SubjectService>();
 builder.Services.AddScoped<IResourceService, ResourceService>();
 builder.Services.AddScoped<ISpaceService, SpaceService>();
@@ -127,7 +116,8 @@ builder.Services.AddHttpClient(HolidayProvider.HttpClientName, client =>
 });
 builder.Services.AddSingleton<IHolidayProvider, HolidayProvider>();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
-// Check-in/check-out: cria as sessões do dia, envia os links e marca ausências/check-outs vencidos (1 min).
+// Check-in/check-out: cria as sessões do dia e marca ausências/check-outs vencidos (1 min).
+// Os e-mails com os links de check-in/check-out são agendados e enviados pelo serviço Email.
 builder.Services.AddHostedService<ReserveUsageWorker>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];

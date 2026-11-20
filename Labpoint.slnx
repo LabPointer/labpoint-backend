@@ -4,6 +4,8 @@
   </Folder>
   <Project Path="Backend/Backend.csproj" />
   <Project Path="Config/Config.csproj" />
+  <Project Path="Core/Core.csproj" />
   <Project Path="DTOs/DTOs.csproj" />
+  <Project Path="Email/Email.csproj" />
   <Project Path="Models/Models.csproj" />
 </Solution>

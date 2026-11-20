@@ -1,3 +1,4 @@
+using DTOs.Common;
 using Backend.Services;
 using DTOs.Error;
 using DTOs.Subject;
@@ -61,6 +62,24 @@ public class SubjectController(
     {
         await subjectService.AdminEditSubject(data);
         
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Excluir matéria permanentemente
+    /// </summary>
+    /// <remarks>
+    /// Exclui a matéria de vez e remove o vínculo dela com usuários e espaços. Exige digitar o nome da matéria.
+    /// </remarks>
+    [HttpDelete("admin/delete")]
+    [Authorize(Roles = "Admin,Root")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteAdmin([FromBody] AdminDeleteRequestDTO data)
+    {
+        await subjectService.AdminDeleteSubject(data);
+
         return NoContent();
     }
 }

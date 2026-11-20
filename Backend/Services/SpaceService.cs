@@ -1,4 +1,5 @@
-﻿using Backend.Handler;
+using DTOs.Common;
+using Backend.Handler;
 using Data;
 using DTOs.Space;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,8 @@ public interface ISpaceService
     public Task AdminCreateSpace(SpaceCreateRequestDTO data);
 
     public Task AdminEditSpace(SpaceEditRequestDTO data);
+
+    public Task AdminDeleteSpace(AdminDeleteRequestDTO data);
 }
 
 public class SpaceService(AppDbContext dbCtx) : ISpaceService
@@ -26,7 +29,7 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
         {
             // Busca por trecho no nome ou na descrição (o full-text só casava palavras inteiras).
             var pattern = QueryHelpers.ContainsPattern(query.SearchQuery);
-            queryable = queryable.Where(s => EF.Functions.ILike(s.Name, pattern) || EF.Functions.ILike(s.Description, pattern));
+            queryable = queryable.Where(s => EF.Functions.Like(s.Name.ToLower(), pattern, TextSearch.Escape) || EF.Functions.Like(s.Description.ToLower(), pattern, TextSearch.Escape));
         }
 
         // Capacity filter
@@ -243,6 +246,22 @@ public class SpaceService(AppDbContext dbCtx) : ISpaceService
         await dbCtx.SaveChangesAsync();
     }
     /// <summary>O nome do espaço é único: devolve 409 em vez de erro 500 do banco.</summary>
+    public async Task AdminDeleteSpace(AdminDeleteRequestDTO data)
+    {
+        var space = await dbCtx.Spaces.AsNoTracking().FirstOrDefaultAsync(s => s.Id == data.Id);
+        if (space is null)
+            throw new ResourceNotFoundException("Espaço não encontrado.");
+
+        PermanentDeletion.EnsureConfirmed(space.Name, data.ConfirmName);
+
+        await using var transaction = await dbCtx.Database.BeginTransactionAsync();
+        // Reservas do espaço, os recursos reservados junto com elas e o histórico de uso.
+        await PermanentDeletion.DeleteSpaceReserves(dbCtx, dbCtx.SpaceReserves.Where(sr => sr.FkSpaceId == space.Id));
+        // Vínculos com matérias e recursos caem em cascata.
+        await dbCtx.Spaces.Where(s => s.Id == space.Id).ExecuteDeleteAsync();
+        await transaction.CommitAsync();
+    }
+
     private async Task EnsureNameAvailable(string name, long? ignoreId)
     {
         var inUse = await dbCtx.Spaces.AsNoTracking().AnyAsync(s => s.Name == name && s.Id != ignoreId);

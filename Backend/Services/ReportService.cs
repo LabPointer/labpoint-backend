@@ -5,7 +5,6 @@ using DTOs.Report;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using Models.Report;
-using Npgsql;
 
 namespace Backend.Services;
 
@@ -101,8 +100,7 @@ public class ReportService(AppDbContext dbCtx, ICalendarService calendar) : IRep
         {
             await dbCtx.SaveChangesAsync();
         }
-        catch (DbUpdateException ex) when (stored == null
-            && ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        catch (DbUpdateException ex) when (stored == null && ex.IsUniqueViolation())
         {
             // Duas requisições calcularam o mesmo período ao mesmo tempo e a outra gravou primeiro.
             // O relatório calculado aqui continua válido; só não precisa ser gravado de novo.

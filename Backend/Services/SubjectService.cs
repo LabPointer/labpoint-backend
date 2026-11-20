@@ -1,3 +1,4 @@
+using DTOs.Common;
 using Backend.Handler;
 using Data;
 using DTOs.Subject;
@@ -11,6 +12,7 @@ public interface ISubjectService
     public Task<List<SubjectResponseDTO>> GetSubjects(SubjectRequestDTO query);
     public Task AdminCreateSubject(SubjectCreateRequestDTO data);
     public Task AdminEditSubject(SubjectEditRequestDTO data);
+    public Task AdminDeleteSubject(AdminDeleteRequestDTO data);
 }
 
 public class SubjectService(AppDbContext dbCtx) : ISubjectService
@@ -60,5 +62,17 @@ public class SubjectService(AppDbContext dbCtx) : ISubjectService
         subject.Name = data.Name ?? subject.Name;
         subject.Enabled = data.Enabled ?? subject.Enabled;
         await dbCtx.SaveChangesAsync();
+    }
+
+    public async Task AdminDeleteSubject(AdminDeleteRequestDTO data)
+    {
+        var subject = await dbCtx.Subjects.AsNoTracking().FirstOrDefaultAsync(s => s.Id == data.Id);
+        if (subject is null)
+            throw new ResourceNotFoundException("Matéria não encontrada.");
+
+        PermanentDeletion.EnsureConfirmed(subject.Name, data.ConfirmName);
+
+        // Os vínculos com usuários e espaços caem em cascata; as contas e os espaços continuam.
+        await dbCtx.Subjects.Where(s => s.Id == subject.Id).ExecuteDeleteAsync();
     }
 }

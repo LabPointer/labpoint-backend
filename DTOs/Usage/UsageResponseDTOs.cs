@@ -45,7 +45,15 @@ public record UsageSessionResponseDTO(
     DateTimeOffset? CheckedInAt,
     DateTimeOffset? CheckedOutAt,
     UsageAccountDTO? CheckedOutBy,
-    List<UsageEntryResponseDTO> Entries);
+    List<UsageEntryResponseDTO> Entries,
+    UsageEmailDTO? CheckInEmail = null,
+    UsageEmailDTO? CheckOutEmail = null);
+
+/// <summary>
+/// Último aviso por e-mail de uma etapa da sessão (fila <c>email_outbox</c>). Nulo = nenhum aviso gerado ainda.
+/// <c>Status</c>: 0 na fila, 1 enviado, 2 falhou, 3 expirado (o prazo passou antes do envio).
+/// </summary>
+public record UsageEmailDTO(EEmailStatus Status, int Attempts, DateTimeOffset CreatedAt, DateTimeOffset? SentAt);
 
 /// <summary>Sessão aberta por um link do e-mail e a etapa que o link permite.</summary>
 public record UsageTokenResponseDTO(EUsageStep Step, UsageSessionResponseDTO Session);
