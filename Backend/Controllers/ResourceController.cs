@@ -1,3 +1,4 @@
+using DTOs.Common;
 using Backend.Services;
 using DTOs.Error;
 using DTOs.Resource;
@@ -59,6 +60,24 @@ public class ResourceController(IResourceService resourceService) : ControllerBa
     public async Task<IActionResult> PatchEdit([FromBody] ResourceEditRequestDTO data)
     {
         await resourceService.AdminEditResource(data);
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Excluir recurso permanentemente
+    /// </summary>
+    /// <remarks>
+    /// Exclui o recurso de vez, junto com as reservas dele e o histórico de uso. Exige digitar o nome do recurso.
+    /// </remarks>
+    [HttpDelete("admin/delete")]
+    [Authorize(Roles = "Admin,Root")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteAdmin([FromBody] AdminDeleteRequestDTO data)
+    {
+        await resourceService.AdminDeleteResource(data);
 
         return NoContent();
     }

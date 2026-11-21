@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        Utilitários comuns do LabPoint, usados pelo Backend (API) e pelo serviço de e-mail:
+        acesso ao banco (AppDbContext e escolha do provedor), relógio de Brasília, tokens dos links de uso
+        e a fila de e-mails.
+    -->
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Core</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.15" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.15" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="10.0.15" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.15" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Models\Models.csproj" />
+    </ItemGroup>
+</Project>

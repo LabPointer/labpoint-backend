@@ -65,7 +65,7 @@ public class ResourceReserveService(AppDbContext dbCtx, ICalendarService calenda
 
         if (!string.IsNullOrWhiteSpace(query.SearchQuery))
         {
-            queryable = queryable.Where(ResourceAvailability.ReserveMatchesText(query.SearchQuery));
+            queryable = queryable.Where(ResourceAvailability.ReserveMatchesText(query.SearchQuery, dbCtx.Database.SupportsFullTextSearch()));
         }
 
         if (query.ResourceIds is { Count: > 0 })
@@ -230,7 +230,7 @@ public class ResourceReserveService(AppDbContext dbCtx, ICalendarService calenda
 
         if (!string.IsNullOrWhiteSpace(query.SearchQuery))
         {
-            queryable = queryable.Where(ResourceAvailability.ReserveMatchesText(query.SearchQuery));
+            queryable = queryable.Where(ResourceAvailability.ReserveMatchesText(query.SearchQuery, dbCtx.Database.SupportsFullTextSearch()));
         }
 
         if (query.ResourceIds is { Count: > 0 })

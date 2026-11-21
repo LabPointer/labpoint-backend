@@ -61,3 +61,16 @@ public enum EHolidaySource
     Municipal,
     Custom
 }
+
+/// <summary>Situação de um e-mail na fila (<c>email_outbox</c>).</summary>
+public enum EEmailStatus
+{
+    /// <summary>Aguardando envio (ou nova tentativa).</summary>
+    Pending,
+    /// <summary>Enviado.</summary>
+    Sent,
+    /// <summary>Desistiu depois do número máximo de tentativas.</summary>
+    Failed,
+    /// <summary>Não foi enviado porque o prazo do aviso passou (ex.: serviço fora do ar até a janela fechar).</summary>
+    Expired
+}

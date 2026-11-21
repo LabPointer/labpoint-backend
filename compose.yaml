@@ -1,9 +1,36 @@
-﻿services:
+services:
   backend:
     image: backend
     build:
       context: .
       dockerfile: Backend/Dockerfile
+
+  # Serviço de e-mail: lê a fila email_outbox (LISTEN/NOTIFY) e agenda os avisos de check-in/check-out.
+  # Credenciais SMTP vêm do ambiente/.env (nunca versionadas). Sem SMTP_HOST, em Development só registra no log.
+  #   docker compose up -d --build email
+  email:
+    image: labpoint-email
+    container_name: labpoint-email
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Email/Dockerfile
+    environment:
+      DOTNET_ENVIRONMENT: ${EMAIL_ENVIRONMENT:-Development}
+      # Mesmo banco e mesmo provedor do backend (PostgreSql ou Sqlite). Com Sqlite, monte o arquivo do banco
+      # em um volume e aponte SQLITE_CONNECTION para ele (ex.: "Data Source=/data/labpoint.db").
+      Database__Provider: ${DATABASE_PROVIDER:-PostgreSql}
+      ConnectionStrings__DbConnection: "Host=db;Port=5432;Database=pei;Username=pei;Password=pei"
+      ConnectionStrings__SqliteConnection: ${SQLITE_CONNECTION:-Data Source=/data/labpoint.db}
+      Frontend__Url: ${FRONTEND_URL:-http://localhost:3000}
+      Smtp__Host: ${SMTP_HOST:-}
+      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__User: ${SMTP_USER:-}
+      Smtp__Password: ${SMTP_PASSWORD:-}
+      Smtp__FromName: ${SMTP_FROM_NAME:-Labpoint}
+      Smtp__FromAddress: ${SMTP_FROM_ADDRESS:-}
+    depends_on:
+      - db
 
   db:
     image: postgres:latest

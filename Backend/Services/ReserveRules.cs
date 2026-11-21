@@ -61,12 +61,13 @@ public static class ReserveRules
                 sr.DateFrom,
                 sr.DateTo,
                 sr.CreatedAt,
+                // Sem Distinct no banco: dentro da projeção ele vira APPLY, que o SQLite não tem.
                 Shifts = sr.SpaceReserveSchedules
                     .Where(s => ids.Contains(s.FkScheduleId))
                     .Select(s => s.Schedule.Shift)
-                    .Distinct()
                     .ToList()
             })
+            .AsSplitQuery()
             .ToListAsync();
 
         if (candidates.Count == 0)

@@ -1,3 +1,4 @@
+using DTOs.Common;
 using Backend.Handler;
 using Data;
 using DTOs.Resource;
@@ -13,6 +14,8 @@ public interface IResourceService
     public Task AdminEditResource(ResourceEditRequestDTO data);
 
     public Task AdminCreateResource(ResourceCreateRequestDTO data);
+
+    public Task AdminDeleteResource(AdminDeleteRequestDTO data);
 }
 
 public class ResourceService(AppDbContext dbCtx) : IResourceService
@@ -30,12 +33,12 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
         if (!string.IsNullOrWhiteSpace(query.Name))
         {
             var pattern = QueryHelpers.ContainsPattern(query.Name);
-            resourceQuery = resourceQuery.Where(r => EF.Functions.ILike(r.Name, pattern));
+            resourceQuery = resourceQuery.Where(r => EF.Functions.Like(r.Name.ToLower(), pattern, TextSearch.Escape));
         }
 
         if (!string.IsNullOrWhiteSpace(query.SearchQuery))
         {
-            resourceQuery = resourceQuery.Where(ResourceAvailability.MatchesText(query.SearchQuery));
+            resourceQuery = resourceQuery.Where(ResourceAvailability.MatchesText(query.SearchQuery, dbCtx.Database.SupportsFullTextSearch()));
         }
 
         var ordered = resourceQuery.OrderBy(r => r.Name).ThenBy(r => r.Id);
@@ -215,6 +218,22 @@ public class ResourceService(AppDbContext dbCtx) : IResourceService
         resource.Quantity = targetQuantity;
 
         await dbCtx.SaveChangesAsync();
+    }
+
+    public async Task AdminDeleteResource(AdminDeleteRequestDTO data)
+    {
+        var resource = await dbCtx.Resources.AsNoTracking().FirstOrDefaultAsync(r => r.Id == data.Id);
+        if (resource is null)
+            throw new ResourceNotFoundException("Recurso não encontrado.");
+
+        PermanentDeletion.EnsureConfirmed(resource.Name, data.ConfirmName);
+
+        await using var transaction = await dbCtx.Database.BeginTransactionAsync();
+        // Reservas do recurso (avulsas e vinculadas a salas) e o histórico de uso delas.
+        await PermanentDeletion.DeleteResourceReserves(dbCtx, dbCtx.ResourceReserves.Where(rr => rr.FkResourceId == resource.Id));
+        // Vínculos com espaços caem em cascata.
+        await dbCtx.Resources.Where(r => r.Id == resource.Id).ExecuteDeleteAsync();
+        await transaction.CommitAsync();
     }
 
     private async Task EnsureNameAvailable(string name, long? currentId)

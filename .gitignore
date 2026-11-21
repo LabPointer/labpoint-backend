@@ -484,3 +484,7 @@ $RECYCLE.BIN/
 # App settings
 appsettings.json
 appsettings.Development.json
+# Banco SQLite local (Database:Provider = Sqlite)
+*.db
+*.db-shm
+*.db-wal

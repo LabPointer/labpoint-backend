@@ -48,36 +48,55 @@ Abra http://localhost:8080/swagger no seu navegador para ver a documentação da
 
 - [.NET](https://dotnet.microsoft.com/pt-br/download)
 
-## appsettings.json
+## appsettings
+
+Backend e Email seguem o mesmo padrão (os arquivos reais são ignorados pelo git; copie dos `.example`):
+
+- `appsettings.json`: base, vale em todos os ambientes (feriados, logs, CORS e URLs de produção, escolha do banco).
+- `appsettings.Development.json`: só o que muda no desenvolvimento (banco local, `http://localhost:3000`, SMTP de
+  teste no Email). O Backend roda em Development pelo perfil `http`; o Email, pelo `Email/Properties/launchSettings.json`.
+- A escolha do banco é `Database:Provider` (`PostgreSql` ou `Sqlite`) e deve ser a mesma no Backend e no Email.
+- O SMTP só existe no Email (o Backend não envia e-mails). Senhas ficam nos arquivos reais ou em variáveis de ambiente,
+  nunca nos `.example`.
+
+## Banco de dados: PostgreSQL ou SQLite
+
+O provedor é escolhido no `appsettings.json` (do Backend e do Email):
 
 ```json
-{
-  "ConnectionStrings": {
-    "DbConnection": "Host=localhost;Port=5432;Database=pei;Username=pei;Password=pei"
-  },
-  "Frontend": {
-    "Url": "http://localhost/3000"
-  },
-  "Smtp": {
-    "Host": "smtp.gmail.com",
-    "Port": 587,
-    "User": "seu email",
-    "Password": "senha do aplicativo do email",
-    "FromName": "Labpoint",
-    "FromAddress": "seu email"
-  },
-  "Cors": {
-    "AllowedOrigins": [
-      "http://localhost:3000"
-    ]
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*"
+"Database": { "Provider": "PostgreSql" },          // ou "Sqlite"
+"ConnectionStrings": {
+  "DbConnection": "Host=localhost;Port=5432;Database=pei;Username=pei;Password=pei",
+  "SqliteConnection": "Data Source=labpoint.db"
 }
-
 ```
+
+- Cada provedor tem as próprias migrations: PostgreSQL em `Backend/Migrations` (contexto `AppDbContext`) e SQLite em
+  `Backend/Migrations/Sqlite` (contexto `SqliteAppDbContext`). Ao mudar o modelo, gere as duas:
+  - `dotnet ef migrations add Nome --context AppDbContext`
+  - `dotnet ef migrations add Nome --context SqliteAppDbContext --output-dir Migrations/Sqlite`
+- Para criar/atualizar o banco SQLite: `dotnet ef database update --context SqliteAppDbContext`.
+- No SQLite não há busca full-text (a busca usa só "contém") nem LISTEN/NOTIFY (o serviço de e-mail verifica a fila a
+  cada `OutboxPollSeconds`), e `lower()` não converte letras acentuadas.
+
+## Projeto `Core`
+
+Class library com o que é comum ao Backend e ao serviço de e-mail: `AppDbContext`/`SqliteAppDbContext` e a escolha do
+provedor (`AddLabpointDatabase`), `BrazilClock`, `UsageTokens` (links de check-in/check-out), `TextSearch` e a fila de
+e-mails (`Core.Email.EmailOutbox`).
+
+## Serviço de e-mail (`Email/`)
+
+O backend não envia e-mails: ele grava cada pedido na tabela `email_outbox` e avisa com `NOTIFY email_outbox`.
+O projeto `Email` (um .NET Worker separado) escuta essa fila, monta o HTML a partir de `Email/Templates`, envia por
+SMTP (com novas tentativas) e agenda os avisos de check-in e check-out.
+
+- Local: `cd Email && dotnet run` (usa a seção `Smtp` do `appsettings` do próprio projeto ou variáveis de ambiente;
+  com `Smtp:Host` vazio, em Development o e-mail só é escrito no log).
+- Docker: `docker compose up -d --build email` (credenciais via `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`,
+  `SMTP_FROM_ADDRESS` no ambiente ou num `.env` não versionado).
+- Cada aviso de check-in/check-out fica ligado à sessão (`email_outbox.fk_usage_id`) e vence no fim da janela
+  (`expires_at`): se o serviço ficar fora do ar até lá, o aviso não é enviado e fica com status 3 (Expirado).
+  O Gerenciar check-out mostra a situação dos avisos de cada sessão.
+- Configuração em `EmailService`: `OutboxPollSeconds`, `BatchSize`, `MaxAttempts`, `UsageScanSeconds`,
+  `CheckInEmailMinutesBeforeWindow` (15) e `CheckOutEmailMinutesBeforeWindow` (0).

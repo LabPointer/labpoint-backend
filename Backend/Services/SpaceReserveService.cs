@@ -292,7 +292,7 @@ public class SpaceReserveService(AppDbContext dbCtx, ICalendarService calendar) 
         if (!string.IsNullOrWhiteSpace(query.SearchQuery))
         {
             var pattern = QueryHelpers.ContainsPattern(query.SearchQuery);
-            queryable = queryable.Where(sr => EF.Functions.ILike(sr.Space.Name, pattern));
+            queryable = queryable.Where(sr => EF.Functions.Like(sr.Space.Name.ToLower(), pattern, TextSearch.Escape));
         }
 
         // Antes o filtro de horários era recebido mas ignorado.

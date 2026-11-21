@@ -12,11 +12,11 @@ public static class QueryHelpers
     /// Substitui a busca full-text, que só casava palavras inteiras (não achava "joa" em "joão") e
     /// devolvia vazio quando qualquer campo concatenado era nulo.
     /// </summary>
-    public static string ContainsPattern(string term)
-    {
-        var escaped = term.Trim().Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
-        return $"%{escaped}%";
-    }
+    /// <remarks>
+    /// Agora em minúsculas, para <c>EF.Functions.Like(campo.ToLower(), padrão, TextSearch.Escape)</c>, que funciona
+    /// no PostgreSQL e no SQLite (o ILIKE só existe no PostgreSQL). Ver <see cref="TextSearch"/>.
+    /// </remarks>
+    public static string ContainsPattern(string term) => TextSearch.ContainsPattern(term);
 }
 
 /// <summary>Linha escalar de uma conta (sem cargo/matéria), lida em uma única consulta.</summary>

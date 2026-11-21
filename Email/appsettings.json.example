@@ -1,0 +1,41 @@
+{
+  // Base do serviço de e-mail (vale em todos os ambientes). appsettings.{Ambiente}.json sobrescreve só o que muda.
+
+  // Mesmo banco do Backend: "PostgreSql" (ConnectionStrings:DbConnection) ou "Sqlite" (ConnectionStrings:SqliteConnection).
+  "Database": {
+    "Provider": "PostgreSql"
+  },
+  "ConnectionStrings": {
+    "DbConnection": "Host=<endpoint>.neon.tech;Port=5432;Database=<database>;Username=<usuario>;Password=<senha>;SSL Mode=Require;Timeout=30",
+    "SqliteConnection": "Data Source=labpoint.db"
+  },
+  // Endereço do frontend, usado nos links de check-in e check-out.
+  "Frontend": {
+    "Url": "https://labpoint.vercel.app"
+  },
+  // Credenciais do SMTP: no appsettings.{Ambiente}.json ou em variáveis de ambiente (Smtp__Host, Smtp__Password...).
+  // Com Host vazio, em Development o e-mail só é escrito no log; fora de Development o envio falha.
+  "Smtp": {
+    "Host": "",
+    "Port": 587,
+    "User": "",
+    "Password": "",
+    "FromName": "Labpoint",
+    "FromAddress": ""
+  },
+  "EmailService": {
+    "OutboxPollSeconds": 30,
+    "BatchSize": 20,
+    "MaxAttempts": 5,
+    "UsageScanSeconds": 60,
+    "CheckInEmailMinutesBeforeWindow": 15,
+    "CheckOutEmailMinutesBeforeWindow": 0
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.Hosting.Lifetime": "Information",
+      "Microsoft.EntityFrameworkCore.Database.Command": "Warning"
+    }
+  }
+}

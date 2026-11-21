@@ -37,27 +37,36 @@ public static class ResourceAvailability
     /// Busca em nome e descrição: full-text em português (palavras inteiras, com radical: "notebooks" acha "notebook")
     /// OU trecho parcial sem diferenciar maiúsculas ("note" acha "Notebooks").
     /// </summary>
-    public static Expression<Func<ResourceModel, bool>> MatchesText(string term)
+    /// <param name="term">Texto digitado.</param>
+    /// <param name="fullText">Usar também a busca full-text (só PostgreSQL: <c>dbCtx.Database.SupportsFullTextSearch()</c>).</param>
+    public static Expression<Func<ResourceModel, bool>> MatchesText(string term, bool fullText)
     {
         var text = term.Trim();
         var pattern = QueryHelpers.ContainsPattern(text);
+        if (!fullText)
+            return r => EF.Functions.Like(r.Name.ToLower(), pattern, TextSearch.Escape)
+                        || (r.Description != null && EF.Functions.Like(r.Description.ToLower(), pattern, TextSearch.Escape));
         return r =>
             EF.Functions.ToTsVector("portuguese", r.Name + " " + (r.Description ?? ""))
                 .Matches(EF.Functions.WebSearchToTsQuery("portuguese", text))
-            || EF.Functions.ILike(r.Name, pattern)
-            || (r.Description != null && EF.Functions.ILike(r.Description, pattern));
+            || EF.Functions.Like(r.Name.ToLower(), pattern, TextSearch.Escape)
+            || (r.Description != null && EF.Functions.Like(r.Description.ToLower(), pattern, TextSearch.Escape));
     }
 
     /// <summary>Mesma busca de <see cref="MatchesText"/>, aplicada ao recurso de uma reserva.</summary>
-    public static Expression<Func<ResourceReserveModel, bool>> ReserveMatchesText(string term)
+    public static Expression<Func<ResourceReserveModel, bool>> ReserveMatchesText(string term, bool fullText)
     {
         var text = term.Trim();
         var pattern = QueryHelpers.ContainsPattern(text);
+        if (!fullText)
+            return rr => EF.Functions.Like(rr.Resource.Name.ToLower(), pattern, TextSearch.Escape)
+                         || (rr.Resource.Description != null
+                             && EF.Functions.Like(rr.Resource.Description.ToLower(), pattern, TextSearch.Escape));
         return rr =>
             EF.Functions.ToTsVector("portuguese", rr.Resource.Name + " " + (rr.Resource.Description ?? ""))
                 .Matches(EF.Functions.WebSearchToTsQuery("portuguese", text))
-            || EF.Functions.ILike(rr.Resource.Name, pattern)
-            || (rr.Resource.Description != null && EF.Functions.ILike(rr.Resource.Description, pattern));
+            || EF.Functions.Like(rr.Resource.Name.ToLower(), pattern, TextSearch.Escape)
+            || (rr.Resource.Description != null && EF.Functions.Like(rr.Resource.Description.ToLower(), pattern, TextSearch.Escape));
     }
 
     /// <summary>

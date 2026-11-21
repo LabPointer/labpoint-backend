@@ -1,3 +1,4 @@
+using DTOs.Common;
 using Backend.Services;
 using DTOs.Error;
 using DTOs.Resource;
@@ -60,6 +61,24 @@ public class ScheduleController(IScheduleService scheduleService) : ControllerBa
     public async Task<IActionResult> PatchEdit([FromBody] ScheduleEditRequestDTO data)
     {
         await scheduleService.AdminEditSchedule(data);
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Excluir horário permanentemente
+    /// </summary>
+    /// <remarks>
+    /// Exclui o horário de vez e o retira das reservas e dos relatórios de uso; reservas que ficarem sem horários são excluídas. Exige digitar o rótulo "HH:mm - HH:mm".
+    /// </remarks>
+    [HttpDelete("admin/delete")]
+    [Authorize(Roles = "Admin,Root")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteAdmin([FromBody] AdminDeleteRequestDTO data)
+    {
+        await scheduleService.AdminDeleteSchedule(data);
 
         return NoContent();
     }

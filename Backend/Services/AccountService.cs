@@ -18,6 +18,8 @@ public interface IAccountService
     public Task<IEnumerable<AccountResponseDTO>> AdminGetUsers(ClaimsPrincipal user, AdminAccountRequestDTO query);
 
     public Task AdminEditAccount(ClaimsPrincipal user, AdminAccountEditRequestDTO data);
+
+    public Task AdminDeleteAccount(ClaimsPrincipal user, AdminAccountDeleteRequestDTO data);
 }
 
 public class AccountService(AppDbContext dbCtx) : IAccountService
@@ -81,9 +83,9 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
         {
             var pattern = QueryHelpers.ContainsPattern(query.SearchQuery);
             usersQuery = usersQuery.Where(u =>
-                EF.Functions.ILike(u.Registration, pattern)
-                || (u.UserName != null && EF.Functions.ILike(u.UserName, pattern))
-                || (u.Email != null && EF.Functions.ILike(u.Email, pattern)));
+                EF.Functions.Like(u.Registration.ToLower(), pattern, TextSearch.Escape)
+                || (u.UserName != null && EF.Functions.Like(u.UserName.ToLower(), pattern, TextSearch.Escape))
+                || (u.Email != null && EF.Functions.Like(u.Email.ToLower(), pattern, TextSearch.Escape)));
         }
 
         if (query.Role.HasValue)
@@ -254,6 +256,48 @@ public class AccountService(AppDbContext dbCtx) : IAccountService
     /// Associa a conta a uma única matéria: atualiza o primeiro vínculo existente (ou cria um) e remove os extras.
     /// Não salva; quem chama faz o SaveChanges.
     /// </summary>
+    public async Task AdminDeleteAccount(ClaimsPrincipal user, AdminAccountDeleteRequestDTO data)
+    {
+        var actorId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
+        if (actorId == data.Id)
+        {
+            throw new BadRequestException("Não é possível excluir a própria conta.");
+        }
+
+        var account = await dbCtx.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == data.Id);
+        if (account == null)
+        {
+            throw new ResourceNotFoundException("Usuário não encontrado.");
+        }
+
+        // Mesma regra de ativar/desativar: só quem tem cargo estritamente superior ao do alvo.
+        var roles = await AccountDirectory.LoadRoles(dbCtx, [actorId, data.Id]);
+        var actorRole = roles.GetValueOrDefault(actorId, EAccountRole.User);
+        var targetRole = roles.GetValueOrDefault(data.Id, EAccountRole.User);
+        if (actorRole <= targetRole)
+        {
+            throw new ForbiddenException("Você não pode excluir um usuário com cargo igual ou superior ao seu.");
+        }
+
+        PermanentDeletion.EnsureConfirmed(account.UserName ?? string.Empty, data.ConfirmName);
+
+        await using var transaction = await dbCtx.Database.BeginTransactionAsync();
+
+        // Liberações do calendário feitas pela conta continuam valendo: passam para quem está excluindo.
+        await dbCtx.ReleasedDates
+            .Where(d => d.FkAccountId == account.Id)
+            .ExecuteUpdateAsync(set => set.SetProperty(d => d.FkAccountId, actorId));
+
+        // Reservas da conta (salas, recursos vinculados e avulsos) e o histórico de uso delas.
+        await PermanentDeletion.DeleteSpaceReserves(dbCtx, dbCtx.SpaceReserves.Where(sr => sr.FkAccountId == account.Id));
+        await PermanentDeletion.DeleteResourceReserves(dbCtx, dbCtx.ResourceReserves.Where(rr => rr.FkAccountId == account.Id));
+
+        // Papéis, matéria, tokens e check-outs fechados por ela (fica nulo) seguem as cascatas do banco.
+        await dbCtx.Users.Where(u => u.Id == account.Id).ExecuteDeleteAsync();
+        await transaction.CommitAsync();
+    }
+
     private async Task ApplySubject(string accountId, long subjectId, bool enabledOnly)
     {
         var subject = await dbCtx.Subjects.AsNoTracking()

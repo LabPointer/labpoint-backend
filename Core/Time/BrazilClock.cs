@@ -1,4 +1,4 @@
-namespace Backend.Services;
+namespace Core;
 
 /// <summary>
 /// Hora oficial de Brasília. O Brasil não tem mais horário de verão, então um deslocamento fixo evita depender do

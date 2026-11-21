@@ -1,8 +1,18 @@
 {
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
+  // Desenvolvimento (ASPNETCORE_ENVIRONMENT=Development, perfil "http" do launchSettings): só o que muda em relação ao
+  // appsettings.json. Para usar SQLite, troque Provider para "Sqlite" e rode
+  // "dotnet ef database update --context SqliteAppDbContext" uma vez.
+  "Database": {
+    "Provider": "PostgreSql"
+  },
+  "ConnectionStrings": {
+    "DbConnection": "Host=localhost;Port=5432;Database=pei;Username=pei;Password=pei",
+    "SqliteConnection": "Data Source=labpoint.db"
+  },
+  "Frontend": {
+    "Url": "http://localhost:3000"
+  },
+  "Cors": {
+    "AllowedOrigins": ["http://localhost:3000"]
   }
 }

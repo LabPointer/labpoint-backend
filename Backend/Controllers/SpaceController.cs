@@ -1,4 +1,5 @@
-﻿using Backend.Services;
+using DTOs.Common;
+using Backend.Services;
 using DTOs.Error;
 using DTOs.Resource;
 using DTOs.Space;
@@ -60,6 +61,24 @@ public class SpaceController(ISpaceService spaceService) : ControllerBase
     public async Task<IActionResult> PatchEdit([FromBody] SpaceEditRequestDTO data)
     {
         await spaceService.AdminEditSpace(data);
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Excluir espaço permanentemente
+    /// </summary>
+    /// <remarks>
+    /// Exclui o espaço de vez, junto com as reservas dele (e os recursos reservados com elas) e o histórico de uso. Exige digitar o nome do espaço.
+    /// </remarks>
+    [HttpDelete("admin/delete")]
+    [Authorize(Roles = "Admin,Root")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErroResponseDTO), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteAdmin([FromBody] AdminDeleteRequestDTO data)
+    {
+        await spaceService.AdminDeleteSpace(data);
 
         return NoContent();
     }
