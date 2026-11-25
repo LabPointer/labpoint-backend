@@ -16,7 +16,10 @@ public enum DatabaseProvider
 /// <summary>
 /// Registra o <see cref="AppDbContext"/> com o provedor do appsettings:
 /// <code>
-/// "Database": { "Provider": "PostgreSql" }   // ou "Sqlite"
+/// "Database": {
+///   "Provider": "PostgreSql",            // ou "Sqlite"
+///   "SqliteDirectory": "/home/discloud"  // opcional: pasta do arquivo do SQLite
+/// },
 /// "ConnectionStrings": {
 ///   "DbConnection": "Host=localhost;Port=5432;Database=pei;Username=...;Password=...",   // PostgreSQL
 ///   "SqliteConnection": "Data Source=labpoint.db"                                      // SQLite
@@ -50,9 +53,7 @@ public static class DatabaseSetup
 
         if (provider == DatabaseProvider.Sqlite)
         {
-            var connection = configuration.GetConnectionString("SqliteConnection");
-            if (string.IsNullOrWhiteSpace(connection))
-                connection = "Data Source=labpoint.db";
+            var connection = configuration.GetSqliteConnectionString();
 
             services.AddDbContext<AppDbContext, SqliteAppDbContext>(options =>
                 ConfigureSqlite(options, connection));
@@ -67,6 +68,35 @@ public static class DatabaseSetup
         }
 
         return provider;
+    }
+
+    /// <summary>
+    /// Connection string do SQLite: <c>ConnectionStrings:SqliteConnection</c> (padrão <c>Data Source=labpoint.db</c>).
+    /// Se <c>Database:SqliteDirectory</c> estiver preenchido e o Data Source for um caminho relativo, o arquivo fica
+    /// nessa pasta (criada se não existir). Ex.: na Discloud, "/home/discloud" → /home/discloud/labpoint.db.
+    /// </summary>
+    public static string GetSqliteConnectionString(this IConfiguration configuration)
+    {
+        var connection = configuration.GetConnectionString("SqliteConnection");
+        if (string.IsNullOrWhiteSpace(connection))
+            connection = "Data Source=labpoint.db";
+
+        var directory = configuration["Database:SqliteDirectory"];
+        if (string.IsNullOrWhiteSpace(directory))
+            return connection;
+
+        var builder = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(connection);
+        var dataSource = builder.DataSource;
+        if (string.IsNullOrWhiteSpace(dataSource)
+            || dataSource == ":memory:"
+            || dataSource.StartsWith("file:", StringComparison.OrdinalIgnoreCase)
+            || Path.IsPathRooted(dataSource))
+            return connection;
+
+        directory = directory.Trim();
+        Directory.CreateDirectory(directory);
+        builder.DataSource = Path.Combine(directory, dataSource);
+        return builder.ToString();
     }
 
     public static DbContextOptionsBuilder ConfigurePostgreSql(DbContextOptionsBuilder options, string connection) =>

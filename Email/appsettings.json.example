@@ -3,7 +3,9 @@
 
   // Mesmo banco do Backend: "PostgreSql" (ConnectionStrings:DbConnection) ou "Sqlite" (ConnectionStrings:SqliteConnection).
   "Database": {
-    "Provider": "PostgreSql"
+    "Provider": "PostgreSql",
+    // Pasta do arquivo do SQLite (o mesmo do Backend; vazio = pasta atual do app). Na Discloud: "/home/discloud".
+    "SqliteDirectory": ""
   },
   "ConnectionStrings": {
     "DbConnection": "Host=<endpoint>.neon.tech;Port=5432;Database=<database>;Username=<usuario>;Password=<senha>;SSL Mode=Require;Timeout=30",
