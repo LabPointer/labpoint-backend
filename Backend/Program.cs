@@ -185,7 +185,7 @@ using (var scope = app.Services.CreateScope())
 
     if (await context.Database.CanConnectAsync())
     {
-        Console.WriteLine("PostgreSQL connected!!");
+        Console.WriteLine($"{builder.Configuration.GetDatabaseProvider()} connected!!");
         // Enum roles
         await IdentitySeeder.SeedRolesAsync(scope.ServiceProvider);
 
@@ -196,7 +196,7 @@ using (var scope = app.Services.CreateScope())
     }
     else
     {
-        Console.WriteLine("PostgreSQL connection failed!");
+        Console.WriteLine($"{builder.Configuration.GetDatabaseProvider()} connection failed!");
     }
 }
 

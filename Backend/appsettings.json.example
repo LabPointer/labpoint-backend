@@ -4,7 +4,9 @@
   // Banco de dados: "PostgreSql" (usa ConnectionStrings:DbConnection) ou "Sqlite" (usa ConnectionStrings:SqliteConnection).
   // O serviço de e-mail (projeto Email) precisa apontar para o mesmo banco.
   "Database": {
-    "Provider": "PostgreSql"
+    "Provider": "PostgreSql",
+    // Pasta do arquivo do SQLite (vazio = pasta atual do app). Na Discloud: "/home/discloud".
+    "SqliteDirectory": ""
   },
   "ConnectionStrings": {
     "DbConnection": "Host=<endpoint>.neon.tech;Port=5432;Database=<database>;Username=<usuario>;Password=<senha>;SSL Mode=Require;Timeout=30",

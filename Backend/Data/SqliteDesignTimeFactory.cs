@@ -10,7 +10,8 @@ namespace Data;
 /// dotnet ef migrations add Nome --context SqliteAppDbContext --output-dir Migrations/Sqlite
 /// dotnet ef database update --context SqliteAppDbContext
 /// </code>
-/// O arquivo do banco vem de <c>ConnectionStrings:SqliteConnection</c> (padrão <c>Data Source=labpoint.db</c>), lido de
+/// O arquivo do banco vem de <c>ConnectionStrings:SqliteConnection</c> (padrão <c>Data Source=labpoint.db</c>), na pasta
+/// <c>Database:SqliteDirectory</c> se preenchida, lido de
 /// appsettings.json e appsettings.Development.json.
 /// </summary>
 public sealed class SqliteDesignTimeFactory : IDesignTimeDbContextFactory<SqliteAppDbContext>
@@ -24,9 +25,7 @@ public sealed class SqliteDesignTimeFactory : IDesignTimeDbContextFactory<Sqlite
             .AddEnvironmentVariables()
             .Build();
 
-        var connection = configuration.GetConnectionString("SqliteConnection");
-        if (string.IsNullOrWhiteSpace(connection))
-            connection = "Data Source=labpoint.db";
+        var connection = configuration.GetSqliteConnectionString();
 
         var options = new DbContextOptionsBuilder<SqliteAppDbContext>();
         DatabaseSetup.ConfigureSqlite(options, connection);
